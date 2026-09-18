@@ -30,7 +30,9 @@ a *local* operation for the receiver. No issuer round-trip is needed at use time
 * `constraints` — flat `name -> number | string | string[]`. Numbers are upper bounds,
   strings are exact matches, arrays are allowed-value sets. The reserved name
   `delegate_to` is an allowlist of subjects the token may be handed to; it is checked
-  when delegating and is *not* inherited by the child.
+  when delegating. Constraints are inherited: a child must repeat every parent
+  constraint at least as strictly, so a delegated grant can never be *wider* than the
+  code that verifies it expects.
 
 ## Proofs
 
@@ -54,7 +56,7 @@ re-parented under a different (more permissive) token after it was signed.
 | `exp` | `child.exp <= parent.exp` |
 | `max_uses` | `child.max_uses <= parent.max_uses` |
 | `max_depth` | `child.max_depth <= parent.max_depth - 1` |
-| constraints | numbers may only decrease, strings must match, arrays may only shrink |
+| constraints | numbers may only decrease, strings must match exactly, arrays may only shrink, and **every parent constraint must be carried into the child** (omitting one is a wider grant, so it is amplification) |
 | delegator | MUST be `parent.subject` or `parent.issuer` |
 | `delegate_to` | child subject MUST be listed, when the parent constrains it |
 

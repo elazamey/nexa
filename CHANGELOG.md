@@ -42,11 +42,18 @@ by the test suite; nothing is aspirational.
 
 * `delegate_to` was compared against an undefined subject because `attenuate` never
   passed the child subject to the amplification check.
-* Dropping a parent constraint was silently accepted as attenuation.
+* Dropping a parent constraint was silently accepted as attenuation; constraints must
+  now be carried into the child.
 * A capability token carried in the body without the envelope's `cap` field skipped
   verification entirely.
 * Resolving a capability could throw out of `Endpoint.receive()` instead of producing
   a recorded, receipted DENY.
+* A signed envelope naming a malformed `resource` or `action` threw out of
+  `Endpoint.receive()`; it is now a `NEXA_E_SCHEMA` DENY with a receipt.
+* A handler returning non-canonical data was reported as a generic failure; it is now a
+  recorded `NEXA_E_HANDLER` DENY that does not spend capability budget.
+* The resource grammar now allows paths (`fs:/etc/passwd`) while keeping the list of
+  dangerous namespaces in exactly one place: the gate table.
 * The use ledger accumulated zero-count entries instead of releasing them.
 
 ### Security posture

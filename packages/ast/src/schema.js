@@ -31,7 +31,13 @@ export const KID_PATTERN = /^nexa:key:ed25519:z[1-9A-HJ-NP-Za-km-z]{20,128}$/;
 export const MESSAGE_ID_PATTERN = /^urn:nexa:msg:[A-Za-z0-9_-]{8,64}$/;
 export const CAPABILITY_ID_PATTERN = /^urn:nexa:cap:[A-Za-z0-9_-]{8,64}$/;
 export const NONCE_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
-export const RESOURCE_PATTERN = /^(tool|fs|vcs|deploy|net|mem|log):[a-z0-9][a-z0-9._-]{0,126}$/;
+/**
+ * Resource identifiers are `<namespace>:<path>`. The grammar is deliberately generic:
+ * which namespaces are *dangerous* is decided by the policy gates
+ * (`packages/policy/src/gates.js`), not by the syntax. That keeps one list of things
+ * NEXA refuses, instead of two that can drift apart.
+ */
+export const RESOURCE_PATTERN = /^[a-z][a-z0-9_-]{0,31}:[a-z0-9/._-]{1,127}$/;
 export const ACTION_PATTERN = /^[a-z][a-z0-9_-]{0,31}$/;
 
 export const ENVELOPE_FIELDS = Object.freeze([

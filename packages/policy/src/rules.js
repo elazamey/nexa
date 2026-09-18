@@ -63,7 +63,7 @@ export function validateRule(rule) {
     throw new NexaError('NEXA_E_POLICY', `rule ${rule.id}: effect must be ALLOW or DENY`);
   }
   if (rule.resource !== undefined) {
-    if (rule.resource !== '*' && !/^[a-z][a-z0-9._-]*(:(\*|[a-z0-9][a-z0-9._-]*))*$/.test(rule.resource)) {
+    if (rule.resource !== '*' && !/^[a-z][a-z0-9_-]{0,31}(:(\*|[a-z0-9/._-]{1,127}))?$/.test(rule.resource)) {
       throw new NexaError('NEXA_E_POLICY', `rule ${rule.id}: invalid resource pattern`);
     }
   }

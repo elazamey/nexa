@@ -1,20 +1,33 @@
 {
   "name": "nexa",
   "version": "0.1.0",
-  "description": "NEXA v0.1 - signed, capability-gated protocol for agent tooling (default-deny, evidence-first)",
+  "description": "NEXA v0.1 - signed, capability-gated protocol for agent tooling. Default-deny, evidence-first, zero runtime dependencies.",
   "type": "module",
   "license": "MIT",
+  "private": true,
   "engines": {
     "node": ">=20.0.0"
   },
-  "private": true,
   "workspaces": [
     "packages/*",
     "adapters/*"
   ],
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test",
+    "test:syntax": "node --check packages/ast/index.js && node --check packages/protocol/index.js",
     "demo": "node tools/demo.mjs",
-    "report": "node tools/gate-report.mjs"
-  }
+    "report": "node tools/gate-report.mjs",
+    "report:json": "node tools/gate-report.mjs --json",
+    "vectors": "node tools/vectors.mjs",
+    "verify": "npm test && npm run demo && npm run report"
+  },
+  "keywords": [
+    "protocol",
+    "capabilities",
+    "ed25519",
+    "evidence",
+    "policy",
+    "mcp",
+    "agent"
+  ]
 }

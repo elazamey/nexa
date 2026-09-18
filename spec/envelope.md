@@ -40,9 +40,12 @@ denial-of-service.
 { "resource": "tool:echo", "action": "call", "args": { "text": "hi" }, "capability": { ... } }
 ```
 
-* `resource` matches `^(tool|fs|vcs|deploy|net|mem|log):[a-z0-9][a-z0-9._-]{0,126}$`.
-  Namespaces `exec`, `shell`, `process`, `terminal`, `tty`, `fs`, `file`, `vcs`, `git`,
-  `push`, `remote`, `deploy`, `release`, `infra` are gated (§10 of `protocol.md`).
+* `resource` matches `^[a-z][a-z0-9_-]{0,31}:[a-z0-9/._-]{1,127}$` — a generic
+  `<namespace>:<path>` grammar, so that the set of *dangerous* namespaces lives in
+  exactly one place: the gate table (§10 of `protocol.md`). Namespaces `exec`, `shell`,
+  `process`, `terminal`, `tty`, `fs`, `file`, `vcs`, `git`, `push`, `remote`, `deploy`,
+  `release`, `infra` are gated and refused with `NEXA_E_GATE` before policy runs.
+  A resource that does not match the grammar at all is a `NEXA_E_SCHEMA` DENY.
 * `action` matches `^[a-z][a-z0-9_-]{0,31}$`.
 * `args` is free-form canonical data, capped at 64 KiB, and further capped by the
   capability constraint `max_args_bytes`.

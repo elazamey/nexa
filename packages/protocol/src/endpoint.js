@@ -14,7 +14,14 @@
  * Every step appends one or more evidence records. ALLOW and DENY both produce
  * a signed receipt. A DENY never reveals handler internals, only the reason code.
  */
-import { NexaError, canonicalBytes, formatInstant } from '../../ast/index.js';
+import {
+  NexaError,
+  asNexaError,
+  assertAction,
+  assertResource,
+  canonicalBytes,
+  formatInstant,
+} from '../../ast/index.js';
 import { KeyPair } from '../../crypto/index.js';
 import { Policy } from '../../policy/index.js';
 import { checkGates } from '../../policy/src/gates.js';
@@ -250,8 +257,26 @@ export class Endpoint {
 
     const { resource, action, args } = envelope.body;
 
+    // --- 4b. request shape ---------------------------------------------------
+    // An envelope can be signed and still name a resource or action that the data
+    // model does not allow. That is an authenticated fault, so it is a recorded
+    // DENY with a receipt — never an exception escaping into the transport.
+    let requestShape;
+    try {
+      requestShape = { resource: assertResource(resource), action: assertAction(action) };
+    } catch (cause) {
+      const error = cause instanceof NexaError ? cause : asNexaError(cause);
+      const record = this.evidence.append({
+        kind: 'ENVELOPE_REJECTED',
+        decision: 'DENY',
+        subject: envelope.from,
+        detail: { code: error.code, reason: error.message },
+      });
+      return this.#deny(envelope, error, { record, now });
+    }
+
     // --- 5. hard gates (before any policy rule) -----------------------------
-    const gateVerdict = checkGates({ resource, action });
+    const gateVerdict = checkGates(requestShape);
     if (!gateVerdict.allowed) {
       const record = this.evidence.append({
         kind: 'GATE_BLOCKED',
@@ -331,13 +356,27 @@ export class Endpoint {
     }
 
     // --- 7. policy ----------------------------------------------------------
-    const verdict = this.policy.evaluate({
-      resource,
-      action,
-      subject: envelope.from,
-      capability: grant ?? undefined,
-      signals: { signed: true, type: envelope.type },
-    });
+    let verdict;
+    try {
+      verdict = this.policy.evaluate({
+        resource,
+        action,
+        subject: envelope.from,
+        capability: grant ?? undefined,
+        signals: { signed: true, type: envelope.type },
+      });
+    } catch (cause) {
+      const error = cause instanceof NexaError ? cause : asNexaError(cause, 'NEXA_E_POLICY');
+      const record = this.evidence.append({
+        kind: 'POLICY_DECISION',
+        decision: 'DENY',
+        subject: envelope.from,
+        resource,
+        action,
+        detail: { code: error.code, reason: error.message },
+      });
+      return this.#deny(envelope, error, { record, resource, action, now });
+    }
     const policyRecord = this.evidence.append({
       kind: 'POLICY_DECISION',
       decision: verdict.effect,

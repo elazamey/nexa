@@ -9,13 +9,7 @@
  * re-checks the same property from the wire, because a token arriving over the
  * network may have been built by someone else entirely.
  */
-import {
-  NexaError,
-  canonicalBytes,
-  compareInstant,
-  parseInstant,
-  validateSignature,
-} from '../../ast/index.js';
+import { NexaError, compareInstant, parseInstant } from '../../ast/index.js';
 import {
   KeyPair,
   publicKeyFromKeyId,
@@ -371,6 +365,7 @@ export function verifyCapability(token, options = {}) {
       nbf: new Date(effectiveNbf).toISOString().replace(/\.\d{3}Z$/, 'Z'),
       exp: new Date(effectiveExp).toISOString().replace(/\.\d{3}Z$/, 'Z'),
       remaining_uses: remainingUses,
+      /** chain ids, root first: chain[0] is the originally issued capability */
       chain: links.map((link) => link.id),
     },
   };
@@ -383,5 +378,4 @@ function toSet(value) {
   return new Set(value);
 }
 
-/** Re-exported for callers that need signature checks on revocation records. */
-export { verifyBytes, validateSignature };
+

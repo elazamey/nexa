@@ -57,7 +57,7 @@ Every message is an envelope; it is the only object that travels on the wire.
 | `nonce` | base64url | yes | 128-bit random, unique per message |
 | `cap` | capability id | no | id of the token carried in `body.capability`; a mismatch is an error |
 | `in_reply_to` | message id | no | set on every `RESULT` / `DENY` |
-| `body` | object | yes | canonicalizable, `<= 64 KiB` |
+| `body` | object | yes | canonicalizable, `<= 64 KiB`; CALL bodies are specified in `spec/envelope.md` |
 | `sig` | object | yes | `{alg:"ed25519", kid, val}` |
 
 **Unknown fields are rejected.** There is no extension point in v0.1 precisely so that

@@ -266,3 +266,48 @@ test('an endpoint without a signing identity is refused', () => {
   const scope = world();
   throwsCode(assert, () => scope.endpoint.registerHandler('tool:x', 'not a function'), 'NEXA_E_HANDLER');
 });
+
+test('a signed envelope with a malformed resource or action is denied, not thrown', () => {
+  const scope = world();
+  const cases = [
+    ['NOPE', 'call'],
+    ['tool:echo', 'CALL!'],
+    ['', 'call'],
+    ['tool:echo', ''],
+    ['tool:ECHO', 'call'],
+  ];
+  for (const [resource, action] of cases) {
+    const envelope = buildEnvelope({
+      sender: scope.caller.identity,
+      to: scope.agent.kid,
+      type: 'CALL',
+      body: { resource, action, args: {} },
+      id: `urn:nexa:msg:${Buffer.from(`${resource}/${action}`).toString('base64url').padEnd(22, 'A').slice(0, 22)}`,
+      nonce: Buffer.from(`${action}/${resource}`).toString('base64url').padEnd(22, 'B').slice(0, 22),
+      now: T0,
+    });
+    const result = scope.endpoint.receive(envelope);
+    assert.equal(result.decision, 'DENY', `${resource}/${action}`);
+    assert.equal(result.code, 'NEXA_E_SCHEMA', `${resource}/${action}`);
+    assert.equal(result.receipt.decision, 'DENY');
+    assert.equal(verifyReceipt(result.reply.body.receipt).ok, true);
+  }
+  // The endpoint survived every malformed request and recorded each refusal
+  // (one ACCEPTED record for the envelope, one REJECTED record for the shape).
+  const records = scope.endpoint.evidence.entries();
+  assert.equal(records.length, cases.length * 2);
+  assert.equal(records.some((record) => record.decision === 'ALLOW'), false);
+  assert.equal(records.some((record) => record.kind === 'HANDLER_RESULT'), false);
+  assert.equal(verifyEvidenceChain(records).ok, true);
+});
+
+test('a handler that returns non-canonical data is a recorded failure', () => {
+  const scope = world();
+  scope.endpoint.registerHandler('tool:weird', () => ({ when: new Date(0) }));
+  scope.endpoint.policy = new Policy({ rules: [{ id: 'allow-weird', effect: 'ALLOW', resource: 'tool:weird', actions: ['call'] }] });
+  const capability = capabilityFor({ issuer: scope.operator, subject: scope.caller.kid, resource: 'tool:weird' });
+  const result = scope.endpoint.receive(scope.caller.call({ to: scope.agent.kid, resource: 'tool:weird', args: {}, capability }));
+  assert.equal(result.decision, 'DENY');
+  assert.equal(result.code, 'NEXA_E_HANDLER');
+  assert.equal(scope.endpoint.ledger.used(capability.id), 0, 'a failed handler must not spend budget');
+});

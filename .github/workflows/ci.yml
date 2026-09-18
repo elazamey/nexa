@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step: NEXA has zero runtime and zero development dependencies.
+      - name: Test suite
+        run: npm test
+
+      - name: End-to-end demo
+        run: npm run demo
+
+      - name: Posture report (fails if a gate is not CLOSED)
+        run: |
+          npm run report:json > report.json
+          node -e '
+            const report = require("./report.json");
+            const open = report.posture.gates.filter((gate) => gate.state !== "CLOSED");
+            if (open.length > 0) {
+              console.error("gates must be CLOSED:", open);
+              process.exit(1);
+            }
+            console.log("all gates CLOSED:", report.posture.gates.map((gate) => gate.name).join(", "));
+          '
+
+      - name: Spec vectors are in sync with the code
+        run: |
+          npm run vectors
+          git diff --exit-code -- spec/vectors

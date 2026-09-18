@@ -17,7 +17,7 @@ import {
   assertAction,
   CAPABILITY_ID_PATTERN,
 } from '../../ast/index.js';
-import { KeyPair, publicKeyFromKeyId, randomId, sha256Multihash, verifyBytes } from '../../crypto/index.js';
+import { KeyPair, randomId, sha256Multihash } from '../../crypto/index.js';
 
 export const CAPABILITY_DOMAIN = 'NEXA/0.1 capability\u0000';
 export const DELEGATION_DOMAIN = 'NEXA/0.1 capability delegation\u0000';
@@ -318,5 +318,3 @@ export function capabilityChainIds(token) {
   }
   return ids;
 }
-
-export { publicKeyFromKeyId, verifyBytes };

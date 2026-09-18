@@ -14,6 +14,12 @@ import { verifyEvidenceChain, verifyReceipt } from '../packages/evidence/index.j
 import { printNex, parseNex } from '../packages/parser/index.js';
 import { canonicalize } from '../packages/ast/index.js';
 
+// Piping into `head` closes stdout early; that is not an error worth a stack trace.
+process.stdout.on('error', (error) => {
+  if (error.code === 'EPIPE') process.exit(0);
+  throw error;
+});
+
 const line = (title) => process.stdout.write(`\n\u001b[1m${title}\u001b[0m\n${'-'.repeat(title.length)}\n`);
 const step = (label, value) => process.stdout.write(`  ${label.padEnd(34)} ${value}\n`);
 

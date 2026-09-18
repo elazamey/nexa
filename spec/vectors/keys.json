@@ -1,0 +1,54 @@
+{
+  "nexa": "0.1",
+  "generated_by": "tools/vectors.mjs",
+  "note": "public keys are derived from the seeds; signatures are ed25519 over the raw message bytes",
+  "seeds": [
+    {
+      "label": "operator",
+      "seed_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+      "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "public_key_b64u": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc",
+      "public_key_multicodec_b58btc": "6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S"
+    },
+    {
+      "label": "agent",
+      "seed_hex": "2222222222222222222222222222222222222222222222222222222222222222",
+      "kid": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+      "public_key_b64u": "oJql9HpnWYAv-VX43C0qFKXJnSO-l_hkEn_5ODRVpPA",
+      "public_key_multicodec_b58btc": "6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK"
+    },
+    {
+      "label": "delegate",
+      "seed_hex": "3333333333333333333333333333333333333333333333333333333333333333",
+      "kid": "nexa:key:ed25519:z6Mkg49NtQR2LyYRDCQFK4w1VVHqhypZSSRo7HsyuN7SV7v5",
+      "public_key_b64u": "F8t5-ytBIPKx7GXkGY1uCLKOgT_rAeSkAIObheGAgM4",
+      "public_key_multicodec_b58btc": "6Mkg49NtQR2LyYRDCQFK4w1VVHqhypZSSRo7HsyuN7SV7v5"
+    }
+  ],
+  "signing": [
+    {
+      "label": "operator-signs-message",
+      "message": "NEXA v0.1 test vector",
+      "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "signature_b64u": "5XXa2C8d6sA3mSTdOmLq6BAbFPQStRx9Qia5h_JCG9Fk5k4gYIaMM_GZugMNu9Rag84OY7N4hfIW349LFCtRDQ"
+    },
+    {
+      "label": "agent-signs-message",
+      "message": "NEXA v0.1 test vector",
+      "kid": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+      "signature_b64u": "6zBSh0X-tTZCbQo-h95SZ_eYIy7iXDL46SV4ExWzTnv2U1h4oqb1LC66m4I7yI87ugpXwYeONHEI4K9MtJhlBw"
+    }
+  ],
+  "hashes": [
+    {
+      "label": "sha256-of-message",
+      "input": "NEXA v0.1 test vector",
+      "hash": "sha256:MDhVm7yr8CsFbN0LWIusMoawojwZdoGdRq0NsGo8Zy8"
+    },
+    {
+      "label": "sha256-of-empty",
+      "input": "",
+      "hash": "sha256:47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU"
+    }
+  ]
+}

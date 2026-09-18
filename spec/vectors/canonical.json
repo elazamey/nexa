@@ -1,0 +1,154 @@
+{
+  "nexa": "0.1",
+  "generated_by": "tools/vectors.mjs",
+  "cases": [
+    {
+      "name": "empty-object",
+      "input": {},
+      "expected": "{}"
+    },
+    {
+      "name": "empty-array",
+      "input": [],
+      "expected": "[]"
+    },
+    {
+      "name": "key-order",
+      "input": {
+        "b": 1,
+        "a": 2,
+        "c": {
+          "z": 1,
+          "y": 2
+        }
+      },
+      "expected": "{\"a\":2,\"b\":1,\"c\":{\"y\":2,\"z\":1}}"
+    },
+    {
+      "name": "integers",
+      "input": [
+        0,
+        -1,
+        9007199254740991,
+        -9007199254740991
+      ],
+      "expected": "[0,-1,9007199254740991,-9007199254740991]"
+    },
+    {
+      "name": "negative-zero",
+      "input": [
+        0
+      ],
+      "expected": "[0]"
+    },
+    {
+      "name": "booleans-null",
+      "input": [
+        true,
+        false,
+        null
+      ],
+      "expected": "[true,false,null]"
+    },
+    {
+      "name": "string-escapes",
+      "input": {
+        "s": "a\"b\\c\nd\te\u0001"
+      },
+      "expected": "{\"s\":\"a\\\"b\\\\c\\nd\\te\\u0001\"}"
+    },
+    {
+      "name": "unicode-raw",
+      "input": {
+        "s": "مرحبا 🚀 é"
+      },
+      "expected": "{\"s\":\"مرحبا 🚀 é\"}"
+    },
+    {
+      "name": "nfc-normalization",
+      "input": {
+        "s": "é"
+      },
+      "expected": "{\"s\":\"é\"}"
+    },
+    {
+      "name": "nested",
+      "input": {
+        "a": [
+          {
+            "b": [
+              1,
+              2,
+              {
+                "c": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": "{\"a\":[{\"b\":[1,2,{\"c\":null}]}]}"
+    }
+  ],
+  "rejections": [
+    {
+      "kind": "float",
+      "code": "NEXA_E_C14N_NUMBER"
+    },
+    {
+      "kind": "float-in-array",
+      "code": "NEXA_E_C14N_NUMBER"
+    },
+    {
+      "kind": "nan",
+      "code": "NEXA_E_C14N_NUMBER"
+    },
+    {
+      "kind": "infinity",
+      "code": "NEXA_E_C14N_NUMBER"
+    },
+    {
+      "kind": "unsafe-integer",
+      "code": "NEXA_E_C14N_NUMBER"
+    },
+    {
+      "kind": "undefined",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "bigint",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "function",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "date",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "map",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "set",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "class-instance",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "symbol",
+      "code": "NEXA_E_C14N_TYPE"
+    },
+    {
+      "kind": "lone-surrogate",
+      "code": "NEXA_E_C14N_STRING"
+    },
+    {
+      "kind": "lone-low-surrogate",
+      "code": "NEXA_E_C14N_STRING"
+    }
+  ]
+}

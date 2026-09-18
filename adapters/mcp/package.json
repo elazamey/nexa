@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/mcp",
+  "version": "0.1.0",
+  "description": "MCP (JSON-RPC 2.0) bridge that gates both directions of a tool call",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

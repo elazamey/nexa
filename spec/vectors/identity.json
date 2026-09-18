@@ -1,0 +1,26 @@
+{
+  "nexa": "0.1",
+  "generated_by": "tools/vectors.mjs",
+  "document": {
+    "nexa": "0.1",
+    "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+    "label": "operator",
+    "kind": "operator",
+    "scope": "nexa:local",
+    "created": "2026-09-18T12:00:00Z",
+    "not_before": "2026-09-18T12:00:00Z",
+    "not_after": "2999-01-01T00:00:00Z",
+    "keys": [
+      {
+        "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+        "alg": "ed25519",
+        "public_key": "0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc"
+      }
+    ],
+    "sig": {
+      "alg": "ed25519",
+      "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "val": "wIcKmmx6wfpAWk4sTz4ESNgSAHU37OzsnwPB6xI_DSdY316taVIblqpJgn0j3xdWhU3uEMe-8Hr9FPc5CtMODQ"
+    }
+  }
+}

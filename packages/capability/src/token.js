@@ -148,7 +148,7 @@ export function normalizeConstraints(constraints = {}) {
  * @param {object} [input.caveats]
  * @param {object} [input.constraints]
  * @param {string} [input.id]
- * @param {Date} [input.now]
+ * @param {Date} [input.now] used only to default the `nbf` caveat
  * @param {string} [input.note]
  * @returns {object} signed capability token
  */

@@ -50,7 +50,10 @@ export class UsageLedger {
   release(capabilityId) {
     const current = this.used(capabilityId);
     if (current === 0) return 0;
-    this.#counts.set(capabilityId, current - 1);
+    // Drop the entry at zero so a long-lived endpoint does not accumulate ids
+    // it no longer knows anything about.
+    if (current === 1) this.#counts.delete(capabilityId);
+    else this.#counts.set(capabilityId, current - 1);
     return current - 1;
   }
 

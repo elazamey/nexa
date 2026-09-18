@@ -7,7 +7,7 @@
  *   3. replay guard                     (only after step 1 succeeds)
  *   4. sender trust                     (trust store, pin-or-reject)
  *   5. hard gates                       (the six closed gates, checked pre-policy)
- *   6. capability verification          (signatures, chain, budget, audience)
+ *   6. capability verification          (signatures, chain, budget, presenter)
  *   7. policy evaluation                (default-deny)
  *   8. handler dispatch                 (in-memory only)
  *
@@ -271,11 +271,20 @@ export class Endpoint {
 
     // --- 6. capability ------------------------------------------------------
     let grant = null;
-    if (envelope.cap !== undefined) {
-      const token = this.#resolveCapability(envelope);
+    // A capability is "carried" when either the envelope names one or the body
+    // contains the token. Both are verified: the envelope field is a binding, not a
+    // switch that can be omitted to skip verification.
+    const carriedCapability = envelope.cap !== undefined || envelope.body?.capability !== undefined;
+    if (carriedCapability) {
       try {
+        // Resolving the token is part of verification: an envelope that references
+        // a capability it does not carry is authenticated input, so it must produce
+        // a recorded DENY, not an exception thrown at the transport layer.
+        const token = this.#resolveCapability(envelope);
         const verified = verifyCapability(token, {
-          audience: this.kid,
+          // The capability must name the *presenter* as its holder. The endpoint
+          // itself is identified by the resource, not by the token subject.
+          presenter: envelope.from,
           now,
           revoked: this.revoked,
           uses: (id) => this.ledger.used(id),
@@ -404,8 +413,8 @@ export class Endpoint {
 
     // Spend the budget only after the handler produced a value, and only for
     // executed calls: a dry run must not consume authority.
-    if (execute && envelope.cap !== undefined) {
-      const token = this.#resolveCapability(envelope);
+    if (execute && carriedCapability) {
+      const token = envelope.body.capability;
       const links = chainLinks(token); // child-first
       this.ledger.spend(
         links.map((link) => link.id),

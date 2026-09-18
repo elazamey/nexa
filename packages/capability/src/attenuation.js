@@ -47,10 +47,17 @@ export function areActionsSubset(parentActions, childActions) {
 
 /**
  * Constraint narrowing: numbers may only decrease, strings must match exactly,
- * arrays must be subsets.
+ * arrays must be subsets, and **every parent constraint must be carried into the
+ * child**. Omitting a constraint is not "no constraint" — it is a wider grant, and
+ * therefore amplification.
  * @returns {{ok: true} | {ok: false, reason: string}}
  */
 export function isConstraintSubset(parentConstraints, childConstraints) {
+  for (const key of Object.keys(parentConstraints)) {
+    if (!Object.hasOwn(childConstraints, key)) {
+      return { ok: false, reason: `constraint "${key}" was dropped by the child` };
+    }
+  }
   for (const [key, childValue] of Object.entries(childConstraints)) {
     const parentValue = parentConstraints[key];
     if (parentValue === undefined) {
@@ -127,6 +134,16 @@ function assertNoAmplification(parent, childInput, delegatorKid) {
   if (!narrowing.ok) {
     throw new NexaError('NEXA_E_CAP_AMPLIFY', narrowing.reason);
   }
+  // `delegate_to`, when present on the parent, is an allowlist of subjects this
+  // token may be handed to. It restricts *who receives* authority, so it is
+  // checked here rather than being inherited by the child.
+  const delegateTo = parent.constraints.delegate_to;
+  if (Array.isArray(delegateTo) && !delegateTo.includes(childInput.subject)) {
+    throw new NexaError('NEXA_E_CAP_AMPLIFY', 'parent capability forbids delegating to this subject', {
+      subject: childInput.subject,
+      delegate_to: delegateTo,
+    });
+  }
   return { childCaveats, constraints };
 }
 
@@ -158,7 +175,7 @@ export function attenuate(parentToken, {
   if (!(delegator?.keys instanceof KeyPair)) {
     throw new NexaError('NEXA_E_KEY', 'delegator must carry a KeyPair');
   }
-  const input = { resource, actions, caveats, constraints };
+  const input = { subject, resource, actions, caveats, constraints };
   const { childCaveats, constraints: normalizedConstraints } = assertNoAmplification(
     parentToken,
     input,
@@ -196,10 +213,12 @@ export function attenuate(parentToken, {
 
 /**
  * Verifies a capability end-to-end: signatures, chain linkage, attenuation,
- * revocation, freshness, audience, and use budget.
+ * revocation, freshness, presenter binding, and use budget.
  * @param {object} token
  * @param {object} [options]
- * @param {string} [options.audience] required subject (the endpoint's own kid)
+ * @param {string} [options.presenter] key id that must equal the token subject — the holder
+ *   presenting it. The endpoint passes `envelope.from`, so a token can only be
+ *   exercised by the party the grant names.
  * @param {Date} [options.now]
  * @param {Set<string>|string[]} [options.revoked]
  * @param {(id: string) => number} [options.uses] number of times a capability id was already used
@@ -315,16 +334,13 @@ export function verifyCapability(token, options = {}) {
     throw new NexaError('NEXA_E_CAP_AMPLIFY', 'capability chain is deeper than its root allows');
   }
 
-  // --- audience ---
-  if (options.audience !== undefined && token.subject !== options.audience) {
-    throw new NexaError('NEXA_E_CAP_AUDIENCE', 'capability is addressed to a different subject', {
-      expected: options.audience,
-      actual: token.subject,
+  // --- presenter binding ---
+  if (options.presenter !== undefined && token.subject !== options.presenter) {
+    throw new NexaError('NEXA_E_CAP_AUDIENCE', 'capability names a different holder', {
+      expected: options.presenter,
+      subject: token.subject,
+      hint: 'a capability may only be presented by the key id it was granted to',
     });
-  }
-  const delegateTo = token.constraints.delegate_to;
-  if (Array.isArray(delegateTo) && options.audience !== undefined && !delegateTo.includes(options.audience)) {
-    throw new NexaError('NEXA_E_CAP_AUDIENCE', 'capability constrains who may use it');
   }
 
   // --- requested scope ---

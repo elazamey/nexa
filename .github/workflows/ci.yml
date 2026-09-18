@@ -26,8 +26,18 @@ jobs:
       - name: Test suite
         run: npm test
 
-      - name: End-to-end demo
+      - name: End-to-end demo (v0.1 protocol flow)
         run: npm run demo
+
+      # The Ω demonstration: compile, run, refuse a closed gate, refuse a secret
+      # egress, propose/anchor/activate/roll back a version, learn, benchmark, heal.
+      - name: NEXA Ω end-to-end demonstration
+        run: npm run demo:omega
+
+      # Twenty-three attacks across eleven categories, against the real compiler, runtime,
+      # registry and cellular layer. The build fails if one of them succeeds.
+      - name: NEXA Ω adversarial suite
+        run: npm run attacks
 
       # A dedicated Node program, not a shell one-liner: an earlier version piped
       # `npm run report:json` into a file and npm's banner made it invalid JSON, so
@@ -49,6 +59,11 @@ jobs:
           else
             npm run proof:permission:legacy
           fi
+
+      # The cellular layer, live: topology, a real crossing, five refusals, homeostasis,
+      # learning, division/fusion and the attack suite.
+      - name: NEXA Ω∞ cellular demonstration
+        run: npm run demo:cellular
 
       - name: Spec vectors are in sync with the code
         run: |

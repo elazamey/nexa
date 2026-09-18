@@ -3,6 +3,140 @@
 All notable changes to NEXA are recorded here. The format follows Keep a Changelog,
 and the project uses semantic versioning once it leaves `0.x`.
 
+## [0.3.0] — 2026-09-18 — NEXA Ω∞ (cellular layer)
+
+The layer *above* Ω: composition becomes structural. The cell is the unit of composition,
+the recursion Cell → Tissue → Organ → Organism holds at every level, and no cell ever holds
+authority. Nothing in Ω v1 was changed except where the cellular layer needed to be visible
+to it (two evidence kinds, one observation kind, one attack category, one error code).
+
+### Added
+
+* **Cell** (`@nexa/cell`) — identity, nucleus (module + invariants, `Object.freeze`d and
+  never written), membrane, receptors (`accepts` / `requires`), a `{ verify, record }` port,
+  digest-only local memory, a budget, health counters, a six-state lifecycle with a closed
+  transition set, evidence, and a version. A cell has no `issue`, no `mint` and no authority
+  object: `propose()` returns an inert `CellProposal`.
+* **Membrane** — the seven steps, in order: `identity → capability → type/schema → policy →
+  budget → execution → evidence`. The membrane records its own refusals, so a denial cannot
+  be lost; payloads enter the transcript as `payload_digest`, never as data.
+* **Tissue** — cells plus a contract whose grant set *is* the contract, plus entry points
+  that make the tissue a composite cell (`asCell()`). A tissue with no entry points refuses
+  to be a cell.
+* **Organ** — cross-tissue routes declared by the organ and registered in the *source*
+  tissue's contract; one guarantor per organ (`OMEGA_E_CELL_AMPLIFY` otherwise); the organ
+  is a cell from above.
+* **Organism** — cross-organ routes, `sample()` (cells, calls, failures, failure rate in
+  basis points, isolated/degraded names, evidence continuity), `react()`, and `recover()`
+  which requires a passing check per cell.
+* **Homeostasis** — `DEGRADED` → `ISOLATE` → fallback → recovery → **verify** → `ACTIVE`,
+  built on the runtime's existing circuit breaker. `DEGRADED` still serves; `ISOLATED`
+  serves only life support; `RETIRED` is terminal.
+* **Cellular evolution** (`@nexa/cellular-evolution`) — division (capability-checked:
+  a child cannot hold what the parent never had), fusion (compatibility → contract →
+  capability analysis → state migration → sandbox → security tests → benchmark → canary →
+  new immutable version), and terminal quarantine (`release()` always throws).
+* **Sample organism + demos** — `buildCodingOrganism()` (Planner → Coder → Tester →
+  Reviewer → Evidence, plus memory and security tissues), `npm run demo:cellular`, and
+  `tools/cellular-vectors.mjs` → `spec/vectors/cellular.json`.
+* **Docs** — `spec/omega/cellular.md` and `spec/omega/cellular.ar.md`, including § 14 which
+  states where the implemented layout deviates from the sketched one and why.
+
+### Changed
+
+* `OMEGA_EVIDENCE_KINDS` gains `CELL_MESSAGE`, `CELL_LIFECYCLE` and `HOMEOSTASIS`.
+* The learning layer now treats a `CELL_MESSAGE` as a call observation, so a cell refusal is
+  observable exactly like a tool refusal — that is how cellular learning gets its evidence.
+* The adversarial suite gains the category `kernel-self-modification` and ten cellular
+  attacks (23 attacks across 11 categories, all blocked).
+* Nine new error codes — `OMEGA_E_MEMBRANE`, `OMEGA_E_IDENTITY`, `OMEGA_E_RECEPTOR`,
+  `OMEGA_E_ROUTE`, `OMEGA_E_POLICY`, `OMEGA_E_LIFECYCLE`, `OMEGA_E_ISOLATED`,
+  `OMEGA_E_HANDLER`, `OMEGA_E_HOMEOSTASIS`, `OMEGA_E_CELL_AMPLIFY` — taking the registry
+  from 62 to 72.
+* `tools/check-posture.mjs` now asserts the membrane order, the lifecycle table, the cell
+  lifecycle table's serving rules, and that no package under `packages/cell` mints a
+  capability or holds an authority object.
+
+### Verified
+
+`npm run verify` → posture (7 membrane steps, 6 cell states, 11 attack categories, 72 error
+codes, 6 immutable kernel modules) → **207/207 tests** (113 v0.1 + 68 Ω + 26 cellular) →
+audit 16/16 → v0.1 demo → Ω demo → cellular demo → adversarial suite **23/23 blocked** →
+gate report. `node tools/cellular-vectors.mjs --check` reports "cellular vectors are in sync".
+
+## [0.2.0] — 2026-09-18 — NEXA Ω v1
+
+The layer above the protocol: a language, a runtime that holds no authority, an immutable
+kernel, a deterministic Evolution Gate, and a learning layer that can propose but not
+apply. Nothing in v0.1 was changed — the wire protocol, capability algebra, policy engine
+and evidence chain are the same code, and Ω only ever *asks* them.
+
+### Added
+
+* **Compiler** (`@nexa/compiler` 0.2.0) — one grammar for script, intent and policy; a
+  security type system (`SecretString`, `UntrustedData`, `VerifiedData`, `ToolResult`,
+  `Capability`, …) with a secrecy × trust lattice; capability references (`fs.read("/src/**")`,
+  `model.invoke(provider: "gemini")`, MCP tools); `vault://` handles as a lexer token; an IR
+  that is canonical data and hashes to `sha256:…` under its own domain separator; diagnostics
+  as values (`path:line:col: severity CODE: message`).
+* **Runtime** (`@nexa/runtime` 0.2.0) — the mission machine, kernel host, capability
+  authority, six-tier memory that stores digests and never values, world model, provider
+  registry with a vault, circuit breaker, self-healer, and the Ω evidence ledger
+  (hash-linked, signed, domain-separated from the kernel chain).
+* **Evolution** (`@nexa/evolution` 0.2.0) — signed manifests, an **eight-stage** gate
+  (`compile · types · capabilities · security · adversarial · regression · benchmark · policy`),
+  an adversarial runner with ten attack categories, an immutable version registry with
+  canary windows, quarantine, activation and rollback.
+* **Learning** (`@nexa/learning` 0.2.0) — observations derived from records, pattern mining,
+  falsifiable hypotheses with integer confidence, reflection, a knowledge store with a
+  verification/invalidation lifecycle and cascading staleness, replay plans, and
+  reproducible benchmarks with regression detection.
+* **CLI** (`@nexa/cli` 0.2.0) and `tools/nexa.mjs` — `check`, `compile`, `explain`, `run`,
+  `gate`, `version`; the shell is the only place in Ω that touches a filesystem.
+* **Tools** — `tools/omega-demo.mjs` (nine sections, compile → run → refuse → evolve →
+  benchmark → learn → heal), `tools/omega-attacks.mjs` (13 attacks, 10 categories),
+  `tools/omega-vectors.mjs` (`spec/vectors/omega.json`, pinned and diffed in CI).
+* **Examples** — `repository-review.nexa` (runs ALLOW end to end), `provider-secrets.nexa`
+  (a secret never leaves the vault), `gated-write.nexa` (well-typed, and refused by a
+  closed gate), `refused-secret-egress.nexa` (three compile-time refusals at once),
+  `evolution-proposal.nexa` (an `evolve` block as data).
+* **Documents** — `spec/omega/` (index, language, grammar, types, authority, evidence,
+  evolution, learning, MCP) plus `threat-model.md`, which states what is defended, what is
+  contained, what is out of scope, and names the test that checks every claim.
+* **Tests** — 68 new tests (`tests/omega-{compiler,runtime,security,evolution,learning,invariants}.test.js`),
+  taking the suite from 113 to **181**, plus a 13-attack adversarial suite that CI runs.
+
+### Fixed (each found by an adversarial probe or a test, not by review)
+
+* **The step budget was never enforced.** The IR emitted `maxSteps` while the machine read
+  `max_steps`, so a mission could run past `max_steps 2` with no denial. The IR now speaks
+  snake_case throughout, and the machine reads either spelling.
+* **Every `if` was broken end to end.** The analyser replaced the condition *expression*
+  with its type attributes, so a conditional compiled and then died mid-mission with
+  `OMEGA_E_SCHEMA: unknown expression kind`. Lowering now also refuses to emit an IR
+  containing an unlowerable node (`findUnlowered`).
+* **A quarantined candidate could be activated.** `activate()` counted samples instead of
+  *clean* samples and never checked the quarantine state: a candidate that violated its own
+  declared expectations could still be promoted. Fixed with `OMEGA_E_QUARANTINED`.
+* **A string literal could be bound to a secret type.** `let key: SecretString = "AIza…"`
+  compiled; a credential in the source is not a secret. Now `OMEGA_E_SECRET_LITERAL`.
+* **A named provider was ignored when a strategy was set**, so `model.invoke(provider: "gemini")`
+  picked the cheapest adapter and refused the credential. Provider selection now honours a
+  named adapter before falling back to strategy and cost.
+* **Memory tier words were reserved**, which made `policy evolution { … }` a parse error.
+  Reserved words are keywords again.
+* **An observation counted records instead of calls**, doubling every gate refusal (a refused
+  call writes both a `TOOL_RESULT` and a `GATE_REFUSAL`). One call, one count.
+* **Grant scopes could only be written one way.** `grant fs.write { scope "/build/**" }` and
+  `grant fs.write("/build/**")` now mean the same thing.
+
+### Verified
+
+`npm run verify` passes end to end on Node 22: posture (`6 gates CLOSED, 14 gated
+namespaces, 8 Ω gate stages, 11 attack categories, 6 immutable kernel modules, 72 Ω error
+codes`), `npm test` 207/207, `npm run audit` 16/16, all three demos, `npm run attacks` 23/23
+blocked, and the gate report.
+
 ## [0.1.0] — 2026-09-18
 
 First complete cut of the protocol core. Everything below is implemented and covered

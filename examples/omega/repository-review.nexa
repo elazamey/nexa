@@ -1,0 +1,90 @@
+# NEXA Ω v1 — a mission that runs end to end.
+#
+# Compile:  node tools/nexa.mjs check examples/omega/repository-review.nexa
+# Explain:  node tools/nexa.mjs explain examples/omega/repository-review.nexa
+# Run:      node tools/nexa.mjs run examples/omega/repository-review.nexa --mission review
+#
+# Everything this module can do is written down here: an instrument it may call, the
+# five capabilities it may use, the grants the authority will mint, and the contract it
+# must satisfy before it can report success.
+
+nexa omega 1
+
+policy project {
+    allow echo.call, sanitizer.redact, memory.read("episodic"), memory.store("episodic"), world.read("project")
+
+    # A sanitizer may receive secrets: that is what it is for. Nothing else may.
+    allow secret -> sanitizer.redact
+    deny secret -> network
+
+    max_runtime 30s
+    max_steps 64
+}
+
+instrument echo {
+    resource "tool:echo"
+    actions call
+    trust verified
+}
+
+agent reviewer {
+    role verification
+    model provider.auto
+    allow echo.call, sanitizer.redact, memory.read("episodic"), memory.store("episodic"), world.read("project")
+}
+
+grant echo.call {
+    subject reviewer
+    ttl 5m
+    max_calls 3
+}
+
+grant sanitizer.redact {
+    subject reviewer
+    ttl 5m
+    max_calls 2
+}
+
+grant world.read {
+    subject reviewer
+    scope "project"
+    ttl 5m
+    max_calls 1
+}
+
+grant memory.read {
+    subject reviewer
+    scope "episodic"
+    ttl 5m
+    max_calls 2
+}
+
+grant memory.store {
+    subject reviewer
+    scope "episodic"
+    ttl 5m
+    max_calls 1
+}
+
+mission review {
+    goal "Review a repository and report an inspected result"
+    agent reviewer
+
+    plan { observe inspect sanitize remember report }
+
+    require capability world.read("project")
+    require capability echo.call
+    require evidence "repository inspected"
+
+    observe project
+
+    let raw: UntrustedData = echo.call(text: "hello nexa")
+    let clean: VerifiedData = untaint raw as VerifiedData via sanitizer.redact(text: "ok")
+
+    evidence claim "repository inspected" from clean
+
+    remember clean as episodic
+    recall episodic as history
+
+    emit clean
+}

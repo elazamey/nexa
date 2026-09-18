@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/compiler",
+  "version": "0.2.0",
+  "description": "NEXA Ω compiler — lexer, parser, security-type and capability analysis, IR lowering",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

@@ -1,0 +1,572 @@
+{
+  "nexa": "omega1",
+  "layer": "cellular",
+  "generated_by": "node tools/cellular-vectors.mjs",
+  "membrane": {
+    "steps": [
+      "identity",
+      "capability",
+      "type",
+      "policy",
+      "budget",
+      "execution",
+      "evidence"
+    ],
+    "serving_states": [
+      "ACTIVE",
+      "DEGRADED"
+    ],
+    "diagnostic_states": [
+      "READY",
+      "ACTIVE",
+      "DEGRADED",
+      "ISOLATED"
+    ],
+    "life_support": [
+      "health",
+      "recover",
+      "retire"
+    ],
+    "states": [
+      "DEFINED",
+      "READY",
+      "ACTIVE",
+      "DEGRADED",
+      "ISOLATED",
+      "RETIRED"
+    ],
+    "transitions": {
+      "DEFINED": [
+        "READY",
+        "RETIRED"
+      ],
+      "READY": [
+        "ACTIVE",
+        "ISOLATED",
+        "RETIRED"
+      ],
+      "ACTIVE": [
+        "DEGRADED",
+        "ISOLATED",
+        "RETIRED"
+      ],
+      "DEGRADED": [
+        "ISOLATED",
+        "ACTIVE",
+        "RETIRED"
+      ],
+      "ISOLATED": [
+        "READY",
+        "RETIRED"
+      ],
+      "RETIRED": []
+    }
+  },
+  "organism": {
+    "name": "nexa",
+    "state": "SYSTEM_DEGRADED",
+    "policy": {
+      "max_failure_rate_bp": 4000,
+      "min_calls_for_rate": 3,
+      "max_consecutive_failures": 3
+    },
+    "cells": [
+      {
+        "name": "planner",
+        "kid": "nexa:key:ed25519:z6Mkg3neV7TLk2rXFAKvAnerrC8TGiB3LAAod3RBkQspUqH4",
+        "nucleus": {
+          "module": "planner@1",
+          "invariants": [
+            "plans are proposals, not authority"
+          ]
+        },
+        "receptors": [
+          "plan"
+        ]
+      },
+      {
+        "name": "coder",
+        "kid": "nexa:key:ed25519:z6MkkWH8aJ5tV4b8guPvLBhb2Y3EXEUHAzQRvztTSnLJzkan",
+        "nucleus": {
+          "module": "coder@1",
+          "invariants": [
+            "a patch is data, never an applied write"
+          ]
+        },
+        "receptors": [
+          "implement"
+        ]
+      },
+      {
+        "name": "tester",
+        "kid": "nexa:key:ed25519:z6Mksak8Y4dB8znT8VycJruTUfQCV3UUYuPSMYLdfLgdn6VP",
+        "nucleus": {
+          "module": "tester@1",
+          "invariants": [
+            "tests report, they do not decide"
+          ]
+        },
+        "receptors": [
+          "run"
+        ]
+      },
+      {
+        "name": "reviewer",
+        "kid": "nexa:key:ed25519:z6MktuNt4jGsQ8A7Ggra2sUGKLmqHgumXWiB5VDiYmvLFPVM",
+        "nucleus": {
+          "module": "reviewer@1",
+          "invariants": [
+            "review produces an opinion, never a verdict"
+          ]
+        },
+        "receptors": [
+          "review"
+        ]
+      },
+      {
+        "name": "archivist",
+        "kid": "nexa:key:ed25519:z6MkftrcvfNb2LDVYPk18mZdHUNDLJxiwX2TLUv5nFJAcffG",
+        "nucleus": {
+          "module": "archivist@1",
+          "invariants": [
+            "memory holds digests, never values"
+          ]
+        },
+        "receptors": [
+          "recall",
+          "remember"
+        ]
+      },
+      {
+        "name": "watcher",
+        "kid": "nexa:key:ed25519:z6MkkbwHV3mNTXWMC6geathRxtNxhx7Hwn3aafXEUnXn7Vah",
+        "nucleus": {
+          "module": "watcher@1",
+          "invariants": [
+            "observations are OBSERVED, never VERIFIED"
+          ]
+        },
+        "receptors": [
+          "report"
+        ]
+      }
+    ],
+    "tissues": [
+      {
+        "name": "coding",
+        "cells": [
+          "planner",
+          "coder",
+          "tester",
+          "reviewer",
+          "coding.tissue"
+        ],
+        "contract": [
+          "coder->tester.run",
+          "coding.tissue->planner.plan",
+          "planner->coder.implement",
+          "reviewer->archivist.remember",
+          "tester->reviewer.review"
+        ]
+      },
+      {
+        "name": "memory",
+        "cells": [
+          "archivist",
+          "memory.tissue"
+        ],
+        "contract": [
+          "memory.tissue->archivist.recall",
+          "memory.tissue->archivist.remember"
+        ]
+      },
+      {
+        "name": "security",
+        "cells": [
+          "watcher",
+          "security.tissue"
+        ],
+        "contract": [
+          "security.tissue->watcher.report"
+        ]
+      }
+    ],
+    "organs": [
+      {
+        "name": "software",
+        "tissues": [
+          "coding"
+        ],
+        "contract": []
+      },
+      {
+        "name": "memory",
+        "tissues": [
+          "memory"
+        ],
+        "contract": []
+      },
+      {
+        "name": "security",
+        "tissues": [
+          "security"
+        ],
+        "contract": []
+      }
+    ],
+    "cross_organ_contract": [
+      {
+        "from": "software.reviewer",
+        "to": "memory.archivist",
+        "receptor": "remember"
+      }
+    ]
+  },
+  "mission": {
+    "transcript": [
+      {
+        "hop": "planner → coder.implement",
+        "decision": "ALLOWED"
+      },
+      {
+        "hop": "coder → tester.run",
+        "decision": "ALLOWED"
+      },
+      {
+        "hop": "tester → reviewer.review",
+        "decision": "ALLOWED"
+      },
+      {
+        "hop": "reviewer → archivist.remember",
+        "decision": "ALLOWED"
+      }
+    ],
+    "decisions": [
+      {
+        "seq": 0,
+        "kind": "CELL_MESSAGE",
+        "decision": "ALLOW",
+        "mission": "coder",
+        "step": 0,
+        "resource": "coder",
+        "action": "implement",
+        "code": null,
+        "membrane_step": "evidence",
+        "payload_digest": "sha256:93bZRWGRSOwpYWB5mOrdKMfgrpI5QIiANCNlBXIoyYY"
+      },
+      {
+        "seq": 1,
+        "kind": "CELL_MESSAGE",
+        "decision": "ALLOW",
+        "mission": "tester",
+        "step": 1,
+        "resource": "tester",
+        "action": "run",
+        "code": null,
+        "membrane_step": "evidence",
+        "payload_digest": "sha256:e_lzqaBhb7ofDuPXC3HzKcqX2tyi8CqhTkjpEcVIPqU"
+      },
+      {
+        "seq": 2,
+        "kind": "CELL_MESSAGE",
+        "decision": "ALLOW",
+        "mission": "reviewer",
+        "step": 2,
+        "resource": "reviewer",
+        "action": "review",
+        "code": null,
+        "membrane_step": "evidence",
+        "payload_digest": "sha256:-zv4s-bbsldURn_mCOyqDiIHMISpPhQypNJCYfLpjFc"
+      },
+      {
+        "seq": 3,
+        "kind": "CELL_MESSAGE",
+        "decision": "ALLOW",
+        "mission": "archivist",
+        "step": 3,
+        "resource": "archivist",
+        "action": "remember",
+        "code": null,
+        "membrane_step": "evidence",
+        "payload_digest": "sha256:tYSP2iltlXRtbk6OPyiS1xOw_2amLEMc_qoDbyDTarc"
+      },
+      {
+        "seq": 4,
+        "kind": "CELL_MESSAGE",
+        "decision": "DENY",
+        "mission": "planner",
+        "step": 4,
+        "resource": "planner",
+        "action": "plan",
+        "code": "OMEGA_E_ROUTE",
+        "membrane_step": "policy",
+        "payload_digest": null
+      },
+      {
+        "seq": 5,
+        "kind": "CELL_MESSAGE",
+        "decision": "DENY",
+        "mission": "tester",
+        "step": 5,
+        "resource": "tester",
+        "action": "run",
+        "code": "OMEGA_E_CAP_MISSING",
+        "membrane_step": "capability",
+        "payload_digest": null
+      },
+      {
+        "seq": 6,
+        "kind": "CELL_MESSAGE",
+        "decision": "ALLOW",
+        "mission": "tester",
+        "step": 6,
+        "resource": "tester",
+        "action": "run",
+        "code": null,
+        "membrane_step": "evidence",
+        "payload_digest": "sha256:D8PQ3CuO5nglgBKFR04GRpMqBlxk-UTga8Z8Ktsw9gE"
+      },
+      {
+        "seq": 7,
+        "kind": "CELL_MESSAGE",
+        "decision": "DENY",
+        "mission": "tester",
+        "step": 7,
+        "resource": "tester",
+        "action": "run",
+        "code": "NEXA_E_REPLAY",
+        "membrane_step": "capability",
+        "payload_digest": null
+      },
+      {
+        "seq": 8,
+        "kind": "CELL_MESSAGE",
+        "decision": "DENY",
+        "mission": "coder",
+        "step": 8,
+        "resource": "coder",
+        "action": "implement",
+        "code": "OMEGA_E_SCHEMA",
+        "membrane_step": "type",
+        "payload_digest": null
+      },
+      {
+        "seq": 9,
+        "kind": "CELL_MESSAGE",
+        "decision": "DENY",
+        "mission": "coder",
+        "step": 9,
+        "resource": "coder",
+        "action": "implement",
+        "code": "OMEGA_E_ISOLATED",
+        "membrane_step": "identity",
+        "payload_digest": null
+      }
+    ],
+    "evidence": {
+      "records": 10,
+      "chain_ok": true,
+      "head_pinned": false
+    }
+  },
+  "refusals": [
+    {
+      "probe": "undeclared route",
+      "ok": false,
+      "code": "OMEGA_E_ROUTE",
+      "step": "policy"
+    },
+    {
+      "probe": "no capability",
+      "ok": false,
+      "code": "OMEGA_E_CAP_MISSING",
+      "step": "capability"
+    },
+    {
+      "probe": "replayed capability",
+      "ok": false,
+      "code": "NEXA_E_REPLAY",
+      "step": "capability"
+    },
+    {
+      "probe": "payload key smuggled",
+      "ok": false,
+      "code": "OMEGA_E_SCHEMA",
+      "step": "type"
+    },
+    {
+      "probe": "isolated cell",
+      "ok": false,
+      "code": "OMEGA_E_ISOLATED",
+      "step": "identity"
+    }
+  ],
+  "learning": {
+    "window": {
+      "runs": 5,
+      "calls": 10,
+      "denials": 5,
+      "missions": [
+        "archivist.remember",
+        "coder.implement",
+        "planner.plan",
+        "reviewer.review",
+        "tester.run"
+      ]
+    },
+    "patterns": [
+      {
+        "key": "coder!implement",
+        "observations": 3,
+        "failures": 2,
+        "failure_rate_bp": 6667,
+        "dominant_code": "OMEGA_E_ISOLATED"
+      },
+      {
+        "key": "tester!run",
+        "observations": 4,
+        "failures": 2,
+        "failure_rate_bp": 5000,
+        "dominant_code": "NEXA_E_REPLAY"
+      }
+    ],
+    "hypotheses": [
+      {
+        "claim": "coder!implement fails more often than the mission can absorb",
+        "target": "tool-selection",
+        "evidence": 3
+      },
+      {
+        "claim": "tester!run fails more often than the mission can absorb",
+        "target": "tool-selection",
+        "evidence": 4
+      }
+    ],
+    "proposals": [
+      {
+        "target": "tool-selection",
+        "baseline": "failure_rate(coder!implement) = 6667bp",
+        "expected_change": "failure_rate(coder!implement) < 4167bp",
+        "confidence_bp": 6000,
+        "requires": [
+          "replay",
+          "benchmark",
+          "adversarial",
+          "evolution-gate"
+        ]
+      },
+      {
+        "target": "tool-selection",
+        "baseline": "failure_rate(tester!run) = 5000bp",
+        "expected_change": "failure_rate(tester!run) < 2500bp",
+        "confidence_bp": 5000,
+        "requires": [
+          "replay",
+          "benchmark",
+          "adversarial",
+          "evolution-gate"
+        ]
+      }
+    ]
+  },
+  "evolution": {
+    "division": {
+      "name": "planner -> plan.architect, plan.verifier",
+      "children": [
+        "plan.architect",
+        "plan.verifier"
+      ]
+    },
+    "fusion": {
+      "compatible": true,
+      "stages": [
+        "compatibility",
+        "contract",
+        "capability_analysis",
+        "state_migration",
+        "sandbox",
+        "security_tests",
+        "benchmark",
+        "canary"
+      ],
+      "version": "planner+watcher@1",
+      "released": true,
+      "immutable": true,
+      "parents": [
+        "planner@1",
+        "watcher@1"
+      ]
+    },
+    "conflicting_fusion": {
+      "compatible": false,
+      "code": "OMEGA_E_QUARANTINED"
+    },
+    "quarantine": {
+      "release": "OMEGA_E_QUARANTINED",
+      "state": "SUPERSEDED",
+      "superseded_by": "plan.architect@3"
+    }
+  },
+  "attacks": [
+    {
+      "id": "message-without-a-capability",
+      "category": "capability-escalation",
+      "blocked": true,
+      "code": "OMEGA_E_CAP_MISSING"
+    },
+    {
+      "id": "call-across-an-undeclared-route",
+      "category": "policy-bypass",
+      "blocked": true,
+      "code": "OMEGA_E_ROUTE"
+    },
+    {
+      "id": "replay-a-spent-capability",
+      "category": "replay",
+      "blocked": true,
+      "code": "NEXA_E_REPLAY"
+    },
+    {
+      "id": "present-another-cells-capability",
+      "category": "capability-escalation",
+      "blocked": true,
+      "code": "NEXA_E_CAP_AUDIENCE"
+    },
+    {
+      "id": "forge-a-cell-capability",
+      "category": "invalid-signature",
+      "blocked": true,
+      "code": "NEXA_E_UNTRUSTED"
+    },
+    {
+      "id": "smuggle-a-payload-key",
+      "category": "tool-confusion",
+      "blocked": true,
+      "code": "OMEGA_E_SCHEMA"
+    },
+    {
+      "id": "widen-authority-by-dividing",
+      "category": "scope-widening",
+      "blocked": true,
+      "code": "OMEGA_E_CELL_AMPLIFY"
+    },
+    {
+      "id": "fuse-into-a-conflict",
+      "category": "policy-bypass",
+      "blocked": true,
+      "code": "OMEGA_E_QUARANTINED"
+    },
+    {
+      "id": "wrap-the-kernel-in-a-cell",
+      "category": "kernel-self-modification",
+      "blocked": true,
+      "code": "OMEGA_E_KERNEL_IMMUTABLE"
+    },
+    {
+      "id": "keep-serving-while-isolated",
+      "category": "resource-exhaustion",
+      "blocked": true,
+      "code": "OMEGA_E_ISOLATED"
+    }
+  ]
+}

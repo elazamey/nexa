@@ -281,13 +281,19 @@ const payload = {
     fields: ['binding', 'sub_hash', 'nexa_kid', 'role', 'created_by', 'created_at', 'expires_at', 'method', 'reason', 'changes', 'sig'],
   },
   attacks: runGoogleAttackSuite().map((attack) => ({ id: attack.id, category: attack.category, blocked: attack.blocked, code: attack.code, step: attack.detail?.step ?? null })),
-  /** What the identity path must never do, restated as the vectors a reader can check. */
+  /** What the identity path must never do, restated as the vectors a reader can check. The set
+   *  is the closure record's (spec/google/closure-g0.md, § 2): record, vector and code must
+   *  agree. */
   invariants: {
     identity_anchor: 'sub',
     email: 'display metadata',
+    stored_identity: 'sha256("NEXA/google1 subject\u0000" || sub)',
+    identity_authority_split: 'Google proves identity; NEXA decides authority',
     capability_subject: 'the service cell',
+    owner_identity: 'never the capability subject; a login never creates a binding',
     class_source: 'resource, action and scope — never the cell’s opinion',
     class_d_requires: ['capability', 'policy', 'explicit owner approval'],
+    no_write_before_evidence: 'an approval is in evidence before it authorizes, and is consumed with the call',
     break_glass: 'a bounded recovery state, never a second owner',
   },
 };

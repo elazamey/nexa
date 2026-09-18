@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/lexer",
+  "version": "0.1.0",
+  "description": "Lexer for the NEXA .nex wire syntax",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

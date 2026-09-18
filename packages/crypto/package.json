@@ -1,0 +1,11 @@
+{
+  "name": "@nexa/crypto",
+  "version": "0.1.0",
+  "description": "Ed25519 keys, key ids (base58btc multibase), sha256 helpers, nonces",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}

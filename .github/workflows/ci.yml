@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step: NEXA has zero runtime and zero development dependencies.
+      - name: Test suite
+        run: npm test
+
+      - name: End-to-end demo
+        run: npm run demo
+
+      # A dedicated Node program, not a shell one-liner: an earlier version piped
+      # `npm run report:json` into a file and npm's banner made it invalid JSON, so
+      # the step failed for its own reasons and hid the real signal.
+      - name: Posture check (fails if a gate is not CLOSED)
+        run: npm run posture
+
+      - name: Adversarial security suite
+        run: npm run audit
+
+      # Runtime-enforced proof: the protocol flow completes while the runtime denies
+      # filesystem writes, child processes and network access. `--permission` exists
+      # on modern Node; older releases spell it `--experimental-permission`.
+      - name: Ambient-authority proof (no fs write, no child process, no network)
+        shell: bash
+        run: |
+          if node --permission -e 'true' 2>/dev/null; then
+            npm run proof:permission
+          else
+            npm run proof:permission:legacy
+          fi
+
+      - name: Spec vectors are in sync with the code
+        run: |
+          npm run vectors
+          git diff --exit-code -- spec/vectors

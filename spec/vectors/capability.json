@@ -1,0 +1,145 @@
+{
+  "nexa": "0.1",
+  "generated_by": "tools/vectors.mjs",
+  "parent": {
+    "nexa": "0.1",
+    "id": "urn:nexa:cap:AAAAAAAAAAAAAAAAAAAAAA",
+    "issuer": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+    "subject": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+    "resource": "tool:echo",
+    "actions": [
+      "call"
+    ],
+    "caveats": {
+      "exp": "2026-09-18T13:00:00Z",
+      "nbf": "2026-09-18T11:00:00Z",
+      "max_uses": 5,
+      "max_depth": 1
+    },
+    "constraints": {
+      "max_args_bytes": 1024,
+      "mode": [
+        "fast",
+        "safe"
+      ]
+    },
+    "proof": {
+      "kind": "ed25519",
+      "parent": null,
+      "alg": "ed25519",
+      "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "val": "lwle_S1Ib-Jd5aN_G7hSV6Humn08jgawZaSxiMB63DaJfGCJrFLJ0XqasPrqWvylB-nqKZQADqsaMyXE0_O0Ag"
+    }
+  },
+  "parent_signature_payload": "TkVYQS8wLjEgY2FwYWJpbGl0eQB7ImFjdGlvbnMiOlsiY2FsbCJdLCJjYXZlYXRzIjp7ImV4cCI6IjIwMjYtMDktMThUMTM6MDA6MDBaIiwibWF4X2RlcHRoIjoxLCJtYXhfdXNlcyI6NSwibmJmIjoiMjAyNi0wOS0xOFQxMTowMDowMFoifSwiY29uc3RyYWludHMiOnsibWF4X2FyZ3NfYnl0ZXMiOjEwMjQsIm1vZGUiOlsiZmFzdCIsInNhZmUiXX0sImlkIjoidXJuOm5leGE6Y2FwOkFBQUFBQUFBQUFBQUFBQUFBQUFBQUEiLCJpc3N1ZXIiOiJuZXhhOmtleTplZDI1NTE5Ono2TWt0VUx1ZFR0QXNBaFJlZ1lQaVo2NjMxUlYzdml2MTJxZDRHUUY4ejF4QjIyUyIsIm5leGEiOiIwLjEiLCJyZXNvdXJjZSI6InRvb2w6ZWNobyIsInN1YmplY3QiOiJuZXhhOmtleTplZDI1NTE5Ono2TWtxR0MzbldaaFlpZUVWVFZES1c1djU4OENpR2ZzRFNtUlZHOVp3d1dUdkxTSyJ9",
+  "child": {
+    "nexa": "0.1",
+    "id": "urn:nexa:cap:BBBBBBBBBBBBBBBBBBBBBB",
+    "issuer": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+    "subject": "nexa:key:ed25519:z6Mkg49NtQR2LyYRDCQFK4w1VVHqhypZSSRo7HsyuN7SV7v5",
+    "resource": "tool:echo",
+    "actions": [
+      "call"
+    ],
+    "caveats": {
+      "exp": "2026-09-18T12:30:00Z",
+      "nbf": "2026-09-18T11:30:00Z",
+      "max_uses": 2,
+      "max_depth": 0
+    },
+    "constraints": {
+      "max_args_bytes": 512,
+      "mode": [
+        "safe"
+      ]
+    },
+    "proof": {
+      "kind": "chain",
+      "parent": {
+        "nexa": "0.1",
+        "id": "urn:nexa:cap:AAAAAAAAAAAAAAAAAAAAAA",
+        "issuer": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+        "subject": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+        "resource": "tool:echo",
+        "actions": [
+          "call"
+        ],
+        "caveats": {
+          "exp": "2026-09-18T13:00:00Z",
+          "nbf": "2026-09-18T11:00:00Z",
+          "max_uses": 5,
+          "max_depth": 1
+        },
+        "constraints": {
+          "max_args_bytes": 1024,
+          "mode": [
+            "fast",
+            "safe"
+          ]
+        },
+        "proof": {
+          "kind": "ed25519",
+          "parent": null,
+          "alg": "ed25519",
+          "kid": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+          "val": "lwle_S1Ib-Jd5aN_G7hSV6Humn08jgawZaSxiMB63DaJfGCJrFLJ0XqasPrqWvylB-nqKZQADqsaMyXE0_O0Ag"
+        }
+      },
+      "alg": "ed25519",
+      "kid": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+      "val": "g8LylpdMvywjA4kxNUvXLozroBS5YZh2DODBCskvQe7YHxb4RaZVrP1Psc2TSCQ6nIjSl1V3EMRz7U0gX5llCg"
+    }
+  },
+  "expectations": {
+    "parent_grant": {
+      "id": "urn:nexa:cap:AAAAAAAAAAAAAAAAAAAAAA",
+      "issuer": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "holder": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+      "delegator": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "resource": "tool:echo",
+      "actions": [
+        "call"
+      ],
+      "constraints": {
+        "max_args_bytes": 1024,
+        "mode": [
+          "fast",
+          "safe"
+        ]
+      },
+      "depth": 0,
+      "max_depth": 1,
+      "nbf": "2026-09-18T11:00:00Z",
+      "exp": "2026-09-18T13:00:00Z",
+      "remaining_uses": 5,
+      "chain": [
+        "urn:nexa:cap:AAAAAAAAAAAAAAAAAAAAAA"
+      ]
+    },
+    "child_grant": {
+      "id": "urn:nexa:cap:BBBBBBBBBBBBBBBBBBBBBB",
+      "issuer": "nexa:key:ed25519:z6MktULudTtAsAhRegYPiZ6631RV3viv12qd4GQF8z1xB22S",
+      "holder": "nexa:key:ed25519:z6Mkg49NtQR2LyYRDCQFK4w1VVHqhypZSSRo7HsyuN7SV7v5",
+      "delegator": "nexa:key:ed25519:z6MkqGC3nWZhYieEVTVDKW5v588CiGfsDSmRVG9ZwwWTvLSK",
+      "resource": "tool:echo",
+      "actions": [
+        "call"
+      ],
+      "constraints": {
+        "max_args_bytes": 512,
+        "mode": [
+          "safe"
+        ]
+      },
+      "depth": 1,
+      "max_depth": 1,
+      "nbf": "2026-09-18T11:30:00Z",
+      "exp": "2026-09-18T12:30:00Z",
+      "remaining_uses": 2,
+      "chain": [
+        "urn:nexa:cap:AAAAAAAAAAAAAAAAAAAAAA",
+        "urn:nexa:cap:BBBBBBBBBBBBBBBBBBBBBB"
+      ]
+    }
+  }
+}

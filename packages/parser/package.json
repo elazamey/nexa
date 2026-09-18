@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/parser",
+  "version": "0.1.0",
+  "description": "Parser and printer for the NEXA .nex wire syntax, with schema mapping",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

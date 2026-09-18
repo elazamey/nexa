@@ -1,0 +1,12 @@
+{
+  "name": "@nexa/learning",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "NEXA Ω learning layer: observations, patterns, hypotheses, reflection, knowledge, replay and reproducible benchmarks. Produces proposals; holds no authority.",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./src/*": "./src/*"
+  }
+}

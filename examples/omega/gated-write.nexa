@@ -1,0 +1,40 @@
+# NEXA Ω v1 — the language can express the intent; the kernel still refuses it.
+#
+#   node tools/nexa.mjs run examples/omega/gated-write.nexa --mission write-report
+#
+# `check` and `explain` both pass: the module is well-typed, the agent is allowed, and
+# the authority is willing to mint. The call then dies at step 5 of the kernel pipeline
+# with NEXA_E_GATE — because FILESYSTEM_WRITE is closed, and Ω has no way to open it.
+# The refusal is recorded (GATE_REFUSAL) and receipted like any other decision.
+
+nexa omega 1
+
+policy project {
+    allow fs.write("/build/**")
+    max_runtime 10s
+    max_steps 8
+}
+
+agent builder {
+    role implementation
+    model provider.auto
+    allow fs.write("/build/**")
+}
+
+grant fs.write {
+    subject builder
+    scope "/build/**"
+    ttl 1m
+    max_calls 1
+}
+
+mission write-report {
+    goal "Write a build report (and be refused by the kernel)"
+    agent builder
+
+    plan { report }
+
+    do fs.write("/build/report.json", content: "hello") as written
+
+    emit written
+}

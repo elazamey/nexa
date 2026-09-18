@@ -1,0 +1,44 @@
+# NEXA Ω v1 — a proposal is data.
+#
+#   node tools/nexa.mjs explain examples/omega/evolution-proposal.nexa
+#   node tools/omega-demo.mjs            (builds the manifests and runs the gate)
+#
+# `evolve` compiles into an evolution proposal: parent, candidate, hypothesis and the
+# machine-checkable expectations. Nothing is replaced, nothing runs, and the module
+# cannot activate anything — activation is an explicit call by an identity the registry
+# was told to trust. planner@4 keeps running until then.
+
+nexa omega 1
+
+policy evolution {
+    allow memory.read("episodic"), model.invoke("auto")
+    max_runtime 30s
+}
+
+agent planner {
+    role planning
+    model provider.auto
+    allow memory.read("episodic"), model.invoke("auto")
+}
+
+grant memory.read {
+    subject planner
+    scope "episodic"
+    ttl 5m
+    max_calls 4
+}
+
+grant model.invoke {
+    subject planner
+    scope "auto"
+    ttl 5m
+    max_calls 2
+}
+
+evolve planner {
+    from "planner@4"
+    to "planner@5"
+    hypothesis "reducing unnecessary replanning lowers iterations without lowering success"
+    expect "success_rate" >= 96
+    expect "security_findings" == 0
+}

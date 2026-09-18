@@ -1,0 +1,596 @@
+{
+  "nexa": "0.1",
+  "layer": "google-identity",
+  "generated_by": "tools/google-vectors.mjs",
+  "identity": {
+    "domain_separators": {
+      "subject": "NEXA/google1 subject\u0000",
+      "email": "NEXA/google1 email\u0000",
+      "nonce": "NEXA/google1 nonce\u0000"
+    },
+    "stored_identity": "sha256(\"NEXA/google1 subject\\u0000\" || sub)",
+    "subject_hash": "sha256:bjy7I2-utyb46Gx0pAthW5uPlWI4drvAy-lAoUZv-IM",
+    "verification_steps": [
+      "shape",
+      "signature",
+      "issuer",
+      "audience",
+      "audience+azp",
+      "window",
+      "nonce",
+      "subject",
+      "email"
+    ],
+    "verified_checks": [
+      "shape",
+      "signature",
+      "issuer",
+      "audience+azp",
+      "window",
+      "nonce",
+      "subject",
+      "email"
+    ],
+    "principal_fields": [
+      "aud_hash",
+      "claims",
+      "email_display",
+      "kind",
+      "method",
+      "nonce_id",
+      "sub_hash",
+      "verified_at"
+    ],
+    "evidence": {
+      "records": 3,
+      "chain_ok": true,
+      "head_pinned": false
+    }
+  },
+  "refusals": [
+    {
+      "scene": "issuer-lookalike",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "issuer"
+    },
+    {
+      "scene": "audience-of-another-client",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "audience"
+    },
+    {
+      "scene": "authorized-party-is-another-client",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "audience+azp"
+    },
+    {
+      "scene": "expired-token",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "window"
+    },
+    {
+      "scene": "token-not-yet-valid",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "window"
+    },
+    {
+      "scene": "no-subject",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "subject"
+    },
+    {
+      "scene": "signature-of-an-unpublished-key",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "signature"
+    },
+    {
+      "scene": "alg-none",
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "shape"
+    },
+    {
+      "scene": "challenge-from-another-session",
+      "code": "OMEGA_E_NONCE",
+      "step": "nonce"
+    }
+  ],
+  "membrane": {
+    "crossing": {
+      "kind": "CELL_MESSAGE",
+      "decision": "ALLOW",
+      "from": "google.session",
+      "cell": "google.identity",
+      "receptor": "verify",
+      "payload_digest": "sha256:1Kuu4b5-6A9AmPmSonrjuu5qNU3FnF1P-mk048fuKDI"
+    },
+    "contract": [
+      "google.session->google.identity.verify",
+      "google.tissue->google.identity.verify"
+    ]
+  },
+  "jwks": {
+    "sources": {
+      "gsi": {
+        "uri": "https://www.googleapis.com/oauth2/v3/certs",
+        "issuers": [
+          "accounts.google.com",
+          "https://accounts.google.com"
+        ],
+        "alg": "RS256",
+        "enabled": true
+      },
+      "firebase": {
+        "uri": "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com",
+        "issuers": [],
+        "alg": "RS256",
+        "enabled": false
+      }
+    },
+    "policy": "pinned by issuer, untrusted until validated, one refresh per unknown kid, then refuse",
+    "live": {
+      "source": "gsi",
+      "keys": 2,
+      "kids": [
+        "offline-key-1",
+        "offline-key-2"
+      ]
+    }
+  },
+  "scopes": {
+    "fields": [
+      "cell",
+      "action",
+      "question_answered",
+      "full_scope_uri",
+      "google_classification",
+      "v1_required",
+      "approval_class"
+    ],
+    "rules": [
+      "No Cell → No Scope",
+      "No Action → No Scope",
+      "No documented question → No Scope"
+    ],
+    "phases": [
+      "G0",
+      "G1",
+      "G2",
+      "G3",
+      "G4"
+    ],
+    "rows": [
+      {
+        "cell": "google.identity",
+        "action": "verify",
+        "scope": "openid",
+        "google": "non-sensitive",
+        "v1_required": true,
+        "approval_class": null,
+        "phase": "G0",
+        "rung": 1
+      },
+      {
+        "cell": "google.identity",
+        "action": "verify",
+        "scope": "https://www.googleapis.com/auth/userinfo.email",
+        "google": "non-sensitive",
+        "v1_required": true,
+        "approval_class": null,
+        "phase": "G0",
+        "rung": 1
+      },
+      {
+        "cell": "google.identity",
+        "action": "verify",
+        "scope": "https://www.googleapis.com/auth/userinfo.profile",
+        "google": "non-sensitive",
+        "v1_required": true,
+        "approval_class": null,
+        "phase": "G0",
+        "rung": 1
+      },
+      {
+        "cell": "google.gemini",
+        "action": "invoke",
+        "scope": null,
+        "google": "n/a (api key, no oauth)",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G1",
+        "rung": 1
+      },
+      {
+        "cell": "google.drive",
+        "action": "read.metadata",
+        "scope": "https://www.googleapis.com/auth/drive.file",
+        "google": "non-sensitive",
+        "v1_required": false,
+        "approval_class": "A",
+        "phase": "G2",
+        "rung": 1
+      },
+      {
+        "cell": "google.drive",
+        "action": "read.metadata",
+        "scope": "https://www.googleapis.com/auth/drive.metadata.readonly",
+        "google": "restricted",
+        "v1_required": false,
+        "approval_class": "A",
+        "phase": "G2",
+        "rung": 2
+      },
+      {
+        "cell": "google.drive",
+        "action": "read.content",
+        "scope": "https://www.googleapis.com/auth/drive.file",
+        "google": "non-sensitive",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G2",
+        "rung": 1
+      },
+      {
+        "cell": "google.drive",
+        "action": "read.content",
+        "scope": "https://www.googleapis.com/auth/drive.readonly",
+        "google": "restricted",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G2",
+        "rung": 2
+      },
+      {
+        "cell": "google.sheets",
+        "action": "read.range",
+        "scope": "https://www.googleapis.com/auth/drive.file",
+        "google": "non-sensitive",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G2",
+        "rung": 1
+      },
+      {
+        "cell": "google.sheets",
+        "action": "read.range",
+        "scope": "https://www.googleapis.com/auth/spreadsheets.readonly",
+        "google": "sensitive (to confirm)",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G2",
+        "rung": 2
+      },
+      {
+        "cell": "google.gmail",
+        "action": "read.message",
+        "scope": "https://www.googleapis.com/auth/gmail.metadata",
+        "google": "restricted",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G3",
+        "rung": 1
+      },
+      {
+        "cell": "google.gmail",
+        "action": "read.message",
+        "scope": "https://www.googleapis.com/auth/gmail.readonly",
+        "google": "restricted",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G3",
+        "rung": 2
+      },
+      {
+        "cell": "google.gmail",
+        "action": "send",
+        "scope": "https://www.googleapis.com/auth/gmail.send",
+        "google": "sensitive",
+        "v1_required": false,
+        "approval_class": "D",
+        "phase": "G3",
+        "rung": 1
+      },
+      {
+        "cell": "google.calendar",
+        "action": "read.events",
+        "scope": "https://www.googleapis.com/auth/calendar.events.readonly",
+        "google": "sensitive (to confirm)",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G3",
+        "rung": 1
+      },
+      {
+        "cell": "google.calendar",
+        "action": "read.events",
+        "scope": "https://www.googleapis.com/auth/calendar.readonly",
+        "google": "sensitive (to confirm)",
+        "v1_required": false,
+        "approval_class": "B",
+        "phase": "G3",
+        "rung": 2
+      },
+      {
+        "cell": "google.calendar",
+        "action": "write.event",
+        "scope": "https://www.googleapis.com/auth/calendar.events",
+        "google": "sensitive (to confirm)",
+        "v1_required": false,
+        "approval_class": "C",
+        "phase": "G4",
+        "rung": 1
+      }
+    ],
+    "narrowest": {
+      "cell": "google.drive",
+      "action": "read.metadata",
+      "scope": "https://www.googleapis.com/auth/drive.file",
+      "phase": "G2",
+      "rung": 1
+    }
+  },
+  "classes": {
+    "ladder": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "operations": [
+      {
+        "operation": "identity.verify",
+        "resource": "cell:google.identity",
+        "action": "verify",
+        "class": "A",
+        "scope": null
+      },
+      {
+        "operation": "drive.read.metadata",
+        "resource": "net:google.drive",
+        "action": "read",
+        "class": "A",
+        "scope": "google.drive.read.metadata"
+      },
+      {
+        "operation": "drive.read.content",
+        "resource": "net:google.drive",
+        "action": "read",
+        "class": "B",
+        "scope": "google.drive.read.content"
+      },
+      {
+        "operation": "sheets.read.range",
+        "resource": "net:google.sheets",
+        "action": "read",
+        "class": "B",
+        "scope": "google.sheets.read.range"
+      },
+      {
+        "operation": "gmail.read.message",
+        "resource": "net:google.gmail",
+        "action": "read",
+        "class": "B",
+        "scope": "google.gmail.read.message"
+      },
+      {
+        "operation": "gmail.send",
+        "resource": "net:google.gmail",
+        "action": "send",
+        "class": "D",
+        "scope": "google.gmail.send"
+      },
+      {
+        "operation": "calendar.read.events",
+        "resource": "net:google.calendar",
+        "action": "read",
+        "class": "B",
+        "scope": "google.calendar.read.events"
+      },
+      {
+        "operation": "model.invoke",
+        "resource": "model:gemini",
+        "action": "invoke",
+        "class": "B",
+        "scope": "google.gemini.invoke"
+      }
+    ],
+    "cells": {
+      "google.identity": "A",
+      "google.gemini": "B",
+      "google.drive": "B",
+      "google.sheets": "B",
+      "google.gmail": "D",
+      "google.calendar": "C"
+    },
+    "role_ceilings": {
+      "owner": "D",
+      "admin": "D",
+      "developer": "C",
+      "agent": "B",
+      "viewer": "A",
+      "recovery": "A"
+    },
+    "recovery_operations": [
+      "identity.verify"
+    ],
+    "break_glass_max_ms": 86400000
+  },
+  "approvals": {
+    "fields": [
+      "approval_id",
+      "owner_binding",
+      "operation",
+      "resource",
+      "action",
+      "scope",
+      "operation_digest",
+      "issued_at",
+      "expires_at",
+      "single_use",
+      "consumed_at",
+      "signer"
+    ],
+    "operation_digest": "sha256:fjKJfGEuERzJ-fc-nncvy49xsE2czXaTI28vIttXGXo",
+    "single_use": true,
+    "approval_id_shape": "approval:fjKJfGEuERzJ-fc-:<n>",
+    "records": [
+      {
+        "kind": "APPROVAL",
+        "decision": "ALLOW",
+        "resource": "net:google.gmail",
+        "action": "send"
+      }
+    ],
+    "outcomes": {
+      "approval-for-another-operation": "OMEGA_E_APPROVAL_REQUIRED",
+      "replayed-approval": "OMEGA_E_APPROVAL_CONSUMED"
+    }
+  },
+  "token_vault": {
+    "handle": {
+      "handle": "vault://google/gmail",
+      "presenter": "google.gmail",
+      "has_material": false
+    },
+    "refresh_margin_ms": 300000,
+    "outcomes": {
+      "handle-presented-by-another-cell": "NEXA_E_CAP_AUDIENCE",
+      "expired-with-no-refresh-port": "OMEGA_E_TOKEN"
+    }
+  },
+  "quota": {
+    "default_limits": {
+      "calls": 60,
+      "window_ms": 60000
+    },
+    "backoff_ms": [
+      1000,
+      2000,
+      4000,
+      8000,
+      8000,
+      8000
+    ],
+    "outcomes": {
+      "call-while-backing-off": "OMEGA_E_QUOTA"
+    },
+    "records": [
+      {
+        "kind": "QUOTA",
+        "decision": "DENY",
+        "resource": "net:google.gmail",
+        "action": "call"
+      }
+    ]
+  },
+  "egress": {
+    "patterns": [
+      "google-access-token",
+      "google-api-key",
+      "google-refresh-token",
+      "jwt"
+    ],
+    "scan": {
+      "clean": false,
+      "findings": [
+        {
+          "path": "$.authorization",
+          "kind": "google-access-token"
+        }
+      ]
+    },
+    "payload_digest": "sha256:bfzVA_uQqPoh5018OJGKVeiLvL17m6vYdME911MPhhs"
+  },
+  "bindings": {
+    "active": {
+      "binding": "owner",
+      "role": "owner",
+      "method": "invitation",
+      "created_by": "operator",
+      "sub_hash": "sha256:bjy7I2-utyb46Gx0pAthW5uPlWI4drvAy-lAoUZv-IM",
+      "expires_at": "2027-09-18T12:00:00Z"
+    },
+    "fields": [
+      "binding",
+      "sub_hash",
+      "nexa_kid",
+      "role",
+      "created_by",
+      "created_at",
+      "expires_at",
+      "method",
+      "reason",
+      "changes",
+      "sig"
+    ]
+  },
+  "attacks": [
+    {
+      "id": "lookalike-signing-key",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "signature"
+    },
+    {
+      "id": "issuer-lookalike",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "issuer"
+    },
+    {
+      "id": "audience-confusion",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "audience"
+    },
+    {
+      "id": "authorized-party-confusion",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "audience+azp"
+    },
+    {
+      "id": "algorithm-confusion",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY_TOKEN",
+      "step": "shape"
+    },
+    {
+      "id": "nonce-replay-across-sessions",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_NONCE",
+      "step": "nonce"
+    },
+    {
+      "id": "nonce-replay-after-login",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_NONCE",
+      "step": "nonce"
+    },
+    {
+      "id": "owner-by-email",
+      "category": "identity-forgery",
+      "blocked": true,
+      "code": "OMEGA_E_IDENTITY",
+      "step": null
+    }
+  ],
+  "invariants": {
+    "identity_anchor": "sub",
+    "email": "display metadata",
+    "capability_subject": "the service cell",
+    "class_source": "resource, action and scope — never the cell’s opinion",
+    "class_d_requires": [
+      "capability",
+      "policy",
+      "explicit owner approval"
+    ],
+    "break_glass": "a bounded recovery state, never a second owner"
+  }
+}

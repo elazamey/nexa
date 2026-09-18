@@ -1,0 +1,144 @@
+(* NEXA Ω v1 — grammar for .nexa source files.
+   Lexical rules are listed last. This file is normative: `packages/compiler`
+   implements exactly these productions, and tests/omega-compiler.test.js checks
+   the accepted and the refused forms one by one. *)
+
+program        = header, { newline }, { decl, { newline } } ;
+header         = "nexa", "omega", integer ;
+
+decl           = policy_decl | agent_decl | mcp_decl | instrument_decl
+               | grant_decl | mission_decl | evolve_decl ;
+
+(* ---------- policy: what the authority will and will not do ---------- *)
+
+policy_decl    = "policy", ident, block_begin, { newline | policy_stmt }, block_end ;
+policy_stmt    = allow_stmt | deny_stmt | limit_stmt | secret_rule ;
+allow_stmt     = "allow", capref ;
+deny_stmt      = "deny", capref ;
+limit_stmt     = "max_runtime", duration
+               | "max_steps", integer ;
+secret_rule    = ("allow" | "deny"), "secret", "->", ident_seq ;
+
+(* ---------- agents: who is allowed to do what ---------- *)
+
+agent_decl     = "agent", ident, block_begin, { newline | agent_field }, block_end ;
+agent_field    = "role", ident
+               | "model", ident_seq
+               | "allow", capref_list
+               | "deny", capref_list ;
+capref_list    = capref, { (",", capref) | capref } ;   (* commas optional: one per line *)
+
+(* A capability reference is a dotted path, optionally scoped.
+   `fs.read("/src/**")`     builtin namespace, path-scoped
+   `echo.call`              declared instrument `echo`, action `call`
+   `github.repository.read` declared MCP server `github`, tool `repository.read`
+   `tool:echo call`         explicit resource id + action list                       *)
+capref         = capref_scope | capref_actions ;
+capref_scope   = ident_seq, "(", string, ")" ;
+capref_actions = resource_id, { action } ;
+resource_id    = ident_seq ;
+action         = ident ;
+
+(* ---------- MCP servers and local instruments ---------- *)
+
+mcp_decl       = "mcp", ident, block_begin, { newline | mcp_field }, block_end ;
+mcp_field      = "tools", tool_list ;
+tool_list      = tool_name, { (",", tool_name) | tool_name } ;
+tool_name      = ident_seq ;
+
+instrument_decl= "instrument", ident_seq, block_begin,
+                 { newline | instrument_field }, block_end ;
+instrument_field = "resource", string
+                 | "actions", ident_list
+                 | "trust", ("verified" | "untrusted" | "internal")
+                 | "accepts_secret", boolean
+                 | "provider", ident_seq ;
+ident_list     = ident, { (",", ident) | ident } ;
+
+(* ---------- grants: what the authority will mint ---------- *)
+
+grant_decl     = "grant", ident_seq, block_begin, { newline | grant_field }, block_end ;
+grant_field    = "subject", ident
+               | "scope", string
+               | "ttl", duration
+               | "max_calls", integer
+               | "require", "approval", "(", ident, ")" ;
+
+(* ---------- missions: the executable unit of intent ---------- *)
+
+mission_decl   = "mission", ident, block_begin, { newline | stmt }, block_end ;
+stmt           = goal_stmt | agent_stmt | plan_stmt | let_stmt | set_stmt
+               | do_stmt | require_stmt | observe_stmt | remember_stmt
+               | recall_stmt | untaint_stmt | seal_stmt | assert_stmt
+               | evidence_stmt | emit_stmt | if_stmt | fail_stmt ;
+goal_stmt      = "goal", string ;
+agent_stmt     = "agent", ident ;
+plan_stmt      = "plan", block_begin, { newline | step }, block_end ;
+step           = (ident | string) , { (",", (ident | string)) } ;
+let_stmt       = "let", ident, [ ":", type_name ], "=", expr ;
+set_stmt       = "set", ident, "=", expr ;
+do_stmt        = "do", call, [ "as", ident ] ;
+require_stmt   = "require", ( capability_req | evidence_req ) ;
+capability_req = "capability", capref ;
+evidence_req   = "evidence", string ;
+observe_stmt   = "observe", ident_seq ;
+remember_stmt  = "remember", ident, "as", memory_tier ;
+recall_stmt    = "recall", memory_tier, "as", ident ;
+untaint_stmt   = "untaint", ident, "as", type_name, "via", call ;
+seal_stmt      = "seal", ident ;
+assert_stmt    = "assert", ( comparison | type_assert ) ;
+type_assert    = ident, "is", type_name ;
+evidence_stmt  = "evidence", "claim", string, [ "from", ident ] ;
+emit_stmt      = "emit", expr ;
+if_stmt        = "if", expr, block_begin, { newline | stmt }, block_end,
+                 [ "else", block_begin, { newline | stmt }, block_end ] ;
+fail_stmt      = "fail", string ;
+memory_tier    = "working" | "episodic" | "semantic" | "procedural" | "meta" | "evolution" ;
+type_name      = ident ;
+
+(* ---------- evolution: a proposal, not a modification ---------- *)
+
+evolve_decl    = "evolve", ident_seq, block_begin, { newline | evolve_field }, block_end ;
+evolve_field   = "from", string
+               | "to", string
+               | "hypothesis", string
+               | "expect", metric_expectation ;
+metric_expectation = string, comparison_op, number ;
+
+(* ---------- expressions ---------- *)
+
+expr           = or_expr ;
+or_expr        = and_expr, { "or", and_expr } ;
+and_expr       = not_expr, { "and", not_expr } ;
+not_expr       = [ "not" ], comparison ;
+comparison     = additive, [ comparison_op, additive ] ;
+comparison_op  = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+additive       = primary, { ("+" | "-"), primary } ;
+primary        = literal | call | name ;
+call           = ident_seq, "(", [ arg_list ], ")" ;
+arg_list       = arg, { ",", arg } ;
+arg            = ( ident, ":", expr ) | expr ;
+literal        = string | integer | boolean ;
+boolean        = "true" | "false" ;
+name           = ident ;
+
+(* ---------- lexical ---------- *)
+
+ident_seq      = ident, { ".", ident } ;
+ident          = ident_start, { ident_part } ;
+ident_start    = letter | "_" ;
+ident_part     = letter | digit | "_" | "-" ;
+string         = '"', { character | escape }, '"' ;      (* no newline inside a string *)
+escape         = "\\", ( "n" | "t" | "r" | '"' | "\\" | "/" | "b" | "f" | unicode_escape ) ;
+unicode_escape = "u", hex, hex, hex, hex ;
+integer        = [ "-" ], digit, { digit } ;
+duration       = integer, ( "ms" | "s" | "m" | "h" ) ;
+comment        = "#", { character - newline }, newline ;
+block_begin    = "{", { newline } ;
+block_end      = { newline }, "}" ;
+newline        = "\n" ;
+
+(* Comments start with `#` and run to the end of the line. Newlines are
+   significant between statements, and are ignored inside `( ... )` lists, so a
+   call may be wrapped across lines. A `,` is accepted as a statement separator
+   wherever a newline is. *)

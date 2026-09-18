@@ -1,0 +1,572 @@
+{
+  "nexa": "omega1",
+  "ir_version": 1,
+  "generated_by": "node tools/omega-vectors.mjs",
+  "modules": [
+    {
+      "path": "examples/omega/repository-review.nexa",
+      "ok": true,
+      "hash": "sha256:WSYs1Y4Plgo5hupOYx8Mxi6SsJ3XpFbIz5StNj3owRY",
+      "diagnostics": []
+    },
+    {
+      "path": "examples/omega/provider-secrets.nexa",
+      "ok": true,
+      "hash": "sha256:_zQp4cxMf80M_MrVFgK6iVcN0S2B1YjXRAccXmGcxcU",
+      "diagnostics": [
+        {
+          "code": "OMEGA_W_NO_OBSERVE",
+          "severity": "warning",
+          "message": "mission summarise never observes the world",
+          "line": 46,
+          "column": 9
+        }
+      ]
+    },
+    {
+      "path": "examples/omega/gated-write.nexa",
+      "ok": true,
+      "hash": "sha256:rpxA4hPZsJR3YiR9dzKunYPU4rxiI-bfxsVuQ--vjv4",
+      "diagnostics": [
+        {
+          "code": "OMEGA_W_NO_OBSERVE",
+          "severity": "warning",
+          "message": "mission write-report never observes the world",
+          "line": 31,
+          "column": 9
+        }
+      ]
+    },
+    {
+      "path": "examples/omega/refused-secret-egress.nexa",
+      "ok": false,
+      "hash": null,
+      "diagnostics": [
+        {
+          "code": "OMEGA_W_NO_OBSERVE",
+          "severity": "warning",
+          "message": "mission leak never observes the world",
+          "line": 41,
+          "column": 9
+        },
+        {
+          "code": "OMEGA_E_EVIDENCE_UNTRUSTED",
+          "severity": "error",
+          "message": "UntrustedData is not verified: only verified values become evidence",
+          "line": 50,
+          "column": 5,
+          "details": {
+            "claim": "this is proof",
+            "from": "echoed",
+            "trust": "untrusted"
+          }
+        },
+        {
+          "code": "OMEGA_E_CAP_MISSING",
+          "severity": "error",
+          "message": "agent careless does not allow delete on fs:/",
+          "line": 51,
+          "column": 8,
+          "details": {
+            "agent": "careless",
+            "resource": "fs:/",
+            "action": "delete",
+            "context": "call",
+            "allowed": [
+              "load on secrets:*",
+              "call on tool:echo"
+            ]
+          }
+        },
+        {
+          "code": "OMEGA_E_SECRET_EGRESS",
+          "severity": "error",
+          "message": "a SecretString value cannot reach the mission result: secrets stay in secrets",
+          "line": 53,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "path": "examples/omega/evolution-proposal.nexa",
+      "ok": true,
+      "hash": "sha256:2gYmxY2CY577feid2K8Na-Qt3KQaxV7MG1TBrQgdqKA",
+      "diagnostics": []
+    }
+  ],
+  "types": {
+    "table": {
+      "String": {
+        "base": "string",
+        "secrecy": "public",
+        "trust": "internal"
+      },
+      "Number": {
+        "base": "number",
+        "secrecy": "public",
+        "trust": "internal"
+      },
+      "Bool": {
+        "base": "bool",
+        "secrecy": "public",
+        "trust": "internal"
+      },
+      "SecretString": {
+        "base": "string",
+        "secrecy": "secret",
+        "trust": "internal"
+      },
+      "SecretNumber": {
+        "base": "number",
+        "secrecy": "secret",
+        "trust": "internal"
+      },
+      "SecretBool": {
+        "base": "bool",
+        "secrecy": "secret",
+        "trust": "internal"
+      },
+      "UntrustedData": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "untrusted"
+      },
+      "UntrustedString": {
+        "base": "string",
+        "secrecy": "public",
+        "trust": "untrusted"
+      },
+      "ToolResult": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "untrusted"
+      },
+      "UserIntent": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "untrusted"
+      },
+      "VerifiedData": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "verified"
+      },
+      "VerifiedString": {
+        "base": "string",
+        "secrecy": "public",
+        "trust": "verified"
+      },
+      "SignedEvidence": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "verified"
+      },
+      "MemoryRef": {
+        "base": "data",
+        "secrecy": "public",
+        "trust": "internal"
+      },
+      "Capability": {
+        "base": "cap",
+        "secrecy": "secret",
+        "trust": "internal"
+      }
+    },
+    "matrix": {
+      "String->String": "ok",
+      "String->SecretString": "ok",
+      "String->UntrustedData": "ok",
+      "String->VerifiedData": "no:trust",
+      "String->MemoryRef": "ok",
+      "String->Capability": "no:base",
+      "SecretString->String": "no:secrecy",
+      "SecretString->SecretString": "ok",
+      "SecretString->UntrustedData": "no:secrecy",
+      "SecretString->VerifiedData": "no:secrecy",
+      "SecretString->MemoryRef": "no:secrecy",
+      "SecretString->Capability": "no:base",
+      "UntrustedData->String": "no:trust",
+      "UntrustedData->SecretString": "no:trust",
+      "UntrustedData->UntrustedData": "ok",
+      "UntrustedData->VerifiedData": "no:trust",
+      "UntrustedData->MemoryRef": "no:trust",
+      "UntrustedData->Capability": "no:trust",
+      "VerifiedData->String": "no:base",
+      "VerifiedData->SecretString": "no:base",
+      "VerifiedData->UntrustedData": "ok",
+      "VerifiedData->VerifiedData": "ok",
+      "VerifiedData->MemoryRef": "ok",
+      "VerifiedData->Capability": "no:base",
+      "ToolResult->String": "no:trust",
+      "ToolResult->SecretString": "no:trust",
+      "ToolResult->UntrustedData": "ok",
+      "ToolResult->VerifiedData": "no:trust",
+      "ToolResult->MemoryRef": "no:trust",
+      "ToolResult->Capability": "no:trust",
+      "MemoryRef->String": "no:base",
+      "MemoryRef->SecretString": "no:base",
+      "MemoryRef->UntrustedData": "ok",
+      "MemoryRef->VerifiedData": "no:trust",
+      "MemoryRef->MemoryRef": "ok",
+      "MemoryRef->Capability": "no:base",
+      "Capability->String": "no:secrecy",
+      "Capability->SecretString": "no:base",
+      "Capability->UntrustedData": "no:secrecy",
+      "Capability->VerifiedData": "no:secrecy",
+      "Capability->MemoryRef": "no:secrecy",
+      "Capability->Capability": "ok",
+      "VerifiedString->String": "ok",
+      "VerifiedString->SecretString": "ok",
+      "VerifiedString->UntrustedData": "ok",
+      "VerifiedString->VerifiedData": "ok",
+      "VerifiedString->MemoryRef": "ok",
+      "VerifiedString->Capability": "no:base"
+    }
+  },
+  "caprefs": [
+    {
+      "path": "fs.read",
+      "scope": "/src/main.js",
+      "pattern": false,
+      "resource": "fs:/src/main.js",
+      "actions": [
+        "read"
+      ],
+      "origin": "builtin",
+      "trust": "untrusted"
+    },
+    {
+      "path": "fs.read",
+      "scope": "/src/**",
+      "pattern": true,
+      "resource": "fs:/src/**",
+      "actions": [
+        "read"
+      ],
+      "origin": "builtin",
+      "trust": "untrusted"
+    },
+    {
+      "path": "sanitizer.redact",
+      "scope": null,
+      "pattern": false,
+      "resource": "sanitizer:redact",
+      "actions": [
+        "redact"
+      ],
+      "origin": "builtin",
+      "trust": "verified"
+    },
+    {
+      "path": "memory.store",
+      "scope": "episodic",
+      "pattern": true,
+      "resource": "memory:episodic",
+      "actions": [
+        "store"
+      ],
+      "origin": "builtin",
+      "trust": "internal"
+    },
+    {
+      "path": "github.repository.read",
+      "scope": null,
+      "pattern": false,
+      "resource": "mcp:github.repository.read",
+      "actions": [
+        "call"
+      ],
+      "origin": "mcp",
+      "trust": "untrusted"
+    },
+    {
+      "path": "echo.call",
+      "scope": null,
+      "pattern": false,
+      "resource": "tool:echo",
+      "actions": [
+        "call"
+      ],
+      "origin": "instrument",
+      "trust": "verified"
+    }
+  ],
+  "ledger": [
+    {
+      "nexa": "omega1",
+      "seq": 0,
+      "ts": "2026-09-18T12:00:00Z",
+      "kind": "MISSION_START",
+      "decision": "INFO",
+      "actor": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+      "module": "examples/omega/repository-review.nexa",
+      "mission": "review",
+      "step": 0,
+      "detail": {
+        "goal": "vector",
+        "agent": "reviewer"
+      },
+      "prev": "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "hash": "sha256:im4Tj2JXdO24iqLbJucLG2jSWToaBq54vztx5DhDNj0",
+      "sig": {
+        "kind": "ed25519",
+        "alg": "ed25519",
+        "kid": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+        "val": "7DLeXh6A2aekwrS8ICxg9CN7n2B1RUToGPLul6kCdIUoZY2h1Ajb80IaOwMHpDM3u_b67xgka4FKPH35Yw5lDw"
+      }
+    },
+    {
+      "nexa": "omega1",
+      "seq": 1,
+      "ts": "2026-09-18T12:00:00Z",
+      "kind": "TOOL_RESULT",
+      "decision": "ALLOW",
+      "actor": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+      "module": "examples/omega/repository-review.nexa",
+      "mission": "review",
+      "step": 1,
+      "resource": "tool:echo",
+      "action": "call",
+      "capability": "urn:nexa:cap:vector-capability",
+      "detail": {
+        "kernel_decision": "ALLOW",
+        "code": null,
+        "value_hash": "sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "prev": "sha256:im4Tj2JXdO24iqLbJucLG2jSWToaBq54vztx5DhDNj0",
+      "hash": "sha256:g4ekwUGgAaFpc751O4JrHTFBv9RQyGyhMmPT2gygJps",
+      "sig": {
+        "kind": "ed25519",
+        "alg": "ed25519",
+        "kid": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+        "val": "w9OhH3-ZwIX0ab3n1dqfHJ7g8radKMvSP4b0RqSMR-BYbcAVHxoPO993gi5mtcT3f9Ob5DfReRt9xE_LIBavCQ"
+      }
+    },
+    {
+      "nexa": "omega1",
+      "seq": 2,
+      "ts": "2026-09-18T12:00:00Z",
+      "kind": "VERDICT",
+      "decision": "ALLOW",
+      "actor": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+      "module": "examples/omega/repository-review.nexa",
+      "mission": "review",
+      "step": 2,
+      "detail": {
+        "contracts": 0,
+        "steps": 2
+      },
+      "prev": "sha256:g4ekwUGgAaFpc751O4JrHTFBv9RQyGyhMmPT2gygJps",
+      "hash": "sha256:RuvQGFUX7WfdUdV5i-T6fGrjyZmNsUqOlMi4J8lwFqQ",
+      "sig": {
+        "kind": "ed25519",
+        "alg": "ed25519",
+        "kid": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+        "val": "yxkW2kJ77AR6_bD9SLCo6PU50gv1bLILzf8Q7nyaIFwOBv2Dsdq_k-69QJw4ZMzicBtSJimteSzyqphaQdtnDA"
+      }
+    }
+  ],
+  "ledger_head": {
+    "nexa": "omega1",
+    "seq": 2,
+    "ts": "2026-09-18T12:00:00Z",
+    "kind": "VERDICT",
+    "decision": "ALLOW",
+    "actor": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+    "module": "examples/omega/repository-review.nexa",
+    "mission": "review",
+    "step": 2,
+    "detail": {
+      "contracts": 0,
+      "steps": 2
+    },
+    "prev": "sha256:g4ekwUGgAaFpc751O4JrHTFBv9RQyGyhMmPT2gygJps",
+    "hash": "sha256:RuvQGFUX7WfdUdV5i-T6fGrjyZmNsUqOlMi4J8lwFqQ",
+    "sig": {
+      "kind": "ed25519",
+      "alg": "ed25519",
+      "kid": "nexa:key:ed25519:z6Mkhu4BLQGcYCtgBVYdM7TgYcGyg6TXqGcnbpdY8ufABFsz",
+      "val": "yxkW2kJ77AR6_bD9SLCo6PU50gv1bLILzf8Q7nyaIFwOBv2Dsdq_k-69QJw4ZMzicBtSJimteSzyqphaQdtnDA"
+    }
+  },
+  "gate": {
+    "candidate": {
+      "module": "planner",
+      "version": 5,
+      "parent": 4,
+      "evolver": "nexa:key:ed25519:z6MkswFb62xmEDrqnknM3TP112AiH6A5YETp7gc2Qz4Wqkar",
+      "capabilities": [
+        "memory:episodic!read",
+        "model:auto!invoke"
+      ]
+    },
+    "parent": {
+      "module": "planner",
+      "version": 4,
+      "capabilities": [
+        "memory:episodic!read",
+        "model:auto!invoke"
+      ]
+    },
+    "parent_manifest_hash": "sha256:7yrIFklpTFIC03dq2uMFN3F6kp0AWMRDltmH-dgPbms",
+    "verdicts": [
+      {
+        "name": "all-stages-pass",
+        "verdict": "FAIL",
+        "code": "OMEGA_E_GATE_STAGE",
+        "failed": "adversarial",
+        "action": "QUARANTINE",
+        "stages": [
+          {
+            "stage": "manifest",
+            "status": "PASS"
+          },
+          {
+            "stage": "parent",
+            "status": "PASS"
+          },
+          {
+            "stage": "compile",
+            "status": "PASS"
+          },
+          {
+            "stage": "types",
+            "status": "PASS"
+          },
+          {
+            "stage": "capabilities",
+            "status": "PASS"
+          },
+          {
+            "stage": "security",
+            "status": "PASS"
+          },
+          {
+            "stage": "adversarial",
+            "status": "FAIL"
+          }
+        ]
+      },
+      {
+        "name": "missing-stage",
+        "verdict": "FAIL",
+        "code": "OMEGA_E_GATE_STAGE",
+        "failed": "security",
+        "action": "QUARANTINE",
+        "stages": [
+          {
+            "stage": "manifest",
+            "status": "PASS"
+          },
+          {
+            "stage": "parent",
+            "status": "PASS"
+          },
+          {
+            "stage": "compile",
+            "status": "PASS"
+          },
+          {
+            "stage": "types",
+            "status": "PASS"
+          },
+          {
+            "stage": "capabilities",
+            "status": "PASS"
+          },
+          {
+            "stage": "security",
+            "status": "FAIL"
+          }
+        ]
+      },
+      {
+        "name": "benchmark-unmet",
+        "verdict": "FAIL",
+        "code": "OMEGA_E_GATE_STAGE",
+        "failed": "adversarial",
+        "action": "QUARANTINE",
+        "stages": [
+          {
+            "stage": "manifest",
+            "status": "PASS"
+          },
+          {
+            "stage": "parent",
+            "status": "PASS"
+          },
+          {
+            "stage": "compile",
+            "status": "PASS"
+          },
+          {
+            "stage": "types",
+            "status": "PASS"
+          },
+          {
+            "stage": "capabilities",
+            "status": "PASS"
+          },
+          {
+            "stage": "security",
+            "status": "PASS"
+          },
+          {
+            "stage": "adversarial",
+            "status": "FAIL"
+          }
+        ]
+      },
+      {
+        "name": "authority-widened",
+        "verdict": "FAIL",
+        "code": "OMEGA_E_GATE_STAGE",
+        "failed": "capabilities",
+        "action": "QUARANTINE",
+        "stages": [
+          {
+            "stage": "manifest",
+            "status": "PASS"
+          },
+          {
+            "stage": "parent",
+            "status": "PASS"
+          },
+          {
+            "stage": "compile",
+            "status": "PASS"
+          },
+          {
+            "stage": "types",
+            "status": "PASS"
+          },
+          {
+            "stage": "capabilities",
+            "status": "FAIL"
+          }
+        ]
+      },
+      {
+        "name": "kernel-immutable",
+        "verdict": "REFUSED",
+        "code": "OMEGA_E_KERNEL_IMMUTABLE",
+        "failed": null,
+        "action": "REFUSE",
+        "stages": []
+      },
+      {
+        "name": "untrusted-evolver",
+        "verdict": "REFUSED",
+        "code": "OMEGA_E_NOT_ACTIVATOR",
+        "failed": null,
+        "action": "REFUSE",
+        "stages": [
+          {
+            "stage": "manifest",
+            "status": "FAIL"
+          }
+        ]
+      }
+    ]
+  }
+}

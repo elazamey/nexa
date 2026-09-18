@@ -1,7 +1,12 @@
-# NEXA v0.1
+# NEXA
 
-**A signed, capability-gated protocol for agent tooling.**
-Default-deny. Evidence-first. Digital signatures from commit one. Zero runtime dependencies.
+**Two layers, one rule: AI proposes, the deterministic system decides.**
+
+* **NEXA v0.1** — a signed, capability-gated *protocol* for agent tooling. Default-deny,
+  evidence-first, Ed25519 from commit one, zero runtime dependencies. (This document.)
+* **NEXA Ω** — a *language*, a runtime, an immutable kernel, an Evolution Gate and a
+  learning layer on top of that protocol. A program can ask; it can never grant itself
+  anything. → [jump to NEXA Ω](#nexa-ω--language--runtime--evolution-gate--learning)
 
 NEXA is the layer between an autonomous agent and the tools it wants to use.
 Every request is an *envelope*: canonicalized, Ed25519-signed, time-boxed, nonce-protected.
@@ -24,6 +29,156 @@ INSPECT -> CREATE -> TEST -> VERIFY -> REPORT
   verified capability and a verified envelope signature.
 * **Provable afterwards.** Tamper-evident chain + signed receipts for both outcomes.
 * **No ambient power.** The six gates below are closed in code, not in configuration.
+
+## NEXA Ω — language · runtime · Evolution Gate · learning
+
+> **NEXA does not trust itself. NEXA proves itself.**
+
+Ω is a front end that can only ever *ask*. The wire protocol, the capability algebra,
+the policy engine and the evidence chain of v0.1 are unchanged and remain the only things
+that can authorize anything.
+
+```text
+.nexa source ──► compiler (pure) ──► typed IR ──► manifest (signed) ──► Evolution Gate
+                                                            │
+                      AI / planner ──► proposal ────────────┘
+                                                            ▼
+                              runtime ──► authority ──► capability ──► kernel (v0.1)
+                                                                          │
+                                        Ω ledger ◄── receipts ◄── gates · policy · evidence
+```
+
+### The rules, and where they are enforced in code
+
+| Rule | Enforced by |
+| --- | --- |
+| **AI ≠ Authority** — a program cannot create permission | `packages/runtime/src/authority.js` |
+| **No secret in the language** — `vault://` handles only; a credential bound to a secret-typed name is a compile error | `packages/compiler/src/analyzer.js` |
+| **Types carry trust** — `SecretString` cannot reach a log, a tool argument, a prompt or evidence | `packages/compiler/src/security-types.js` |
+| **Evidence ≠ opinion** — only verified values become evidence | `packages/compiler/src/analyzer.js` |
+| **Six gates stay closed** — `fs.write` compiles, and is then refused by the kernel | `packages/policy/src/gates.js` |
+| **Self-modifying ≠ self-authorizing** — propose → verify → attack → measure → canary → activate | `packages/evolution` |
+| **The kernel is immutable** — six modules no manifest may name | `packages/evolution/src/manifest.js` |
+| **Learning proposes, never applies** — `learner.apply()` throws | `packages/learning/src/learner.js` |
+| **Refusal is evidence** — every denied step is recorded and receipted | `packages/runtime/src/ledger.js` |
+| **A claim without a check does not exist** — every claim in `spec/omega/threat-model.md` names its test | `tests/omega-*.test.js` |
+
+### The Evolution Gate: eight stages, each of which can only fail
+
+```text
+compile → types → capabilities → security → adversarial → regression → benchmark → policy
+                                                       │
+   a missing stage fails · authority is monotone · the kernel is refused first ·
+   a forged manifest is REFUSED, not quarantined · every attack must be blocked
+```
+
+`adversarial` is re-counted by the gate itself: a candidate cannot pass by asserting that
+it attacked. A candidate then runs **beside** the active version through a canary window,
+and only an identity the registry was told to trust can activate it. A quarantine is not a
+warning: `activate()` counts *clean* observations and refuses a quarantined candidate
+(`OMEGA_E_QUARANTINED`).
+
+### Learning, measurement and self-healing
+
+```text
+observe → reflect → hypothesize → propose → [ replay · benchmark · adversarial · gate ]
+```
+
+* **Observations** are summaries of finished runs, derived from records, carrying the hash
+  of every record they were derived from. Rates are basis points: canonical NEXA data has
+  no floats, so a number that cannot be hashed is not evidence.
+* **Hypotheses** are evidence-bound and *falsifiable*, with a documented confidence and a
+  list of targets that excludes the kernel.
+* **Knowledge** has a lifecycle: verified only with evidence (`OMEGA_E_UNPROVEN`),
+  invalidated when contradicted, with everything resting on it marked `STALE`.
+* **Benchmarks** run a fixed suite twice and refuse a plan whose own results move; a task
+  the baseline passed and the candidate fails is a regression, whatever the aggregate says.
+* **Replay** turns a transcript into a content-addressed decision skeleton, so determinism
+  is inspectable: the same inputs must produce the same plan id.
+* **Self-healing** is `detect → isolate → diagnose → recover → verify → learn`. Failures
+  are classified: a closed gate is *permanent* (never retried, never routed around), a
+  handler error is *transient*, anything unrecognised fails closed.
+
+### Quickstart
+
+```bash
+node tools/nexa.mjs check   examples/omega/repository-review.nexa
+node tools/nexa.mjs explain examples/omega/repository-review.nexa   # the authority table
+node tools/nexa.mjs run     examples/omega/repository-review.nexa --mission review
+node tools/nexa.mjs run     examples/omega/gated-write.nexa --mission write-report   # NEXA_E_GATE
+node tools/nexa.mjs check   examples/omega/refused-secret-egress.nexa                # 3 compile errors
+
+npm run demo:omega            # nine sections: compile → run → refuse → evolve → learn → heal
+npm run attacks               # 31 attacks, 12 categories, against the real system
+npm run attacks:google        # the 8 identity forgeries alone, offline
+node tools/omega-vectors.mjs  # regenerate the pinned Ω vectors
+```
+
+### Implemented surface
+
+```text
+packages/compiler   lexer · parser · analyzer (types + authority) · IR · diagnostics
+packages/runtime    mission machine · kernel host · authority · memory · world ·
+                    providers + vault · circuit breaker · self-healer · Ω evidence ledger
+packages/evolution  manifests · eight-stage deterministic gate · adversarial stage ·
+                    immutable version registry · canary · quarantine · rollback
+packages/learning   observation · patterns · hypotheses · reflection · knowledge ·
+                    replay · reproducible benchmarks (pure, no authority, no I/O)
+packages/cli        argv → plan · renderers (pure, no I/O)
+packages/cell       nucleus · membrane · receptors · ports · lifecycle · health ·
+                    guarantor · tissue · organ · organism · homeostasis (the cellular layer)
+packages/cellular-evolution
+                    division · fusion · terminal quarantine
+tools/nexa.mjs      the CLI shell: the only place in Ω that touches a filesystem
+tools/cellular-demo.mjs  the organism end to end, plus the cellular attacks, live
+tools/cellular-vectors.mjs  pins `spec/vectors/cellular.json`
+```
+
+Deliberately **not** in Ω v1: a network transport (ports are injected), durable storage
+(the `FILESYSTEM_WRITE` gate is closed and Ω does not reopen it), a model backend (the
+planner is an injected port with a deterministic default), WASM compilation (the IR is
+already the boundary a WASM backend would consume), and any claim of unbreakability —
+`spec/omega/threat-model.md` § 6 states what remains open.
+
+## NEXA Ω∞ — the cellular layer
+
+> **A cell composes; it does not authorize.**
+
+Ω v1 made authority and evidence *grammar*. Ω∞ makes them *structure*: the unit of
+composition is a **cell**, and nothing composes by importing anything. The layer sits above
+the Ω foundations and borrows them — the compiler's error vocabulary, the runtime's circuit
+breaker, the capability authority, the evidence ledger, the Evolution Gate. It adds no new
+kind of authority.
+
+```text
+Cell A → Membrane → Identity → Capability → Type/Schema → Policy → Budget → Execution → Evidence → Cell B
+```
+
+- **The cell** has an identity, a nucleus (module + invariants, frozen), a membrane (the
+  only way in), receptors, ports, local memory (digests, not values), a budget, health, a
+  lifecycle of six states and its own evidence. A cell holds **no authority**: it can
+  `propose()`, and the tissue's guarantor asks the operator's authority.
+- **The recursion:** Cell → Tissue → Organ → Organism, and an organ is usable as a cell at
+  the next level (`tissue.asCell()`, `organ.asCell()`). A tissue with no entry points cannot
+  pretend to be a cell — it has no receptors.
+- **No direct access:** a route the contract does not name has no capability to travel on,
+  so it is refused by the tissue (`OMEGA_E_ROUTE`, nothing minted) *and* by the destination
+  membrane. Routes are declared before traffic; the topology is sealed on the first call.
+- **Capabilities are presenter-bound and single-use:** a replay is `NEXA_E_REPLAY`, another
+  cell's token is `NEXA_E_CAP_AUDIENCE`, an untrusted issuer is `NEXA_E_UNTRUSTED`.
+- **Homeostasis** reuses the runtime's breaker: `DEGRADED` → `ISOLATE` → fallback →
+  recovery → **verify** → `ACTIVE`. A degraded cell still serves; an isolated one serves only
+  life support, and nothing returns to service without a check that passes.
+- **Division** gives each child only the capabilities it needs (`OMEGA_E_CELL_AMPLIFY`
+  otherwise). **Fusion never overwrites**: compatibility → contract → capability analysis →
+  state migration → sandbox → security tests → benchmark → canary → a new immutable version.
+  **Quarantine is terminal.**
+- **Cellular learning** is evidence-first: cells publish `CELL_MESSAGE` evidence, the tissue
+  aggregates it, the organ sees the pattern, the organism learns — and the learner proposes,
+  never applies (`OMEGA_E_LEARNER_AUTHORITY`).
+
+Full specification: [`spec/omega/cellular.md`](spec/omega/cellular.md) ·
+[الملخّص العربي](spec/omega/cellular.ar.md) · run it: `npm run demo:cellular`.
 
 ## Safety posture (v0.1) — hard gates
 
@@ -138,11 +293,18 @@ nexa/
 │   ├── capability/       mint / attenuate / verify / revoke
 │   ├── policy/           default-deny engine + the six hard gates
 │   ├── evidence/         hash-chained log, receipts, inclusion checks
-│   └── protocol/         envelopes, replay guard, ledger, endpoint state machine
+│   ├── protocol/         envelopes, replay guard, ledger, endpoint state machine
+│   ├── compiler/         (Ω) lexer, parser, analyzer, IR, diagnostics
+│   ├── runtime/          (Ω) mission machine, kernel host, authority, memory, healer, ledger
+│   ├── evolution/        (Ω) manifests, eight-stage gate, adversarial runner, registry
+│   ├── learning/         (Ω) observation, patterns, hypotheses, knowledge, replay, benchmarks
+│   └── cli/              (Ω) argv → plan, renderers
 ├── adapters/mcp/         MCP (JSON-RPC 2.0) bridge, gated in both directions
 ├── examples/             hello-nexa.mjs (the README flow, executed by the tests)
-├── tools/                demo, gate report, vector regeneration
-└── tests/                113 tests (incl. tests/security.test.js), no external services
+│                         omega/*.nexa — six modules, from "runs end to end" to "refused"
+├── tools/                demo, Ω demo, Ω attacks, gate report, vector regeneration
+└── tests/                207 tests (incl. tests/security.test.js, tests/omega-*.test.js,
+│                        tests/cellular.test.js)
 ```
 
 ## Capabilities in one screen
@@ -216,6 +378,10 @@ listed. See [`adapters/mcp/README.md`](adapters/mcp/README.md).
 
 ## Specification
 
+The Ω layer's documents sit beside the v0.1 ones: `spec/omega/README.md` (index),
+`language.md`, `grammar.ebnf`, `types.md`, `authority.md`, `evidence.md`, `evolution.md`,
+`learning.md`, `mcp.md` and `threat-model.md`.
+
 | Document | Contents |
 | --- | --- |
 | [`spec/protocol.md`](spec/protocol.md) | message types, decision order, transport, versioning |
@@ -234,12 +400,14 @@ the pinned bytes drift apart.
 ## Verify it yourself
 
 ```bash
-npm test                      # 113 tests
+npm test                      # 307 tests (68 of them Ω, 26 cellular, 100 Google)
 npm run audit                 # 16 adversarial probes (attacks that must keep failing)
 npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
 npm run proof:permission      # runs the protocol flow while the runtime denies fs write,
                               # child processes and network — and fails if it does not deny them
 npm run demo                  # ALLOW, delegation, revocation, gate DENY, tamper check
+npm run demo:omega            # compile, run, refuse, evolve, benchmark, learn, heal
+npm run attacks               # 31 Ω attacks across 12 categories — all must be blocked
 npm run report                # runtime posture, protocol surface, inventory
 npm run verify                # everything above, in order
 ```
@@ -253,9 +421,40 @@ written; see `CHANGELOG.md` for what each one found.
 ## Status
 
 `v0.1.0` — protocol core, signatures, canonicalization, replay protection, capabilities,
-policy, evidence, `.nex` syntax, MCP adapter, 113 tests (16 of them adversarial), pinned spec vectors.
-Deliberately **not** in v0.1: any execution, filesystem, terminal, VCS or deploy
-capability; durable evidence storage; cross-endpoint evidence reconciliation.
+policy, evidence, `.nex` syntax, MCP adapter, pinned spec vectors.
+
+`Ω v1` (packages `0.2.0`) — the `.nexa` language, the security type system, the capability
+authority, the mission runtime, the Ω evidence ledger, memory, the world model, the
+provider/vault boundary, the MCP bridge, the eight-stage Evolution Gate, the immutable
+version registry, the learning layer, the self-healer and the CLI. **207 tests, 16 of them
+adversarial, plus a 23-attack Ω suite across 11 categories**, every one of which runs in
+`npm run verify`.
+
+`Ω∞` (packages `0.3.0`) — the cellular layer: cell anatomy, the seven-step membrane,
+tissue / organ / organism contracts, homeostasis, division and fusion. **207 tests** at that
+release.
+
+`GOOGLE IDENTITY CELL v1` (packages `0.4.0`) — the first external organ, and with it the
+twelfth attack category: identity that arrives from outside the system. **307 tests, plus a
+31-attack suite across 12 categories**, once again entirely inside `npm run verify`.
+
+The honest summary of the security posture is the one the repository can *demonstrate*,
+not the one it can assert:
+
+```text
+0 unauthorized capability grants       (31/31 attacks blocked, re-counted by the gate)
+0 forged Google identities admitted    (8/8 identity forgeries blocked, each refused at its own step)
+0 secret exfiltrations                 (compile-time types + vault handles + egress refusal)
+0 evidence-chain breaks                (one edited field fails verification)
+0 kernel mutations                     (six modules, refused before any stage runs)
+0 unsigned or forged modules admitted  (REFUSED, not quarantined)
+6 gates CLOSED · 14 gated namespaces · 72 Ω error codes · 207 tests · 0 runtime
+                                       dependencies
+```
+
+Deliberately **not** in v0.1 or Ω v1: any execution of arbitrary code, filesystem or
+terminal capability, durable evidence storage, cross-endpoint evidence reconciliation, and
+WASM compilation.
 
 ## License
 

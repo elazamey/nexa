@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/cli",
+  "version": "0.2.0",
+  "description": "NEXA Ω command surface: argv planning and pure renderers (no I/O)",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

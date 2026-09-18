@@ -11,9 +11,17 @@
  *
  *   1. exercises the full protocol surface — identity, capability, ALLOW, gate DENY,
  *      evidence chain, MCP bridge — and fails if any of it breaks;
- *   2. *attempts* a filesystem write, a child process and a network call, and fails
- *      if the runtime does **not** deny them. Without step 2 the proof would be
- *      vacuous: "it ran under a sandbox" means nothing if the sandbox was open.
+ *   2. *attempts* the things NEXA must never need — a filesystem write, a child
+ *      process, a worker thread — and fails if the runtime does **not** deny them.
+ *      Without step 2 the proof would be vacuous: "it ran under a sandbox" means
+ *      nothing if the sandbox was open.
+ *
+ * Scope note, learned the hard way: Node's permission model does not gate sockets in
+ * every version, so network access is *reported* rather than asserted here — an
+ * earlier version of this script treated a reachable network as "sandbox open" and
+ * failed on GitHub runners that have one. NEXA's no-network property is established
+ * by `npm run posture` (no `node:net`/`node:http`/`node:tls` import anywhere in
+ * `packages/` or `adapters/`) and by the fact that the whole demo runs with no I/O.
  *
  * Node's own test runner needs child processes per file, so the suite cannot be run
  * this way; this script is the runtime-enforced complement to `npm run posture`,
@@ -108,14 +116,29 @@ try {
 }
 
 try {
-  await fetch('https://example.com');
-  attempts.network = 'ALLOWED';
+  const { Worker } = await import('node:worker_threads');
+  const worker = new Worker('process.exit(0)', { eval: true });
+  await worker.terminate();
+  attempts.workerThread = 'ALLOWED';
 } catch (error) {
-  attempts.network = error.code ?? error.message;
+  attempts.workerThread = error.code ?? error.message;
 }
 
-for (const [name, result] of Object.entries(attempts)) {
-  if (result === 'ALLOWED') failures.push(`${name} was not denied — the proof is vacuous`);
+for (const name of ['filesystemWrite', 'childProcess', 'workerThread']) {
+  if (attempts[name] === 'ALLOWED') {
+    failures.push(`${name} was not denied — the proof would be vacuous`);
+  }
+}
+
+// Reported, not asserted: the permission model does not gate sockets in every Node
+// release, so a reachable network says nothing about NEXA either way. What matters is
+// that nothing in the protocol surface can open one — that is what posture checks.
+let network;
+try {
+  await fetch('https://example.com');
+  network = 'reachable (not gated by this Node version — see posture scan)';
+} catch (error) {
+  network = `unreachable (${error.code ?? error.message})`;
 }
 
 if (failures.length > 0) {
@@ -129,6 +152,8 @@ process.stdout.write([
   `  protocol flow: ALLOW ${JSON.stringify(allowed.value)}, gate DENY ${denied.code}/${denied.reply.body.details.gate}`,
   `  evidence: ${chain.length} records, chain verified, ${endpoint.evidence.summary().length} kinds`,
   `  gates: ${gatePosture().map((gate) => gate.name).join(', ')} all CLOSED`,
-  `  runtime denied: filesystem write (${attempts.filesystemWrite}), child process (${attempts.childProcess}), network (${attempts.network})`,
+  `  runtime denied: filesystem write (${attempts.filesystemWrite}), child process (${attempts.childProcess}), worker thread (${attempts.workerThread})`,
+  `  network: ${network}`,
+  '  protocol surface imports only node:crypto (see npm run posture)',
   '',
 ].join('\n'));

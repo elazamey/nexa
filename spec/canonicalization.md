@@ -23,9 +23,15 @@ than 64 levels is rejected.
 
 ## Object keys
 
-Sorted by UTF-16 code unit order (`Array.prototype.sort()` default). No other order is
-canonical. Keys must be strings and are NFC-normalized before comparison, so two
-visually identical keys cannot appear as different keys on the wire.
+Sorted by UTF-16 code unit order. No other order is canonical. Keys must be strings and
+are NFC-normalized before encoding, with two hard rules:
+
+* **Normalization collisions are rejected** (`NEXA_E_C14N_FORM`). `{"é":1,"e\u0301":2}`
+  is two distinct JavaScript keys that normalize to one canonical key; emitting both
+  would make the signed bytes ambiguous, so it is an error rather than a silent merge.
+* **`__proto__` is refused** (`NEXA_E_C14N_TYPE`). An own property with that name is a
+  prototype-pollution vector for any consumer that spreads or assigns the decoded object,
+  and no NEXA document legitimately needs it.
 
 ## Strings
 

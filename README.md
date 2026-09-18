@@ -17,6 +17,9 @@ INSPECT -> CREATE -> TEST -> VERIFY -> REPORT
   (`nexa:key:ed25519:z6Mk…`), so identity is checkable offline with no registry.
 * **Authority only shrinks.** Capabilities are macaroon-style: delegation can narrow
   scope, actions, time, budget and constraints — and nothing else.
+* **Authority has an origin.** An endpoint names the keys allowed to grant it
+  authority (`capabilityIssuers`, empty by default). Being *pinned* as a correspondent
+  is not the same as being allowed to mint permissions.
 * **Deny by default.** No rule means no. A rule that says ALLOW still requires a
   verified capability and a verified envelope signature.
 * **Provable afterwards.** Tamper-evident chain + signed receipts for both outcomes.
@@ -45,7 +48,7 @@ network, no clock, no subprocesses and no files outside the repo.
 
 ```bash
 node --version     # >= 20
-npm test           # 97 tests, zero dependencies
+npm test           # 113 tests, zero dependencies
 npm run demo       # end-to-end flow with a gate denial and a tamper check
 npm run report     # gate posture + protocol surface + inventory
 npm run vectors    # regenerate spec/vectors/*.json (pinned test vectors)
@@ -67,6 +70,9 @@ const agent = createIdentity({ label: 'agent-01', kind: 'agent', seed: '22'.repe
 const endpoint = new Endpoint({
   identity: agent,
   clock: () => new Date('2026-09-18T12:00:00Z'),
+  // Who may grant this endpoint authority. Left empty, the endpoint obeys no
+  // capability at all — a pinned peer still cannot mint itself permissions.
+  capabilityIssuers: [operator.kid],
   policy: new Policy({
     rules: [{ id: 'allow-echo', effect: 'ALLOW', resource: 'tool:echo', actions: ['call'] }],
   }),
@@ -108,11 +114,12 @@ Each step can only deny; a failure at step *n* means later steps never run.
 | 3 | replay guard on `id` + `nonce` (after step 1 succeeds) | `NEXA_E_REPLAY` |
 | 4 | sender trust (trust store, pin-or-reject) | `NEXA_E_UNTRUSTED` |
 | 5 | **hard gates** (pre-policy, unmovable) | `NEXA_E_GATE` |
-| 6 | capability: chain signatures, subset rules, budget, presenter | `NEXA_E_CAP_*` |
+| 6 | capability: chain signatures, subset rules, budget, presenter, **root issuer allowlist**, attributed revocation | `NEXA_E_CAP_*` / `NEXA_E_UNTRUSTED` |
 | 7 | policy: default-deny, first match wins | `NEXA_E_POLICY` |
 | 8 | handler dispatch (in memory), then spend the budget | `NEXA_E_NO_HANDLER` / `NEXA_E_HANDLER` |
 
-Steps 1–3 produce **no reply** — unauthenticated input must not consume replay state,
+An oversized body is refused with `NEXA_E_TOO_LARGE` before any hashing, so an attacker
+cannot make the endpoint do expensive work cheaply. Steps 1–3 produce **no reply** — unauthenticated input must not consume replay state,
 and answering it is how loops start. Steps 4–8 produce a signed `DENY` carrying the
 code, the details and a receipt.
 
@@ -135,7 +142,7 @@ nexa/
 ├── adapters/mcp/         MCP (JSON-RPC 2.0) bridge, gated in both directions
 ├── examples/             hello-nexa.mjs (the README flow, executed by the tests)
 ├── tools/                demo, gate report, vector regeneration
-└── tests/                97 tests, no external services
+└── tests/                113 tests (incl. tests/security.test.js), no external services
 ```
 
 ## Capabilities in one screen
@@ -227,15 +234,24 @@ the pinned bytes drift apart.
 ## Verify it yourself
 
 ```bash
-npm test                      # 97 tests
+npm test                      # 113 tests
+npm run audit                 # 16 adversarial probes (attacks that must keep failing)
+npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
 npm run demo                  # ALLOW, delegation, revocation, gate DENY, tamper check
-npm run report                # proves all six gates are CLOSED at runtime
+npm run report                # runtime posture, protocol surface, inventory
+npm run verify                # everything above, in order
 ```
+
+`tests/security.test.js` is written as a series of attacks — NFC key collisions, a pinned
+peer minting its own capability, third-party revocation, oversized payloads, replay-state
+poisoning, log splicing, secret leakage through every serialized surface, MCP boundary
+probing, and a grep for execution/filesystem imports. Five of them failed when first
+written; see `CHANGELOG.md` for what each one found.
 
 ## Status
 
 `v0.1.0` — protocol core, signatures, canonicalization, replay protection, capabilities,
-policy, evidence, `.nex` syntax, MCP adapter, 97 tests, pinned spec vectors.
+policy, evidence, `.nex` syntax, MCP adapter, 113 tests (16 of them adversarial), pinned spec vectors.
 Deliberately **not** in v0.1: any execution, filesystem, terminal, VCS or deploy
 capability; durable evidence storage; cross-endpoint evidence reconciliation.
 

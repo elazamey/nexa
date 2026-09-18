@@ -296,16 +296,27 @@ test('revocation is signed, attributable and chain-wide', () => {
   throwsCode(assert, () => verifyRevocation({ ...record, issuer: agent.kid }), 'NEXA_E_SIG');
 
   const set = new RevocationSet();
-  assert.deepEqual(set.add(record), { added: true, cap: parent.id });
-  assert.deepEqual(set.add(record), { added: false, cap: parent.id });
+  assert.deepEqual(set.add(record), { added: true, cap: parent.id, issuer: operator.kid });
+  assert.deepEqual(set.add(record), { added: false, cap: parent.id, issuer: operator.kid });
   assert.equal(set.has(parent.id), true);
+  assert.equal(set.has(parent.id, { issuers: [agent.kid] }), false, 'attribution matters');
   assert.equal(set.hasAnyInChain(child), true);
   assert.equal(set.size, 1);
   assert.deepEqual(set.ids(), [parent.id]);
+  assert.deepEqual(set.issuersOf(parent.id), [operator.kid]);
   throwsCode(assert, () => verifyCapability(child, { presenter: worker.kid, now: T0, revoked: set.asSet() }), 'NEXA_E_CAP_REVOKED');
+  throwsCode(assert, () => verifyCapability(child, { presenter: worker.kid, now: T0, revoked: set }), 'NEXA_E_CAP_REVOKED');
 
-  const conflicting = createRevocation({ cap: parent.id, issuer: agent, ts: '2026-09-18T12:07:00Z' });
-  throwsCode(assert, () => set.add(conflicting), 'NEXA_E_UNTRUSTED');
+  // A record from a key that is not part of the chain is refused at insert time
+  // when issuers are named, and ignored at verify time otherwise.
+  const bystander = createRevocation({ cap: parent.id, issuer: agent, ts: '2026-09-18T12:07:00Z' });
+  throwsCode(assert, () => set.add(bystander, { issuers: [operator.kid] }), 'NEXA_E_UNTRUSTED');
+  set.add(bystander);
+  assert.equal(set.has(parent.id, { issuers: [operator.kid] }), true);
+  assert.equal(
+    verifyCapability(child, { presenter: worker.kid, now: T0, revoked: new RevocationSet() }).ok,
+    true,
+  );
 });
 
 test('a chain deeper than its root allows is refused at verify time', () => {

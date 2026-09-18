@@ -18,6 +18,7 @@ import {
   NexaError,
   asNexaError,
   assertAction,
+  assertKid,
   assertResource,
   canonicalBytes,
   formatInstant,
@@ -47,7 +48,11 @@ export class Endpoint {
    * @param {number} [input.skewSeconds]
    * @param {ReplayGuard} [input.replay]
    * @param {UsageLedger} [input.ledger]
-   * @param {Set<string>|string[]} [input.revoked]
+   * @param {object|string[]|Set<string>} [input.revoked] revocation view (a `RevocationSet`
+   *   gives attributed revocation; a plain set of ids is accepted but unattributed)
+   * @param {string[]} [input.capabilityIssuers] key ids allowed to be the ROOT issuer of a
+   *   capability this endpoint obeys. Defaults to **empty**: an endpoint with no named
+   *   authority denies every capability, rather than trusting whoever signs one.
    */
   constructor({
     identity,
@@ -58,6 +63,7 @@ export class Endpoint {
     replay = new ReplayGuard({ windowSeconds: MAX_TTL_SECONDS }),
     ledger = new UsageLedger(),
     revoked = [],
+    capabilityIssuers = [],
   }) {
     if (!(identity?.keys instanceof KeyPair)) {
       throw new NexaError('NEXA_E_KEY', 'an endpoint needs an identity carrying a KeyPair');
@@ -70,6 +76,12 @@ export class Endpoint {
     this.replay = replay;
     this.ledger = ledger;
     this.revoked = revoked;
+    if (!Array.isArray(capabilityIssuers)) {
+      throw new NexaError('NEXA_E_CAP_INVALID', 'capabilityIssuers must be an array of key ids');
+    }
+    for (const kid of capabilityIssuers) assertKid(kid);
+    /** @type {string[]} who may grant this endpoint authority. Empty means nobody. */
+    this.capabilityIssuers = [...new Set(capabilityIssuers)].sort();
     this.evidence = new EvidenceLog({ actor: identity, clock });
     this.now = () => this.clock();
   }
@@ -307,14 +319,16 @@ export class Endpoint {
         // a recorded DENY, not an exception thrown at the transport layer.
         const token = this.#resolveCapability(envelope);
         const verified = verifyCapability(token, {
-          // The capability must name the *presenter* as its holder. The endpoint
-          // itself is identified by the resource, not by the token subject.
+          // The capability must name the *presenter* as its holder, and its root must
+          // come from an issuer this endpoint was told to obey. Both checks are
+          // fail-closed: an endpoint with no named issuer obeys no capability.
           presenter: envelope.from,
           now,
           revoked: this.revoked,
           uses: (id) => this.ledger.used(id),
           action,
           resource,
+          trustedIssuers: this.capabilityIssuers,
         });
         grant = verified.grant;
         this.evidence.append({
@@ -505,6 +519,7 @@ export class Endpoint {
       policy: this.policy.toJSON(),
       resources: this.resources(),
       trusted_peers: this.trust.list(),
+      capability_issuers: [...this.capabilityIssuers],
       evidence_length: this.evidence.length,
       evidence_head: this.evidence.head?.hash ?? null,
       ledger: this.ledger.snapshot(),

@@ -64,10 +64,31 @@ Violations raise `NEXA_E_CAP_AMPLIFY` **at mint time**, and the identical checks
 again **at verify time** on the received chain — because a token that arrives over the
 wire may have been assembled by someone who skipped the minting API entirely.
 
+## Authority origin
+
+`mintCapability` proves only *internal consistency*: any key can sign a token that names
+itself as issuer. Whether that token means anything is the verifier's decision, expressed
+as an allowlist:
+
+```js
+verifyCapability(token, { trustedIssuers: [operator.kid], ... })   // packages/capability
+new Endpoint({ identity, capabilityIssuers: [operator.kid] })      // packages/protocol
+```
+
+* `trustedIssuers` is checked against the **root** issuer of the chain — the origin of
+  the authority, not each hop, because hops are already constrained by attenuation.
+* It is **fail-closed**: an endpoint with an empty `capabilityIssuers` list obeys no
+  capability at all, and answers `NEXA_E_UNTRUSTED` with a hint explaining how to name
+  one. Without it, a peer that is merely *pinned* (trusted as a correspondent) could
+  mint itself permission to call tools, which is exactly the confusion capability
+  systems exist to prevent.
+* A mismatch is `NEXA_E_UNTRUSTED`, never `NEXA_E_POLICY`: this is a question about who
+  may grant authority, not about whether a rule matched.
+
 ## Verification
 
-`verifyCapability(token, {presenter, now, revoked, uses, action, resource})` walks the
-chain from the tip to the root and checks:
+`verifyCapability(token, {presenter, trustedIssuers, now, revoked, uses, action, resource})`
+walks the chain from the tip to the root and checks:
 
 1. shape, field set, caveat bounds (`validateCapabilityShape`)
 2. each link's signature (root: issuer key; link: delegator key)
@@ -79,7 +100,8 @@ chain from the tip to the root and checks:
    supplies `envelope.from`)
 8. remaining budget on every link = `min(max_uses - used)`; any exhausted link denies
 9. chain depth within the root's `max_depth`
-10. requested `action` / `resource` are actually granted
+10. the root issuer is in `trustedIssuers`, when that option is supplied (§Authority origin)
+11. requested `action` / `resource` are actually granted
 
 Result: a `grant` object with the effective window, depth, chain of ids and remaining
 uses.
@@ -104,10 +126,23 @@ NEXA has no online revocation lookup. Instead an issuer publishes a signed recor
   "ts": "...", "reason": "compromised", "sig": { ... } }
 ```
 
-`RevocationSet` verifies records on the way in, refuses conflicting issuers for the
-same capability, and answers `hasAnyInChain(token)` — revoking a root therefore revokes
-everything delegated from it. Verifiers pass `revoked: revocationSet.asSet()` into
-`verifyCapability`.
+`RevocationSet` verifies records on the way in, keeps them indexed by capability and
+issuer, and answers `hasAnyInChain(token)` — revoking a root therefore revokes everything
+delegated from it.
+
+**Revocation is attributed.** Anyone can sign a record naming any capability id, so
+membership in a set is not enough:
+
+```js
+set.add(record, { issuers: [operator.kid] });   // refuse records from outsiders
+verifyCapability(token, { revoked: set });      // attributed: only chain issuers count
+set.revokes(capabilityId, chainIssuers);        // the question verifyCapability asks
+set.has(capabilityId);                          // unattributed membership, for reporting
+set.issuersOf(capabilityId);                    // who actually signed a record
+```
+
+Passing `revoked: revocationSet.asSet()` still works, but it is the *unattributed* form:
+every record counts, whoever signed it. Prefer passing the `RevocationSet` itself.
 
 ## Non-goals in v0.1
 

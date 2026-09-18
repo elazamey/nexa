@@ -51,10 +51,19 @@ function ruleMatches(rule, { resource, action, subject }) {
   return true;
 }
 
-/** @param {PolicyRule} rule @returns {PolicyRule} validated rule */
+/**
+ * @param {PolicyRule} rule
+ * @returns {PolicyRule} validated rule
+ */
 export function validateRule(rule) {
   if (typeof rule !== 'object' || rule === null || Array.isArray(rule)) {
     throw new NexaError('NEXA_E_POLICY', 'a policy rule must be an object');
+  }
+  // Plain data only: a class instance can carry behaviour (getters, a crafted
+  // prototype chain) that the engine would otherwise evaluate as if it were data.
+  const prototype = Object.getPrototypeOf(rule);
+  if (prototype !== Object.prototype && prototype !== null) {
+    throw new NexaError('NEXA_E_POLICY', `rule ${String(rule.id)} must be a plain object, not a class instance`);
   }
   if (typeof rule.id !== 'string' || !/^[a-z][a-z0-9._-]{0,63}$/.test(rule.id)) {
     throw new NexaError('NEXA_E_POLICY', `invalid rule id: ${String(rule.id)}`);

@@ -91,53 +91,107 @@ export function verifyRevocation(record, expect = {}) {
   return { ok: true, cap: record.cap, issuer: record.issuer, ts: record.ts, reason: record.reason };
 }
 
+/**
+ * A collection of verified revocation records.
+ *
+ * A record is only *evidence of revocation* when its issuer was entitled to revoke
+ * that capability — the issuer of the capability itself, or of a link below it.
+ * Anyone can sign a record naming any capability id, so membership alone is not
+ * attribution: `revokes(id, chainIssuers)` answers the question that matters, and it
+ * is what `verifyCapability` calls.
+ */
 export class RevocationSet {
-  #records = new Map();
+  /** @type {Map<string, Map<string, object>>} capId -> issuerKid -> record */
+  #byCapability = new Map();
 
   /**
-   * Adds a record after verification. A record for a capability id we already
-   * revoked is ignored (idempotent), a conflicting one from another issuer is rejected.
+   * Adds a record after verifying its signature. Adding the same record twice is
+   * idempotent; a record from an issuer outside `issuers` (when supplied) is refused.
    * @param {object} record
-   * @returns {{added: boolean, cap: string}}
+   * @param {{issuers?: string[]}} [options]
+   * @returns {{added: boolean, cap: string, issuer: string}}
    */
-  add(record) {
+  add(record, { issuers } = {}) {
     const verified = verifyRevocation(record);
-    const existing = this.#records.get(verified.cap);
-    if (existing !== undefined && existing.issuer !== verified.issuer) {
-      throw new NexaError('NEXA_E_UNTRUSTED', 'conflicting revocation issuers for the same capability');
+    if (issuers !== undefined && !issuers.includes(verified.issuer)) {
+      throw new NexaError('NEXA_E_UNTRUSTED', 'revocation issuer is not an accepted authority', {
+        issuer: verified.issuer,
+        accepted: [...issuers].sort(),
+      });
     }
-    if (existing !== undefined) return { added: false, cap: verified.cap };
-    this.#records.set(verified.cap, verified);
-    return { added: true, cap: verified.cap };
+    const bucket = this.#byCapability.get(verified.cap) ?? new Map();
+    if (bucket.has(verified.issuer)) {
+      return { added: false, cap: verified.cap, issuer: verified.issuer };
+    }
+    bucket.set(verified.issuer, verified);
+    this.#byCapability.set(verified.cap, bucket);
+    return { added: true, cap: verified.cap, issuer: verified.issuer };
   }
 
-  /** @param {string} capId @returns {boolean} */
-  has(capId) {
-    return this.#records.has(capId);
+  /**
+   * @param {string} capId
+   * @param {{issuers?: string[]}} [options] when supplied, only records from these
+   *   issuers count — this is the attributed form and the one to prefer.
+   * @returns {boolean}
+   */
+  has(capId, { issuers } = {}) {
+    const bucket = this.#byCapability.get(capId);
+    if (bucket === undefined) return false;
+    if (issuers === undefined) return bucket.size > 0;
+    return [...bucket.keys()].some((issuer) => issuers.includes(issuer));
+  }
+
+  /** @param {string} capId @returns {string[]} every issuer that signed a record for it */
+  issuersOf(capId) {
+    const bucket = this.#byCapability.get(capId);
+    return bucket === undefined ? [] : [...bucket.keys()].sort();
   }
 
   /** @param {object} token @returns {boolean} true when any link of the chain is revoked */
-  hasAnyInChain(token) {
+  hasAnyInChain(token, options = {}) {
     let cursor = token;
+    const issuers = [];
     for (;;) {
-      if (this.#records.has(cursor.id)) return true;
+      issuers.push(cursor.issuer);
+      if (this.has(cursor.id, { issuers })) return true;
       if (cursor.proof.kind !== 'chain') return false;
       cursor = cursor.proof.parent;
     }
+    void options;
+  }
+
+  /**
+   * Attributed check used by `verifyCapability`: the record must come from an issuer
+   * that appears in this chain, otherwise it is ignored rather than obeyed.
+   * @param {string} capId
+   * @param {string[]} chainIssuers
+   * @returns {boolean}
+   */
+  revokes(capId, chainIssuers) {
+    return this.has(capId, { issuers: chainIssuers });
   }
 
   /** @returns {string[]} revoked capability ids */
   ids() {
-    return [...this.#records.keys()].sort();
+    return [...this.#byCapability.keys()].sort();
   }
 
-  /** @returns {Set<string>} view for `verifyCapability({ revoked })` */
+  /** @returns {{cap: string, issuer: string, ts: string, reason: string}[]} */
+  records() {
+    const out = [];
+    for (const bucket of this.#byCapability.values()) {
+      for (const record of bucket.values()) out.push({ cap: record.cap, issuer: record.issuer, ts: record.ts, reason: record.reason });
+    }
+    return out.sort((a, b) => a.cap.localeCompare(b.cap) || a.issuer.localeCompare(b.issuer));
+  }
+
+  /** @returns {Set<string>} unattributed view, for callers that only need membership */
   asSet() {
-    return new Set(this.#records.keys());
+    return new Set(this.#byCapability.keys());
   }
 
-  /** @returns {number} */
+  /** @returns {number} number of revoked capabilities, not of records */
   get size() {
-    return this.#records.size;
+    return this.#byCapability.size;
   }
 }

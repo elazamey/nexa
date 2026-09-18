@@ -56,6 +56,7 @@ Every message is an envelope; it is the only object that travels on the wire.
 | `exp` | RFC 3339 UTC | yes | MUST be `<= ts + 300s` |
 | `nonce` | base64url | yes | 128-bit random, unique per message |
 | `cap` | capability id | no | id of the token carried in `body.capability`; a mismatch is an error |
+| — | — | — | `body` larger than 64 KiB is refused with `NEXA_E_TOO_LARGE` **before** any hashing |
 | `in_reply_to` | message id | no | set on every `RESULT` / `DENY` |
 | `body` | object | yes | canonicalizable, `<= 64 KiB`; CALL bodies are specified in `spec/envelope.md` |
 | `sig` | object | yes | `{alg:"ed25519", kid, val}` |
@@ -72,7 +73,8 @@ Each step can only DENY. A failure at step *n* means steps after it never ran.
 3. replay guard (`id` and `nonce`, commit only after step 1 succeeded)
 4. sender trust (trust store)
 5. **hard gates** (§10)
-6. capability verification (signature chain, subset rules, budget, presenter binding, revocation)
+6. capability verification (signature chain, subset rules, budget, presenter binding,
+   revocation attribution, and the endpoint's `capabilityIssuers` allowlist)
 7. policy evaluation (default-deny)
 8. handler dispatch (in-memory), then budget spend
 
@@ -101,7 +103,7 @@ All failures are `NEXA_E_*` codes (`packages/ast/src/errors.js`). The code, not 
 message, is the contract; `DENY.reply.body.code` carries it.
 
 `NEXA_E_PARSE`, `NEXA_E_SCHEMA`, `NEXA_E_C14N_*`, `NEXA_E_KEY`, `NEXA_E_SIG`,
-`NEXA_E_SIG_ALG`, `NEXA_E_REPLAY`, `NEXA_E_EXPIRED`, `NEXA_E_CLOCK`, `NEXA_E_TTL`,
+`NEXA_E_SIG_ALG`, `NEXA_E_REPLAY`, `NEXA_E_EXPIRED`, `NEXA_E_CLOCK`, `NEXA_E_TTL`, `NEXA_E_TOO_LARGE`,
 `NEXA_E_UNTRUSTED`, `NEXA_E_IDENTITY`, `NEXA_E_CAP_MISSING`, `NEXA_E_CAP_INVALID`,
 `NEXA_E_CAP_EXPIRED`, `NEXA_E_CAP_AMPLIFY`, `NEXA_E_CAP_USES`, `NEXA_E_CAP_AUDIENCE`,
 `NEXA_E_CAP_REVOKED`, `NEXA_E_POLICY`, `NEXA_E_GATE`, `NEXA_E_NO_HANDLER`,

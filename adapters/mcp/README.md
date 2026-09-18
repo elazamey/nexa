@@ -20,13 +20,16 @@ messages, and it refuses everything NEXA refuses.
 1. **No capability, no call.** A `tools/call` without a capability token reaches the
    endpoint as a `CALL` without `cap` and is denied with `NEXA_E_CAP_MISSING`; the
    bridge does not invent authority on the client's behalf.
-2. **Gated tools are never advertised.** `new McpBridge({...})` throws `NEXA_E_GATE`
+2. **A capability from an unlisted issuer is refused.** The bridge builds a real
+   `CALL`; the endpoint applies its `capabilityIssuers` allowlist, so a pinned peer
+   cannot mint itself tool access through MCP either.
+3. **Gated tools are never advertised.** `new McpBridge({...})` throws `NEXA_E_GATE`
    if asked to expose a resource in a gated namespace, and `tools/list` only ever
    reports what it was allowed to expose.
-3. **Denials are provable.** Every denial returns the signed receipt for the
+4. **Denials are provable.** Every denial returns the signed receipt for the
    `GATE_BLOCKED` / `POLICY_DECISION` / `CAPABILITY_REJECTED` evidence record,
    verifiable with `verifyReceipt` without access to the endpoint's log.
-4. **No new authority surfaces.** The bridge adds no methods that could read files,
+5. **No new authority surfaces.** The bridge adds no methods that could read files,
    execute commands or deploy; `MCP_METHODS` is a closed list.
 
 ## Example
@@ -43,6 +46,7 @@ const agent = createIdentity({ label: 'agent', kind: 'agent' });
 
 const endpoint = new Endpoint({
   identity: agent,
+  capabilityIssuers: [operator.kid],   // who may grant authority; empty means nobody
   policy: new Policy({ rules: [
     { id: 'allow-echo', effect: 'ALLOW', resource: 'tool:echo', actions: ['call'] },
   ]}),

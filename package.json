@@ -14,12 +14,13 @@
   ],
   "scripts": {
     "test": "node --test",
-    "test:syntax": "node --check packages/ast/index.js && node --check packages/protocol/index.js",
+    "audit": "node --test tests/security.test.js",
+    "posture": "node tools/check-posture.mjs",
     "demo": "node tools/demo.mjs",
     "report": "node tools/gate-report.mjs",
     "report:json": "node tools/gate-report.mjs --json",
     "vectors": "node tools/vectors.mjs",
-    "verify": "npm test && npm run demo && npm run report"
+    "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run report"
   },
   "keywords": [
     "protocol",

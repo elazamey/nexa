@@ -36,6 +36,11 @@ Properties worth stating precisely:
 | Authority escalation through delegation | subset-only attenuation, re-checked from the wire; delegation payload binds the parent hash |
 | Redelegation multiplying a budget | every use debits the whole chain atomically |
 | Untrusted peer | trust store is pin-or-reject; `HELLO` never pins implicitly |
+| Pinned peer minting itself authority | `capabilityIssuers` allowlist on the root issuer; empty by default |
+| Third party revoking someone else's capability | revocation is attributed to an issuer inside the chain |
+| Cheap denial of service through huge payloads | 64 KiB body cap enforced before hashing or verification |
+| Signature ambiguity from normalized keys | NFC key collisions and `__proto__` are hard errors |
+| Behaviour smuggled in as configuration | policy rules must be plain data; evidence fields are whitelisted |
 | Revoked authority | signed revocation records; revoking a root revokes the chain |
 | Silent policy gaps | default-deny; unknown rule fields are errors |
 | Log rewriting | hash-chained, signed evidence records; edit/delete/reorder/forge all detected |
@@ -54,6 +59,15 @@ Properties worth stating precisely:
   the caller's responsibility.
 * **A hostile host process.** NEXA constrains what the *protocol* allows, not what a
   process with the same privileges could do by ignoring it.
+
+## Test surfaces
+
+| Suite | Purpose |
+| --- | --- |
+| `npm test` | 113 tests: canonical form, crypto, identity, capability lattice, gates, policy, envelopes, replay, ledger, endpoint pipeline, evidence, parser, MCP |
+| `npm run audit` | 16 adversarial probes that must keep failing to break the protocol |
+| `npm run posture` | runtime assertion that all six gates are CLOSED and that no protocol/adapter source imports execution or filesystem APIs |
+| `npm run vectors` | pinned canonical bytes, key derivation, signatures and capability grants; CI fails on drift |
 
 ## Reporting
 

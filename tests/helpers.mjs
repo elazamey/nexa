@@ -31,6 +31,9 @@ export function world({ when = T0 } = {}) {
   const endpoint = new Endpoint({
     identity: agent,
     clock,
+    // The endpoint only obeys capabilities whose root was issued by the operator.
+    // Without this list it would obey any key that signs a token.
+    capabilityIssuers: [operator.kid],
     policy: new Policy({
       rules: [
         { id: 'allow-echo', effect: 'ALLOW', resource: 'tool:echo', actions: ['call'], description: 'echo is a pure function' },

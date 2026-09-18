@@ -142,7 +142,16 @@ export class EvidenceLog {
    * @param {object} [input.detail] free-form, canonicalizable context
    * @returns {object} the sealed record
    */
-  append({ kind, decision, subject, resource, action, capability, detail }) {
+  append(input) {
+    // Field whitelist, checked rather than assumed: silently dropping a caller's
+    // field (say `exec`) would produce an audit entry that under-reports what was
+    // recorded. Unknown keys are a bug in the caller, so they fail loudly.
+    for (const key of Object.keys(input)) {
+      if (!['kind', 'decision', 'subject', 'resource', 'action', 'capability', 'detail'].includes(key)) {
+        throw new NexaError('NEXA_E_SCHEMA', `unknown evidence field: ${key}`);
+      }
+    }
+    const { kind, decision, subject, resource, action, capability, detail } = input;
     const head = this.#records.at(-1);
     const record = {
       nexa: '0.1',

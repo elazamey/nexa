@@ -29,18 +29,14 @@ jobs:
       - name: End-to-end demo
         run: npm run demo
 
-      - name: Posture report (fails if a gate is not CLOSED)
-        run: |
-          npm run report:json > report.json
-          node -e '
-            const report = require("./report.json");
-            const open = report.posture.gates.filter((gate) => gate.state !== "CLOSED");
-            if (open.length > 0) {
-              console.error("gates must be CLOSED:", open);
-              process.exit(1);
-            }
-            console.log("all gates CLOSED:", report.posture.gates.map((gate) => gate.name).join(", "));
-          '
+      # A dedicated Node program, not a shell one-liner: an earlier version piped
+      # `npm run report:json` into a file and npm's banner made it invalid JSON, so
+      # the step failed for its own reasons and hid the real signal.
+      - name: Posture check (fails if a gate is not CLOSED)
+        run: npm run posture
+
+      - name: Adversarial security suite
+        run: npm run audit
 
       - name: Spec vectors are in sync with the code
         run: |

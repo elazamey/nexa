@@ -14,13 +14,18 @@ NEXA is small on purpose. The rules below exist so it stays checkable.
    `packages/ast/src/errors.js` and a test that proves the refusal.
 5. **Every decision is evidence.** If a new step can refuse a request, it must append an
    evidence record and, for authenticated input, produce a receipt.
+6. **Authority has an origin.** New capability paths must ask *who may grant this*, not
+   only *is the token self-consistent*. Fail closed when the answer is unset.
+7. **Attacks become tests.** Every security-relevant fix lands with an entry in
+   `tests/security.test.js` that fails without it.
 
 ## Workflow
 
 ```bash
-npm test           # 97 tests
+npm test           # 113 tests
+npm run audit      # 16 adversarial probes
+npm run posture    # gate posture + no-ambient-authority scan; must pass
 npm run demo       # end-to-end flow; prints ALLOW, DENY, tamper check
-npm run report     # gate posture; must print ALL SIX CLOSED
 npm run vectors    # regenerate spec/vectors/*.json after a protocol change
 ```
 
@@ -56,5 +61,5 @@ fix(capability): require parent constraints to be inherited
 
 Dropping a constraint silently relaxed a delegated grant. ...
 
-Verified: npm test (97 pass), npm run demo, npm run report (all gates CLOSED)
+Verified: npm test (113 pass), npm run demo, npm run report (all gates CLOSED)
 ```

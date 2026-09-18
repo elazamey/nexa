@@ -60,53 +60,67 @@ function vectorInventory() {
   const directory = join(root, 'spec', 'vectors');
   return readdirSync(directory).sort().map((name) => {
     const parsed = JSON.parse(readFileSync(join(directory, name), 'utf8'));
-    return {
-      file: `spec/vectors/${name}`,
-      sections: Object.keys(parsed).filter((key) => !['nexa', 'generated_by', 'note'].includes(key)),
-    };
-  });
-}
-
-function testInventory() {
-  const directory = join(root, 'tests');
-  return readdirSync(directory)
-    .filter((name) => name.endsWith('.test.js'))
-    .sort()
-    .map((name) => {
-      const source = readFileSync(join(directory, name), 'utf8');
-      const tests = source.match(/^test\(/gm) ?? [];
-      return { file: relative(root, join(directory, name)), tests: tests.length };
+      return {
+        file: `spec/vectors/${name}`,
+        sections: Object.keys(parsed).filter((key) => !['nexa', 'generated_by', 'note'].includes(key)),
+      };
     });
+  }
+
+  function testInventory() {
+    const directory = join(root, 'tests');
+    return readdirSync(directory)
+      .filter((name) => name.endsWith('.test.js'))
+      .sort()
+      .map((name) => {
+        const source = readFileSync(join(directory, name), 'utf8');
+        const tests = source.match(/^test\(/gm) ?? [];
+        return { file: relative(root, join(directory, name)), tests: tests.length };
+      });
+  }
+
+  /**
+   * @returns {object} the full posture report (pure function of the tree it reads)
+   */
+  export function buildReport() {
+    const gates = gatePosture();
+    return {
+    nexa: '0.1',
+    posture: {
+      gates,
+      all_closed: gates.every((gate) => gate.state === 'CLOSED'),
+      gated_resource_namespaces: Object.keys(GATED_RESOURCES).sort(),
+      gated_actions: Object.keys(GATED_ACTIONS).sort(),
+      effective_authority: 'capability ∩ policy ∩ (everything not gated)',
+    },
+    protocol: {
+      envelope_types: MESSAGE_TYPES,
+      default_ttl_seconds: DEFAULT_TTL_SECONDS,
+      max_ttl_seconds: MAX_TTL_SECONDS,
+      max_body_bytes: MAX_BODY_BYTES,
+      error_codes: Object.keys(ERROR_CODES).length,
+      rpc_error_codes: RPC_ERRORS,
+      evidence_kinds: EVIDENCE_KINDS,
+      decisions: DECISIONS,
+    },
+      inventory: {
+        modules: moduleInventory(),
+        vectors: vectorInventory(),
+        tests: testInventory(),
+      },
+  };
 }
 
-const gates = gatePosture();
-const report = {
-  nexa: '0.1',
-  posture: {
-    gates,
-    all_closed: gates.every((gate) => gate.state === 'CLOSED'),
-    gated_resource_namespaces: Object.keys(GATED_RESOURCES).sort(),
-    gated_actions: Object.keys(GATED_ACTIONS).sort(),
-    effective_authority: 'capability ∩ policy ∩ (everything not gated)',
-  },
-  protocol: {
-    envelope_types: MESSAGE_TYPES,
-    default_ttl_seconds: DEFAULT_TTL_SECONDS,
-    max_ttl_seconds: MAX_TTL_SECONDS,
-    max_body_bytes: MAX_BODY_BYTES,
-    error_codes: Object.keys(ERROR_CODES).length,
-    rpc_error_codes: RPC_ERRORS,
-    evidence_kinds: EVIDENCE_KINDS,
-    decisions: DECISIONS,
-  },
-  inventory: {
-    modules: moduleInventory(),
-    vectors: vectorInventory(),
-    tests: testInventory(),
-  },
-};
+const report = buildReport();
+const gates = report.posture.gates;
 
-if (process.argv.includes('--json')) {
+// Importing this module must not print anything: `check-posture.mjs` imports it.
+const invokedDirectly = process.argv[1] !== undefined
+  && import.meta.url === `file://${process.argv[1]}`;
+
+if (!invokedDirectly) {
+  // no-op: the caller will use `buildReport()`
+} else if (process.argv.includes('--json')) {
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 } else {
   const write = (text = '') => process.stdout.write(`${text}\n`);

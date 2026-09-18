@@ -43,6 +43,7 @@ export function run({ log = console.log } = {}) {
   const endpoint = new Endpoint({
     identity: agent,
     clock,
+    capabilityIssuers: [operator.kid], // only the operator may grant this endpoint authority
     policy: new Policy({
       rules: [
         { id: 'allow-echo', effect: 'ALLOW', resource: 'tool:echo', actions: ['call'], description: 'echo is a pure function' },

@@ -46,7 +46,14 @@ checks linkage and `seq` continuity, and verifies every signature. Therefore:
 | substitute another actor's log | `evidence record N was emitted by another actor` |
 
 The log is append-only by construction: `EvidenceLog` exposes `append`, `at`, `entries`,
-`head`, `length`, `summary` — and no mutators. v0.1 keeps it in memory only
+`head`, `length`, `summary` — and no mutators. `append` accepts a **fixed field set** and
+refuses unknown keys (`NEXA_E_SCHEMA`), so a caller's typo cannot produce an audit entry
+that quietly under-reports what was recorded.
+
+A chain produced by one `EvidenceLog` always has exactly one actor: a record commits to
+`seq` and `prev`, so nobody without the log can extend it, and re-sequencing a foreign
+record is detected as tampering. `verifyEvidenceChain(records, {expectActor})` exists for
+logs assembled from other sources, and turns any additional signer into a refusal. v0.1 keeps it in memory only
 (`FILESYSTEM_WRITE` is closed); durability is the caller's responsibility via
 `entries()`.
 

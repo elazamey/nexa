@@ -39,6 +39,9 @@ There is no `defaultEffect` other than `DENY`; passing anything else throws.
 * `subjects` restricts a rule to specific key ids (never labels).
 * Unknown fields are rejected (`NEXA_E_POLICY`), so a typo like `alow: true` cannot
   silently turn into a permit.
+* Rules must be **plain data** — a class instance is refused, because getters and a
+  crafted prototype chain let a rule carry behaviour the engine would evaluate as
+  configuration.
 
 ## Determinism
 
@@ -56,6 +59,8 @@ evidence when an auditor asks "under which policy was this ALLOWed?".
 | capability valid, no rule matches | `DENY` (`NEXA_E_POLICY`) |
 | capability valid, rule explicitly DENY | `DENY` — a DENY rule always outranks an ALLOW |
 | no capability, rule matches ALLOW | `DENY` (`require_capability` unmet) |
+| capability whose root issuer is not in the endpoint's `capabilityIssuers` | `DENY` (`NEXA_E_UNTRUSTED`, before policy) |
+| capability from an untrusted issuer, self-issued by a pinned peer | `DENY` (`NEXA_E_UNTRUSTED`) |
 | gated resource, any capability | `DENY` (`NEXA_E_GATE`) |
 
 **Policy is a filter, never a source of authority.** The maximum authority in a request

@@ -216,6 +216,9 @@ export function attenuate(parentToken, {
  * @param {Date} [options.now]
  * @param {Set<string>|string[]} [options.revoked]
  * @param {(id: string) => number} [options.uses] number of times a capability id was already used
+ * @param {string[]} [options.trustedIssuers] key ids allowed to be the ROOT issuer. Without
+ *   this, verification proves only internal consistency: any key can sign a token that
+ *   grants itself authority. A caller that forgets it is trusting every key in the world.
  * @param {string} [options.action] requested action
  * @param {string} [options.resource] requested resource
  * @returns {{ok: true, grant: object}}
@@ -223,8 +226,16 @@ export function attenuate(parentToken, {
 export function verifyCapability(token, options = {}) {
   validateCapabilityShape(token);
   const now = options.now ?? new Date();
-  const revoked = toSet(options.revoked);
+  const revoked = options.revoked;
   const uses = typeof options.uses === 'function' ? options.uses : () => 0;
+  /** @param {string} id @param {string[]} chainIssuers keys allowed to revoke this id */
+  const isRevoked = (id, chainIssuers) => {
+    if (revoked === undefined || revoked === null) return false;
+    if (typeof revoked.revokes === 'function') return revoked.revokes(id, chainIssuers);
+    if (typeof revoked.has === 'function') return revoked.has(id);
+    if (Array.isArray(revoked)) return revoked.includes(id);
+    throw new NexaError('NEXA_E_CAP_INVALID', 'revoked must be a Set of ids or a RevocationSet');
+  };
 
   const links = [];
   let cursor = token;
@@ -292,8 +303,9 @@ export function verifyCapability(token, options = {}) {
       }
     }
 
-    // --- revocation ---
-    if (revoked.has(link.id)) {
+    // --- revocation (attributed: only a party in this chain may revoke it) ---
+    const chainIssuers = links.slice(0, index + 1).map((item) => item.issuer);
+    if (isRevoked(link.id, chainIssuers)) {
       throw new NexaError('NEXA_E_CAP_REVOKED', `capability ${link.id} is revoked`);
     }
 
@@ -326,6 +338,25 @@ export function verifyCapability(token, options = {}) {
   const depth = capabilityDepth(token);
   if (depth > rootDepthBudget) {
     throw new NexaError('NEXA_E_CAP_AMPLIFY', 'capability chain is deeper than its root allows');
+  }
+
+  // --- authority origin ---
+  // A root capability is only as meaningful as the issuer behind it. `trustedIssuers`
+  // is the caller's statement of "these keys may grant me authority"; omitting it is
+  // an explicit choice to skip that check, never a default.
+  if (options.trustedIssuers !== undefined) {
+    if (!Array.isArray(options.trustedIssuers)) {
+      throw new NexaError('NEXA_E_CAP_INVALID', 'trustedIssuers must be an array of key ids');
+    }
+    if (!options.trustedIssuers.includes(root.issuer)) {
+      throw new NexaError('NEXA_E_UNTRUSTED', 'capability root issuer is not a trusted authority', {
+        issuer: root.issuer,
+        trusted: [...options.trustedIssuers].sort(),
+        ...(options.trustedIssuers.length === 0
+          ? { hint: 'no authority is configured; pass trustedIssuers (Endpoint: capabilityIssuers) naming the keys allowed to grant authority' }
+          : {}),
+      });
+    }
   }
 
   // --- presenter binding ---
@@ -369,13 +400,6 @@ export function verifyCapability(token, options = {}) {
       chain: links.map((link) => link.id),
     },
   };
-}
-
-/** @param {Set<string>|string[]|undefined} value */
-function toSet(value) {
-  if (value === undefined) return new Set();
-  if (value instanceof Set) return value;
-  return new Set(value);
 }
 
 

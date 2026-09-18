@@ -100,14 +100,36 @@ function writeValue(value, out, depth) {
     return;
   }
   if (isPlainObject(value)) {
-    const keys = Object.keys(value).sort();
+    // Two raw keys can normalize to the same canonical key ("é" vs "e" + U+0301).
+    // Emitting both would make the signed bytes ambiguous, so the collision is a
+    // hard error rather than a silent merge. `__proto__` is refused outright: an
+    // own property with that name is a prototype-pollution vector for any consumer
+    // that spreads or assigns the decoded object.
+    const entries = [];
+    const seen = new Map();
+    for (const rawKey of Object.keys(value)) {
+      if (rawKey === '__proto__') {
+        throw new NexaError('NEXA_E_C14N_TYPE', 'object key "__proto__" is not canonicalizable');
+      }
+      const key = rawKey.normalize('NFC');
+      const clash = seen.get(key);
+      if (clash !== undefined) {
+        throw new NexaError(
+          'NEXA_E_C14N_FORM',
+          `keys ${JSON.stringify(clash)} and ${JSON.stringify(rawKey)} collide after NFC normalization`,
+        );
+      }
+      seen.set(key, rawKey);
+      entries.push([key, rawKey]);
+    }
+    entries.sort((left, right) => (left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0));
     out.push('{');
     let first = true;
-    for (const key of keys) {
+    for (const [key, rawKey] of entries) {
       if (!first) out.push(',');
       first = false;
-      out.push(canonicalString(key.normalize('NFC')), ':');
-      writeValue(value[key], out, depth + 1);
+      out.push(canonicalString(key), ':');
+      writeValue(value[rawKey], out, depth + 1);
     }
     out.push('}');
     return;

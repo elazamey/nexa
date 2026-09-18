@@ -10,6 +10,7 @@ import {
   NexaError,
   MESSAGE_TYPES,
   buildUnsignedMessage,
+  canonicalBytes,
   compareInstant,
   formatInstant,
   parseInstant,
@@ -92,6 +93,24 @@ export function buildEnvelope({
  * @returns {{ok: true, envelope: object, sender: string, recipient: string, issuedAt: string, expiresAt: string}}
  */
 export function verifyEnvelope(envelope, options = {}) {
+  // Size is checked before anything else, deliberately: hashing and signature
+  // verification are the expensive part, and an attacker who can cheaply make us
+  // do them wins by default. A body that is not canonicalizable is ignored here and
+  // rejected later by schema validation, so this check never masks a schema error.
+  if (envelope !== null && typeof envelope === 'object' && envelope.body !== undefined) {
+    let bodyBytes = null;
+    try {
+      bodyBytes = canonicalBytes(envelope.body).length;
+    } catch {
+      bodyBytes = null;
+    }
+    if (bodyBytes !== null && bodyBytes > MAX_BODY_BYTES) {
+      throw new NexaError('NEXA_E_TOO_LARGE', `envelope body of ${bodyBytes} bytes exceeds the ${MAX_BODY_BYTES}-byte limit`, {
+        bytes: bodyBytes,
+        limit: MAX_BODY_BYTES,
+      });
+    }
+  }
   validateEnvelope(envelope);
   const now = options.now ?? new Date();
   const skew = options.skewSeconds ?? DEFAULT_SKEW_SECONDS;

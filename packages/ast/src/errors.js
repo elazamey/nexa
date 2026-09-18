@@ -22,6 +22,7 @@ export const ERROR_CODES = Object.freeze({
   NEXA_E_EXPIRED: 'envelope expired',
   NEXA_E_CLOCK: 'timestamp outside the accepted clock skew',
   NEXA_E_TTL: 'envelope lifetime exceeds the maximum TTL',
+  NEXA_E_TOO_LARGE: 'message exceeds a protocol size limit',
   // identity / trust
   NEXA_E_UNTRUSTED: 'issuer is not in the trust store',
   NEXA_E_IDENTITY: 'identity document is invalid',

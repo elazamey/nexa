@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/protocol",
+  "version": "0.1.0",
+  "description": "Signed envelopes, replay protection, use ledger, endpoint state machine",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

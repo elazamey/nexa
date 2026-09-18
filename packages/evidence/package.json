@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/evidence",
+  "version": "0.1.0",
+  "description": "Append-only hash-chained evidence log, inclusion proofs, signed receipts",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

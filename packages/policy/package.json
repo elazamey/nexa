@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/policy",
+  "version": "0.1.0",
+  "description": "Default-deny policy engine and the six closed v0.1 hard gates",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

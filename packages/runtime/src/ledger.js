@@ -48,6 +48,15 @@ export const OMEGA_EVIDENCE_KINDS = Object.freeze([
   'CELL_MESSAGE', // a message crossed a membrane; the payload itself stays out, its digest goes in
   'CELL_LIFECYCLE', // a cell changed state, with the cause
   'HOMEOSTASIS', // the organ read the system and acted on the reading
+  // --- the Google organ ---------------------------------------------------
+  // Registered in the same commit as the code that writes them. An identity record never
+  // carries the token, the raw subject or the raw email: it carries the subject hash, the
+  // audience hash, the spent challenge id and the verdict.
+  'IDENTITY_VERIFIED', // an ID token was verified, or refused, with the step that decided
+  'OWNER_BINDING', // a binding was created, revoked or replaced — before it became active
+  'CONSENT', // a scope set was granted, changed, refused, or ended on the provider's schedule
+  'QUOTA', // a call was throttled or a provider quota was exhausted
+  'APPROVAL', // a class-D approval was granted, and consumed, bound to one exact operation
 ]);
 
 export const OMEGA_DECISIONS = Object.freeze(['ALLOW', 'DENY', 'INFO']);

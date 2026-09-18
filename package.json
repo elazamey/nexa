@@ -22,9 +22,10 @@
     "demo:omega": "node tools/omega-demo.mjs",
     "demo:cellular": "node tools/cellular-demo.mjs",
     "attacks": "node tools/omega-attacks.mjs",
+    "attacks:google": "node tools/google-attacks.mjs",
     "report": "node tools/gate-report.mjs",
     "report:json": "node tools/gate-report.mjs --json",
-    "vectors": "node tools/vectors.mjs && node tools/omega-vectors.mjs && node tools/cellular-vectors.mjs",
+    "vectors": "node tools/vectors.mjs && node tools/omega-vectors.mjs && node tools/cellular-vectors.mjs && node tools/google-vectors.mjs",
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report"
   },
   "keywords": [

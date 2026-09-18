@@ -44,6 +44,7 @@ import {
 } from '../packages/evolution/index.js';
 import { buildCodingOrganism, createCell, createGuarantor, seedFor } from '../packages/cell/index.js';
 import { planFusion, runFusion, specialize } from '../packages/cellular-evolution/index.js';
+import { googleAttackSuite } from './google-attacks.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T0 = new Date('2026-09-18T12:00:00Z');
@@ -654,6 +655,12 @@ mission burn {
         return { blocked: true, code: error.code, detail: { line: error.toJSON().line } };
       },
     }),
+
+    // --- the Google organ: identity that arrives from outside -----------------------------
+    // Its own category, defined in `tools/google-attacks.mjs`, because every other category here
+    // assumes the attacker is inside the system and these begin with a token the provider itself
+    // would have signed. They are spread in rather than re-stated: one definition, one count.
+    ...googleAttackSuite(),
   ];
 }
 

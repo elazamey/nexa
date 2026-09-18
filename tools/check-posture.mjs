@@ -119,9 +119,9 @@ if (!KERNEL_MODULES.includes('kernel') || !KERNEL_MODULES.includes('verifier')
   failures.push('the kernel immutability list no longer names kernel, verifier, policy-engine and capability-authority');
 }
 if (GATE_STAGES.length !== 8) failures.push(`the Evolution Gate has ${GATE_STAGES.length} stages; the spec names 8`);
-if (ATTACK_CATEGORIES.length !== 11) failures.push(`the adversarial suite has ${ATTACK_CATEGORIES.length} categories; the spec names 11`);
+if (ATTACK_CATEGORIES.length !== 12) failures.push(`the adversarial suite has ${ATTACK_CATEGORIES.length} categories; the spec names 12`);
 if (HEAL_PHASES.length !== 6) failures.push(`the healer has ${HEAL_PHASES.length} phases; the spec names 6`);
-if (OMEGA_EVIDENCE_KINDS.length < 20) failures.push('the Ω record kinds look incomplete');
+if (OMEGA_EVIDENCE_KINDS.length < 32) failures.push('the Ω record kinds look incomplete');
 
 // 6. The compiler is pure: no clock, no randomness. A hash that depends on the time is
 //    not a commitment.
@@ -176,12 +176,69 @@ for (const doc of [
   'spec/omega/authority.md', 'spec/omega/evidence.md', 'spec/omega/evolution.md', 'spec/omega/mcp.md',
   'spec/omega/learning.md', 'spec/omega/threat-model.md',
   'spec/omega/cellular.md', 'spec/omega/cellular.ar.md', 'spec/omega/README.ar.md',
-  'spec/vectors/omega.json', 'spec/vectors/cellular.json',
+  'spec/vectors/omega.json', 'spec/vectors/cellular.json', 'spec/vectors/google.json',
+  'spec/google/identity-cell.md', 'spec/google/README.ar.md',
 ]) {
   try {
     statSync(join(root, doc));
   } catch {
     failures.push(`${doc} is missing — the spec and the implementation travel together`);
+  }
+}
+
+// 10. The Google organ. The identity cell is the second module the design says may not grant
+//     itself authority, so the same two questions are asked of it: can it mint, and can it hold
+//     the material it is trusted with? Both answers must be no, and the scope table must still
+//     say what the design said it says.
+const googleCells = walkSources(join(root, 'packages/cells/google'));
+if (googleCells.length === 0) failures.push('the Google organ has no sources');
+for (const file of googleCells) {
+  const source = readFileSync(file, 'utf8');
+  const where = relative(root, file);
+  if (/\bnew Authority\s*\(/.test(source)) failures.push(`${where} holds an authority — the gateway verifies, the host mints`);
+  if (/\bmintCapability\s*\(/.test(source)) failures.push(`${where} mints a capability directly — that is the authority's job`);
+  if (/\bprocess\.env\b/.test(source)) failures.push(`${where} reads the environment — no ambient secrets in the Google organ`);
+  if (/from\s+['"]node:(http|https|net|tls)['"]/.test(source)) failures.push(`${where} opens a network itself — the fetch port is injected`);
+  if (/from\s+['"]node:(fs|child_process)['"]/.test(source)) failures.push(`${where} reaches for the filesystem or a child process`);
+}
+{
+  const google = await import('../packages/cells/google/gateway/index.js');
+  const identity = await import('../packages/cells/google/identity/index.js');
+  const table = google.GOOGLE_SCOPE_TABLE;
+  if (table.length !== 16) failures.push(`the Google scope table has ${table.length} rows; the design names 16`);
+  for (const row of table) {
+    for (const field of google.SCOPE_TABLE_FIELDS) {
+      if (!Object.hasOwn(row, field)) failures.push(`scope row ${row.cell}.${row.action} (${row.full_scope_uri}) has no ${field}`);
+    }
+  }
+  const g0 = table.filter((row) => row.phase === 'G0');
+  if (g0.length !== 3) failures.push(`phase G0 admits ${g0.length} scopes; the design admits the three identity rows, and G0 holds no refresh token`);
+  for (const row of g0) {
+    if (row.cell !== 'google.identity' || row.google_classification !== 'non-sensitive') {
+      failures.push(`phase G0 admits ${row.full_scope_uri}, which is not one of the three identity rows`);
+    }
+  }
+  if (google.GOOGLE_OPERATIONS.length !== 8) failures.push(`the Google operation table has ${google.GOOGLE_OPERATIONS.length} rows; the mapping names 8`);
+  if (google.googleOperation('gmail.send').class !== 'D') failures.push('gmail.send is no longer class D');
+  if (google.GOOGLE_SERVICE_CELLS['google.identity'].max_class !== 'A') failures.push('the identity cell may reach beyond class A');
+  if (google.GOOGLE_SERVICE_CELLS['google.gmail'].max_class !== 'D') failures.push('the gmail cell can no longer reach its own privileged operation');
+  if (identity.BREAK_GLASS_MAX_MS !== 24 * 60 * 60 * 1000) failures.push('break-glass is no longer bounded at 24 hours');
+  if ([...google.RECOVERY_OPERATIONS].join(',') !== 'identity.verify') failures.push('a recovery state can reach more than identity verification');
+  for (const [name, source] of Object.entries(google.GOOGLE_KEY_SOURCES)) {
+    if (!source.uri.startsWith('https://www.googleapis.com/')) failures.push(`the ${name} key source is not pinned to Google`);
+  }
+  if (google.GOOGLE_KEY_SOURCES.firebase.enabled !== false) failures.push('the Firebase key source is enabled; G0 defers it to G2');
+  if (identity.SUBJECT_DOMAIN !== 'NEXA/google1 subject\u0000') failures.push('the stored-identity domain separator changed');
+  // No credential-shaped literal in the organ's own code. `src/scan.js` is where the shapes are
+  // *defined*, so it is the one file the check skips — everywhere else, a `ya29.` in a source
+  // file is a token somebody pasted, and pasted tokens are how integrations leak.
+  for (const file of googleCells) {
+    const where = relative(root, file);
+    if (where.endsWith('src/scan.js')) continue;
+    const source = readFileSync(file, 'utf8');
+    if (/ya29\.[A-Za-z0-9_-]{10,}|AIza[0-9A-Za-z_-]{10,}|1\/\/[0-9A-Za-z_-]{20,}|BEGIN (RSA )?PRIVATE KEY/.test(source)) {
+      failures.push(`${where} contains something shaped like a credential`);
+    }
   }
 }
 

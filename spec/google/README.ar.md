@@ -408,19 +408,35 @@ The approval is consumed as part of the invocation and MUST NOT be reusable.
 كل من G2 وG3 يبدأ بمرور تصميم مستقل بعقوده الستة (هوية، رمز، نطاق، إلغاء، أدلة، عدائي) كما بدأ
 G0. ولا يُطلب نطاق قبل اعتماد عقود مرحلته؛ و`v1: no` في الجدول هو الصيغة الآلية لهذه القاعدة.
 
-## ما سيُضاف للمستودع بعد الاعتماد فقط
+## ما أُضيف للمستودع في G0-H (نُفِّذ)
 
 ```text
-spec/google/identity-cell.md            هذه المواصفة (تصميم فقط، ملزمة)
-spec/google/README.ar.md                التمثيل العربي للعقد نفسه
-spec/google/review-g0.ar.md             سجل المراجعة والأحكام
-spec/vectors/google.json                المتجهات المثبّتة
-packages/cells/google/identity/         خلية الهوية (عضو خارجي)
-packages/cells/google/gateway/          JWKS + OAuth + الخزينة + المُحدِّد (مزوّد موثوق)
-adapters/google/jwks.js                 منفذ الشبكة المُحقَن (اختياري)
-tools/google-vectors.mjs                مولد المتجهات
-tools/google-smoke.mjs                  حيّ، اختياري، خارج CI
-tests/google-*.test.js                  مجموعات H.1
+packages/cells/google/identity/         خلية الهوية: الترتيب الثماني، التحدّي أحادي الاستخدام،
+                                        الروابط، حالة الاسترداد، مسجّل الأدلة (الأنواع الخمسة)
+packages/cells/google/gateway/          JWKS + جدول النطاقات + سلّم الفئات + الموافقات
+                                        + الخزينة + الحصص + فاحص التسريب + بوابة التفويض
+tools/google-fixtures.mjs               ثلاث مفاتيح RSA مؤقتة وموقّع رموز (بلا شبكة)
+tools/google-attacks.mjs                الهجمات الثماني (الفئة الثانية عشرة)
+tools/google-vectors.mjs                → spec/vectors/google.json
+tests/google-identity.test.js           27 اختباراً — الترتيب والفشل الآمن
+tests/google-binding.test.js            22 اختباراً — الربط والإلغاء وحالة الاسترداد
+tests/google-capability.test.js         23 اختباراً — الفئة والقدرة والموافقة والنطاق
+tests/google-gateway.test.js            18 اختباراً — الخزينة والحصة والتسريب
+tests/google-attacks.test.js            10 اختبارات — كل هجوم في اختبار مستقل
+spec/vectors/google.json                 المتجهات المثبّتة (9 مشاهد رفض + 16 صف نطاق + 8 هجمات)
 ```
 
-لا شيء من هذه القائمة موجود الآن. الوثائق الثلاث أعلاه هي كل منتج G0 حتى هذه اللحظة.
+### الحصيلة المقيسة
+
+```text
+npm test         307/307        (منها 100 اختبار لهذه المرحلة)
+npm run attacks  31/31 مصدودة  (اثنتا عشرة فئة، منها 8 هجمات انتحال هوية)
+npm run verify   exit 0         + المتجهات متزامنة
+posture          6 بوابات مغلقة · 12 فئة · 84 رمز خطأ · 32 نوع دليل
+```
+
+### ما لم يُغلق بعد
+
+Drive وGmail وSheets وCalendar وGemini OAuth ومسار Firebase: **خارج G0** كما هو مقرَّر.
+ونطاقات مراحلها (`v1_required: false`) لا تُطلب حتى تُعتمد عقود مرحلتها. و`npm run google:smoke`
+(فحص حيّ اختياري) لم يُكتب بعد، وهو لا يدخل CI لأن CI لا يلمس الشبكة.

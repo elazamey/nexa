@@ -21,6 +21,12 @@ export const OMEGA_ADVERSARIAL_DOMAIN = 'NEXA/omega1 adversarial\0';
  * `kernel-self-modification` was added with the cellular layer: making a cell out of a
  * kernel module was a new way to try to evolve the un-evolvable, and a category that is
  * not attempted is a class of attack nobody is looking for.
+ *
+ * `identity-forgery` was added with the Google organ, and it is the first category that
+ * arrives from outside NEXA: everything else here assumes the attacker is inside the
+ * system, while these attacks begin with a token the provider itself would have signed.
+ * An identity that is *proved* by someone else is a new way in, so it gets its own class
+ * of attempts rather than being filed under `invalid-signature`.
  */
 export const ATTACK_CATEGORIES = Object.freeze([
   'capability-escalation',
@@ -34,6 +40,7 @@ export const ATTACK_CATEGORIES = Object.freeze([
   'tool-confusion',
   'untrusted-to-evidence',
   'kernel-self-modification',
+  'identity-forgery',
 ]);
 
 /** How many attacks a suite must contain before it is credible. */

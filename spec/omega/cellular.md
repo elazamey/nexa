@@ -325,6 +325,6 @@ Stated so the layer is not read as more than it is:
 | a cell refusal is observable to the learning layer | Ω/C22 |
 | the organism reports the truth | Ω/C19, Ω/C20 |
 
-Measured posture (`npm run verify`): **23 adversarial attacks across 11 categories, all
+Measured posture (`npm run verify`): **31 adversarial attacks across 12 categories, all
 blocked · 207 tests · 72 registered Ω error codes · 7 membrane steps · 6 lifecycle states ·
 0 runtime dependencies.**

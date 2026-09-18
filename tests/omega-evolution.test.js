@@ -185,8 +185,9 @@ test('Ω/E8: declared expectations are checked against the measurements', () => 
 });
 
 test('Ω/E9: the adversarial category list is complete, so a stage cannot skip an attack type', () => {
-  // 11 since the cellular layer: making a cell out of a kernel module is its own attack class.
-  assert.equal(ATTACK_CATEGORIES.length, 11);
+  // 12 since the Google organ: identity that arrives from outside the system is its own class of
+  // forgery — the other eleven all begin with an attacker already inside.
+  assert.equal(ATTACK_CATEGORIES.length, 12);
   assert.equal([...new Set(attacks.map((attack) => attack.category))].sort().join(','), [...ATTACK_CATEGORIES].sort().join(','));
 });
 

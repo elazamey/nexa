@@ -109,7 +109,8 @@ node tools/nexa.mjs run     examples/omega/gated-write.nexa --mission write-repo
 node tools/nexa.mjs check   examples/omega/refused-secret-egress.nexa                # 3 compile errors
 
 npm run demo:omega            # nine sections: compile → run → refuse → evolve → learn → heal
-npm run attacks               # 23 attacks, 11 categories, against the real system
+npm run attacks               # 31 attacks, 12 categories, against the real system
+npm run attacks:google        # the 8 identity forgeries alone, offline
 node tools/omega-vectors.mjs  # regenerate the pinned Ω vectors
 ```
 
@@ -399,14 +400,14 @@ the pinned bytes drift apart.
 ## Verify it yourself
 
 ```bash
-npm test                      # 207 tests (68 of them Ω, 26 cellular)
+npm test                      # 307 tests (68 of them Ω, 26 cellular, 100 Google)
 npm run audit                 # 16 adversarial probes (attacks that must keep failing)
 npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
 npm run proof:permission      # runs the protocol flow while the runtime denies fs write,
                               # child processes and network — and fails if it does not deny them
 npm run demo                  # ALLOW, delegation, revocation, gate DENY, tamper check
 npm run demo:omega            # compile, run, refuse, evolve, benchmark, learn, heal
-npm run attacks               # 23 Ω attacks across 11 categories — all must be blocked
+npm run attacks               # 31 Ω attacks across 12 categories — all must be blocked
 npm run report                # runtime posture, protocol surface, inventory
 npm run verify                # everything above, in order
 ```
@@ -429,11 +430,20 @@ version registry, the learning layer, the self-healer and the CLI. **207 tests, 
 adversarial, plus a 23-attack Ω suite across 11 categories**, every one of which runs in
 `npm run verify`.
 
+`Ω∞` (packages `0.3.0`) — the cellular layer: cell anatomy, the seven-step membrane,
+tissue / organ / organism contracts, homeostasis, division and fusion. **207 tests** at that
+release.
+
+`GOOGLE IDENTITY CELL v1` (packages `0.4.0`) — the first external organ, and with it the
+twelfth attack category: identity that arrives from outside the system. **307 tests, plus a
+31-attack suite across 12 categories**, once again entirely inside `npm run verify`.
+
 The honest summary of the security posture is the one the repository can *demonstrate*,
 not the one it can assert:
 
 ```text
-0 unauthorized capability grants       (23/23 attacks blocked, re-counted by the gate)
+0 unauthorized capability grants       (31/31 attacks blocked, re-counted by the gate)
+0 forged Google identities admitted    (8/8 identity forgeries blocked, each refused at its own step)
 0 secret exfiltrations                 (compile-time types + vault handles + egress refusal)
 0 evidence-chain breaks                (one edited field fails verification)
 0 kernel mutations                     (six modules, refused before any stage runs)

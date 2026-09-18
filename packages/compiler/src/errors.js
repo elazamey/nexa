@@ -89,6 +89,25 @@ export const OMEGA_ERROR_CODES = Object.freeze({
   OMEGA_E_HOMEOSTASIS: 'the homeostasis policy is malformed or names an unknown signal',
   OMEGA_E_CELL_AMPLIFY: 'a cell, tissue or organ tried to hold authority it was not granted',
 
+  // --- the Google organ: identity, provider access, recovery --------------
+  // A Google refusal is a refusal like any other, and it says which question failed. The
+  // identity codes separate the *token* (shape, signature, issuer, audience, window) from the
+  // *challenge* (a nonce), because they are different attacks with different controls; the
+  // break-glass codes separate the four ways a recovery state can be illegal, so a refusal
+  // names the rule rather than reporting "malformed" and leaving the reader to guess.
+  OMEGA_E_IDENTITY_TOKEN: 'an ID token did not verify against the pinned key source (shape, signature, issuer or audience)',
+  OMEGA_E_NONCE: 'the single-use challenge is missing, expired, or was already spent',
+  OMEGA_E_SCOPE: 'the requested OAuth scope is not documented for this cell, action and phase',
+  OMEGA_E_QUOTA: 'the provider quota is exhausted, or the service is backing off or already in flight',
+  OMEGA_E_TOKEN: 'vault material is missing, expired beyond refresh, or the handle names another holder',
+  OMEGA_E_BINDING_EXISTS: 'a second live binding was offered for one subject; revoke first, on the record',
+  OMEGA_E_BREAKGLASS_UNBOUNDED: 'a break-glass binding has no finite expiry, or one beyond its ceiling',
+  OMEGA_E_BREAKGLASS_ROLE: 'break-glass was asked to be something other than a recovery state',
+  OMEGA_E_BREAKGLASS_REASON: 'a break-glass binding carries no reason, so it is not auditable',
+  OMEGA_E_BREAKGLASS_CHAIN: 'a break-glass binding was chained onto another, or delegated',
+  OMEGA_E_CLASS_CEILING: 'the operation is above the ceiling its cell or role may reach',
+  OMEGA_E_APPROVAL_CONSUMED: 'a single-use approval was presented twice',
+
   // --- warnings (not failures) -------------------------------------------
   OMEGA_W_UNUSED_CAPABILITY: 'an agent allows a capability no call site uses',
   OMEGA_W_NO_PLAN: 'the mission declares no plan',

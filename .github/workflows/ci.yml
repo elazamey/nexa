@@ -34,8 +34,8 @@ jobs:
       - name: NEXA Ω end-to-end demonstration
         run: npm run demo:omega
 
-      # Twenty-three attacks across eleven categories, against the real compiler, runtime,
-      # registry and cellular layer. The build fails if one of them succeeds.
+      # Thirty-one attacks across twelve categories, against the real compiler, runtime,
+      # registry, cellular layer and Google organ. The build fails if one of them succeeds.
       - name: NEXA Ω adversarial suite
         run: npm run attacks
 
@@ -64,6 +64,12 @@ jobs:
       # learning, division/fusion and the attack suite.
       - name: NEXA Ω∞ cellular demonstration
         run: npm run demo:cellular
+
+      # The Google organ, offline: eight identity forgeries, the verification order, the
+      # class-D approval pair, the vault, the quota discipline and the egress scan. No
+      # network: the tokens are signed locally with throwaway keys.
+      - name: Google identity forgeries (offline)
+        run: npm run attacks:google
 
       - name: Spec vectors are in sync with the code
         run: |

@@ -3,6 +3,72 @@
 All notable changes to NEXA are recorded here. The format follows Keep a Changelog,
 and the project uses semantic versioning once it leaves `0.x`.
 
+## [0.4.0] — 2026-09-18 — GOOGLE IDENTITY CELL v1 (the first external organ)
+
+Google becomes an **external organ** of the organism rather than a set of APIs: an identity
+cell in a tissue, behind the same membrane, holding no authority at all. The design of record
+is `spec/google/identity-cell.md` (v1.1), committed and reviewed before any of this code
+existed; this release is G0-H, the implementation of that contract.
+
+    Google proves identity.        NEXA decides authority.
+
+### Added
+
+* **Identity cell** (`packages/cells/google/identity`) — the verification order
+  `shape → signature → issuer → audience → window → nonce → subject → email`, fail-closed at
+  every step, refusing with the *step* that decided it; the stored identity
+  `sha256("NEXA/google1 subject\0" || sub)` with `email` kept as display metadata; a
+  single-use challenge store; an evidence recorder that writes five record kinds and keeps the
+  no-ledger journal ledger-shaped; owner bindings signed by the operator key; and break-glass
+  as a bounded recovery state rather than a second owner.
+* **Service gateway** (`packages/cells/google/gateway`) — the pinned key sources (Google only,
+  Firebase deferred and disabled), the scope table with its three admission rules, the risk
+  class ladder with per-cell and per-role ceilings, single-use class-D approvals bound to an
+  exact operation digest, a presenter-bound token vault with a 300 s refresh margin and
+  single-flight refresh, a per-service quota limiter with capped exponential backoff and
+  injected jitter, and a secret-material scanner.
+* **A login is a membrane crossing** — `google.session → google.identity.verify`, evidenced as
+  `CELL_MESSAGE`, with the capability minted by the tissue's guarantor and verified by the
+  cell's own membrane. *Owner identity ≠ capability subject*: the capability's subject is the
+  service cell, and a login can never create a binding.
+* **The twelfth attack category, `identity-forgery`** — eight distinct forgeries
+  (`lookalike-signing-key`, `issuer-lookalike`, `audience-confusion`,
+  `authorized-party-confusion`, `algorithm-confusion`, `nonce-replay-across-sessions`,
+  `nonce-replay-after-login`, `owner-by-email`), each asserting the step that refuses it, run
+  offline against throwaway RSA keys by `npm run attacks:google` and by the gate.
+* **Offline fixtures** (`tools/google-fixtures.mjs`) — three throwaway RSA keys and a token
+  signer, so the whole contract is exercised in CI with no network and no Google material.
+* **Google test groups** — `tests/google-identity.test.js` (27), `tests/google-binding.test.js`
+  (22), `tests/google-capability.test.js` (23), `tests/google-gateway.test.js` (18) and
+  `tests/google-attacks.test.js` (10).
+* **Vectors** — `tools/google-vectors.mjs` → `spec/vectors/google.json`: the verification
+  order, nine refusal scenes with their steps, the key sources, the sixteen scope rows, the
+  eight operations and their classes, the approval state machine, the vault contract, the
+  backoff schedule, the egress scan and the eight attack reports.
+
+### Changed
+
+* `OMEGA_ERROR_CODES` grows from 72 to 84: `OMEGA_E_IDENTITY_TOKEN`, `OMEGA_E_NONCE`,
+  `OMEGA_E_SCOPE`, `OMEGA_E_QUOTA`, `OMEGA_E_TOKEN`, `OMEGA_E_BINDING_EXISTS`,
+  `OMEGA_E_BREAKGLASS_UNBOUNDED`, `OMEGA_E_BREAKGLASS_ROLE`, `OMEGA_E_BREAKGLASS_REASON`,
+  `OMEGA_E_BREAKGLASS_CHAIN`, `OMEGA_E_CLASS_CEILING`, `OMEGA_E_APPROVAL_CONSUMED` — each
+  registered in the same commit as the behaviour that throws it.
+* `OMEGA_EVIDENCE_KINDS` gains `IDENTITY_VERIFIED`, `OWNER_BINDING`, `CONSENT`, `QUOTA` and
+  `APPROVAL` (27 → 32).
+* The adversarial suite gains the category `identity-forgery` and eight attacks
+  (**31 attacks across 12 categories, all blocked**).
+* `tools/check-posture.mjs` now asserts the Google scope table's shape and phases, the class of
+  `gmail.send`, the cell ceilings, the 24-hour break-glass bound, the pinned key sources, and
+  that no source under `packages/cells/google` mints, holds an authority, reads the
+  environment, or opens a network.
+
+### Verified
+
+`npm run verify` → posture (12 attack categories, 84 error codes, 32 record kinds) →
+**307/307 tests** (113 v0.1 + 68 Ω + 26 cellular + 100 Google) → audit 16/16 → three demos →
+adversarial suite **31/31 blocked** → gate report. `node tools/google-vectors.mjs --check`
+reports "google vectors are in sync".
+
 ## [0.3.0] — 2026-09-18 — NEXA Ω∞ (cellular layer)
 
 The layer *above* Ω: composition becomes structural. The cell is the unit of composition,

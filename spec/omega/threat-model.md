@@ -34,9 +34,11 @@ compromised **signing key** (key custody is the deployment's problem), **side ch
 
 ## 3. The attack suite, and what it proves
 
-`tools/omega-attacks.mjs` runs twenty-three attacks across eleven categories. `node
-tools/omega-attacks.mjs` must report `23/23 attacks blocked`; `tests/omega-security.test.js`
+`tools/omega-attacks.mjs` runs thirty-one attacks across twelve categories. `node
+tools/omega-attacks.mjs` must report `31/31 attacks blocked`; `tests/omega-security.test.js`
 fails the build if any attack succeeds, if a category is missing, or if the suite shrinks.
+The `identity-forgery` category is defined in `tools/google-attacks.mjs` and spread into the
+same suite, so the gate counts one suite rather than two ways of counting.
 The Evolution Gate runs the same suite as its `adversarial` stage and **re-counts the
 reports itself**, so a candidate cannot pass by asserting that it passed.
 

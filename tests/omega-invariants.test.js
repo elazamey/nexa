@@ -141,7 +141,7 @@ test('Ω/I4: the kernel is a closed list and nothing in it is evolvable', () => 
   assert.deepEqual([...KERNEL_MODULE_NAMES].sort(), [...KERNEL].sort(), 'the cell layer must agree with the gate about what is kernel');
 });
 
-test('Ω/I5: the gate has eight stages, the attack suite eleven categories, the healer six phases', () => {
+test('Ω/I5: the gate has eight stages, the attack suite twelve categories, the healer six phases', () => {
   assert.deepEqual(
     [...GATE_STAGES],
     ['compile', 'types', 'capabilities', 'security', 'adversarial', 'regression', 'benchmark', 'policy'],
@@ -149,9 +149,9 @@ test('Ω/I5: the gate has eight stages, the attack suite eleven categories, the 
   for (const stage of GATE_STAGES) {
     assert.ok(Object.hasOwn(STAGE_DEFAULTS, stage), `${stage} has no default: a caller could omit it`);
   }
-  assert.equal(ATTACK_CATEGORIES.length, 11);
+  assert.equal(ATTACK_CATEGORIES.length, 12);
   assert.equal(OMEGA_EVIDENCE_KINDS.includes('HEAL'), true);
-  assert.equal(OMEGA_EVIDENCE_KINDS.length >= 27, true, 'the record vocabulary only grows');
+  assert.equal(OMEGA_EVIDENCE_KINDS.length >= 32, true, 'the record vocabulary only grows');
 });
 
 test('Ω/I6: no package holds ambient authority', () => {

@@ -640,9 +640,16 @@ the approved attack count stays at eight.)
 
 ### H.4 Vectors
 
-`spec/vectors/google.json` pins: the JWKS fixture digest, the verdict of each § A.3 vector,
-the binding record shape, the § G0-E capability table, and one `IDENTITY_VERIFIED` record
-byte for byte. `--check` must report "google vectors are in sync".
+`spec/vectors/google.json` pins: the verification order and the step that decides each of
+nine refusal scenes, the key sources and their issuers, the sixteen scope rows with their
+phases, the eight operations with their classes, the ceilings, the approval state machine,
+the vault contract, the backoff schedule, the egress scan, and the eight identity-forgery
+reports. `node tools/google-vectors.mjs --check` must report "google vectors are in sync".
+
+Capability ids and the ledger chain head are deliberately **not** pinned: they hash a
+capability minted fresh per call, exactly as `spec/vectors/cellular.json` already notes. The
+decision skeleton is the reproducible part; the token is not, and pinning it would make the
+vectors fail for the one reason that is not a regression.
 
 ### H.5 Posture and invariants (extended, not weakened)
 
@@ -656,7 +663,11 @@ byte for byte. `--check` must report "google vectors are in sync".
   cell's verification path (the network is an injected port, as with MCP); a break-glass
   record that is unbounded, second-in-line, or class-D-capable fails to register.
 
-### H.6 Definition of done for G0
+### H.6 Definition of done for G0 — delivered, G0-H
+
+Every clause below is met, and the column on the right is where it is met. This section was
+written as an acceptance bar before the code existed; it is kept as the bar rather than
+rewritten as a summary.
 
 ```text
 0. the design commit is design-only: no code, no dependency, no CI change, and no new
@@ -674,6 +685,30 @@ byte for byte. `--check` must report "google vectors are in sync".
    (a cell crossing a membrane, not a function call)
 8. no network access anywhere in the test suite
 ```
+
+| # | Met by |
+| --- | --- |
+| 0 | commit `760c7cf` — three spec files, no code, no dependency, no CI change, no error code |
+| 1 | G0 DESIGN = PASS (v1.1, four CHANGE REQUIRED items applied verbatim) |
+| 2 | twelve codes registered in `packages/compiler/src/errors.js` (72 → 84) |
+| 3 | five kinds registered in `OMEGA_EVIDENCE_KINDS` (27 → 32) |
+| 4 | `npm test` → 307/307, of which 100 are the Google suites: 27 identity, 22 binding, 23 capability, 18 gateway, 10 attacks — group minimums were 13 / 16 / 10 |
+| 5 | `npm run attacks` → 31/31 blocked across 12 categories, the twelfth being `identity-forgery` with its eight attacks |
+| 6 | `node tools/google-vectors.mjs --check` → "google vectors are in sync" |
+| 7 | `npm run verify` exits 0, and the login is a membrane crossing (`google.session → google.identity.verify`) evidenced as `CELL_MESSAGE`, not a function call |
+| 8 | the tokens are signed by `tools/google-fixtures.mjs` with throwaway RSA keys; no network import exists anywhere under `packages/cells/google` |
+
+Two things the implementation added that the design did not name, recorded here because a
+contract that hides its own growth is not a contract:
+
+* **the session's challenge is bound to the token's claim.** § A.3 step 6 says "the nonce
+  carried by the token equals the one issued for this session"; the implementation checks
+  both halves — that the challenge is one this session issued, and that it has never been
+  spent. A mismatch is refused *without* burning the session's own challenge, so a stolen
+  token cannot be used to deny a login.
+* **the identity step names itself in the refusal.** `audience+azp` is a step of its own, so a
+  refusal says which half of the audience check decided it rather than reporting `audience`
+  for both.
 
 ### H.7 Codes to register at implementation (not now)
 

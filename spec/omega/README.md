@@ -57,6 +57,8 @@ Nothing in Ω claims to make a system unbreakable. The goal is narrower and achi
 | [`threat-model.md`](threat-model.md) | assets, adversaries, trust boundaries, the attack suite, residual risk |
 | [`cellular.md`](cellular.md) | the cellular layer: cell anatomy, the seven-step membrane, tissue / organ / organism contracts, homeostasis, cellular evolution |
 | [`cellular.ar.md`](cellular.ar.md) | الملخّص العربي للطبقة الخلوية |
+| [`../google/identity-cell.md`](../google/identity-cell.md) | GOOGLE IDENTITY CELL v1: the first external organ — the identity contract, the scope table, the class ladder, the vault, the evidence contract and the threat model |
+| [`../google/README.ar.md`](../google/README.ar.md) | الملخّص العربي لعقد خلية هوية Google |
 | [`README.ar.md`](README.ar.md) | الملخّص التنفيذي العربي لـ Ω v1 |
 
 ## Implemented surface (v1)
@@ -79,7 +81,8 @@ tools/cellular-demo.mjs  the organism end to end, plus the cellular attacks, liv
 tools/nexa.mjs      the CLI shell: the only place in Ω that touches a filesystem
 tools/cellular-demo.mjs  the organism end to end, plus the cellular attacks, live
 tools/omega-demo.mjs     nine sections, end to end: compile → run → refuse → learn → heal
-tools/omega-attacks.mjs  twenty-three attacks across eleven categories, run by the gate
+tools/omega-attacks.mjs  thirty-one attacks across twelve categories, run by the gate
+tools/google-attacks.mjs the eight identity-forgery attacks, offline, run by the same gate
 tools/omega-vectors.mjs  regenerates the pinned Ω vectors in spec/vectors/omega.json
 ```
 

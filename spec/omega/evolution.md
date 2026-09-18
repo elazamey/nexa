@@ -73,11 +73,14 @@ Eight stages, in a fixed order, each of which can only fail:
 
 ### The adversarial stage
 
-`tools/omega-attacks.mjs` attempts twenty-three attacks across eleven categories
+`tools/omega-attacks.mjs` attempts thirty-one attacks across twelve categories
 (`capability-escalation`, `secret-exfiltration`, `replay`, `tampering`,
 `invalid-signature`, `scope-widening`, `resource-exhaustion`, `policy-bypass`,
-`tool-confusion`, `untrusted-to-evidence`) against the real compiler, the real runtime and
-the real registry. `summarizeAttacks()` then re-derives the verdict from the *reports*:
+`tool-confusion`, `untrusted-to-evidence`, `kernel-self-modification`, `identity-forgery`)
+against the real compiler, the real runtime, the real registry and the Google organ. The
+twelfth category is the only one whose attacker begins **outside** the system: the other
+eleven assume someone already inside, while `identity-forgery` begins with a token a
+provider would have signed. `summarizeAttacks()` then re-derives the verdict from the *reports*:
 fewer attacks than categories, a missing category, or a single unblocked attack fails the
 stage. An attack that throws something the system does not model counts as a failure, not
 as a pass — an unhandled crash is a finding.

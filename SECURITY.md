@@ -67,6 +67,7 @@ Properties worth stating precisely:
 | `npm test` | 113 tests: canonical form, crypto, identity, capability lattice, gates, policy, envelopes, replay, ledger, endpoint pipeline, evidence, parser, MCP |
 | `npm run audit` | 16 adversarial probes that must keep failing to break the protocol |
 | `npm run posture` | runtime assertion that all six gates are CLOSED and that no protocol/adapter source imports execution or filesystem APIs |
+| `npm run proof:permission` | executes the protocol flow under Node's permission model and asserts that filesystem write, child processes and network are denied *by the runtime* |
 | `npm run vectors` | pinned canonical bytes, key derivation, signatures and capability grants; CI fails on drift |
 
 ## Reporting

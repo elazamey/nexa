@@ -92,6 +92,16 @@ foreign record) is impossible by construction, and an expectation that an unknow
 envelope field would fail signature verification when it is in fact refused earlier by
 schema validation — an earlier refusal being the stronger one.
 
+Two verification tools were added alongside the audit:
+
+* `npm run posture` — refuses to pass unless all six gates are
+  `CLOSED`, the gate tables are intact, and no source under `packages/` or `adapters/`
+  imports `child_process`, `fs`, network modules, `vm`, `eval` or `Function`.
+* `npm run proof:permission` — runs the full protocol flow (identity, capability, ALLOW,
+  gate DENY, evidence chain, MCP posture) under Node's permission model, and **fails if
+  the runtime does not deny** a filesystem write, a child process and a network call.
+  Without that second assertion the sandbox would prove nothing.
+
 ### Security posture
 
 All six gates — `REAL_EXECUTION`, `TERMINAL`, `FILESYSTEM_WRITE`, `AUTO_COMMIT`,

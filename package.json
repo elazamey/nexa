@@ -16,6 +16,8 @@
     "test": "node --test",
     "audit": "node --test tests/security.test.js",
     "posture": "node tools/check-posture.mjs",
+    "proof:permission": "node --permission --allow-fs-read=. tools/permission-proof.mjs",
+    "proof:permission:legacy": "node --experimental-permission --allow-fs-read=. tools/permission-proof.mjs",
     "demo": "node tools/demo.mjs",
     "report": "node tools/gate-report.mjs",
     "report:json": "node tools/gate-report.mjs --json",

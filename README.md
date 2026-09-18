@@ -237,6 +237,8 @@ the pinned bytes drift apart.
 npm test                      # 113 tests
 npm run audit                 # 16 adversarial probes (attacks that must keep failing)
 npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
+npm run proof:permission      # runs the protocol flow while the runtime denies fs write,
+                              # child processes and network — and fails if it does not deny them
 npm run demo                  # ALLOW, delegation, revocation, gate DENY, tamper check
 npm run report                # runtime posture, protocol surface, inventory
 npm run verify                # everything above, in order

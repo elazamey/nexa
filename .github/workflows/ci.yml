@@ -38,6 +38,18 @@ jobs:
       - name: Adversarial security suite
         run: npm run audit
 
+      # Runtime-enforced proof: the protocol flow completes while the runtime denies
+      # filesystem writes, child processes and network access. `--permission` exists
+      # on modern Node; older releases spell it `--experimental-permission`.
+      - name: Ambient-authority proof (no fs write, no child process, no network)
+        shell: bash
+        run: |
+          if node --permission -e 'true' 2>/dev/null; then
+            npm run proof:permission
+          else
+            npm run proof:permission:legacy
+          fi
+
       - name: Spec vectors are in sync with the code
         run: |
           npm run vectors

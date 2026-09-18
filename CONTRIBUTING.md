@@ -25,6 +25,7 @@ NEXA is small on purpose. The rules below exist so it stays checkable.
 npm test           # 113 tests
 npm run audit      # 16 adversarial probes
 npm run posture    # gate posture + no-ambient-authority scan; must pass
+npm run proof:permission  # protocol flow under Node's permission model
 npm run demo       # end-to-end flow; prints ALLOW, DENY, tamper check
 npm run vectors    # regenerate spec/vectors/*.json after a protocol change
 ```

@@ -1,0 +1,20 @@
+{
+  "name": "nexa",
+  "version": "0.1.0",
+  "description": "NEXA v0.1 - signed, capability-gated protocol for agent tooling (default-deny, evidence-first)",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "adapters/*"
+  ],
+  "scripts": {
+    "test": "node --test tests/",
+    "demo": "node tools/demo.mjs",
+    "report": "node tools/gate-report.mjs"
+  }
+}

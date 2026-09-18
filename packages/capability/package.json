@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/capability",
+  "version": "0.1.0",
+  "description": "Macaroon-style capability tokens: mint, attenuate, verify. No authority amplification.",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/identity",
+  "version": "0.1.0",
+  "description": "Self-signed NEXA identity documents and the trust store",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

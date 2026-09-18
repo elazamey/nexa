@@ -1,0 +1,8 @@
+{
+  "name": "@nexa/ast",
+  "version": "0.1.0",
+  "description": "NEXA data model, NEXA-C14N canonicalization, error taxonomy",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.js"
+}

@@ -260,5 +260,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     if (!report.blocked) process.stdout.write(`          ${JSON.stringify(report.detail)}\n`);
   }
   process.stdout.write(`\n${reports.length - failed}/${reports.length} identity forgeries blocked\n`);
+  // Machine-readable metrics for check-metrics.mjs — no defaults, explicit values
+  process.stdout.write(`NEXA_METRIC google_blocked=${reports.length - failed}\n`);
+  process.stdout.write(`NEXA_METRIC google_total=${reports.length}\n`);
+  process.stdout.write(`NEXA_METRIC google_failed=${failed}\n`);
   process.exit(failed === 0 ? 0 : 1);
 }

@@ -1,0 +1,42 @@
+name: Metrics Enforcement
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # NEXA has zero dependencies, but npm ci ensures clean state if lockfile appears
+        run: npm ci || npm install
+
+      - name: Run Tests & Gather TAP output
+        run: npm test
+
+      - name: Run Security Audit
+        run: npm run audit
+
+      - name: Run Security Posture & Attacks
+        run: |
+          npm run posture
+          npm run attacks
+          npm run attacks:google
+
+      - name: Enforce Documentation Sync
+        run: npm run metrics

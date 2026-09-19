@@ -457,6 +457,14 @@ not the one it can assert:
                                        dependencies
 ```
 
+<!-- NEXA_METRICS:START -->
+- Total tests: 314
+- Security tests: 16
+- Ω attacks: 31
+- Google identity attacks: 8
+- Closed gates: 6
+<!-- NEXA_METRICS:END -->
+
 Deliberately **not** in v0.1 or Ω v1: any execution of arbitrary code, filesystem or
 terminal capability, durable evidence storage, cross-endpoint evidence reconciliation, and
 WASM compilation.

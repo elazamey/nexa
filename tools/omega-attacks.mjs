@@ -684,5 +684,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.stdout.write(`  ${report.blocked ? 'BLOCKED' : 'FAILED '} ${report.category.padEnd(22)} ${report.id.padEnd(32)} ${report.code ?? ''}\n`);
   }
   process.stdout.write(`\n${reports.length - failed}/${reports.length} attacks blocked\n`);
+  // Machine-readable metrics for check-metrics.mjs — no defaults, explicit values
+  process.stdout.write(`NEXA_METRIC omega_blocked=${reports.length - failed}\n`);
+  process.stdout.write(`NEXA_METRIC omega_total=${reports.length}\n`);
+  process.stdout.write(`NEXA_METRIC omega_failed=${failed}\n`);
   process.exit(failed === 0 ? 0 : 1);
 }

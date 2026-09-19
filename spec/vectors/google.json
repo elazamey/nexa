@@ -584,13 +584,17 @@
   "invariants": {
     "identity_anchor": "sub",
     "email": "display metadata",
+    "stored_identity": "sha256(\"NEXA/google1 subject\u0000\" || sub)",
+    "identity_authority_split": "Google proves identity; NEXA decides authority",
     "capability_subject": "the service cell",
+    "owner_identity": "never the capability subject; a login never creates a binding",
     "class_source": "resource, action and scope — never the cell’s opinion",
     "class_d_requires": [
       "capability",
       "policy",
       "explicit owner approval"
     ],
+    "no_write_before_evidence": "an approval is in evidence before it authorizes, and is consumed with the call",
     "break_glass": "a bounded recovery state, never a second owner"
   }
 }

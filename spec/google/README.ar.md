@@ -422,14 +422,16 @@ tests/google-identity.test.js           27 اختباراً — الترتيب �
 tests/google-binding.test.js            22 اختباراً — الربط والإلغاء وحالة الاسترداد
 tests/google-capability.test.js         23 اختباراً — الفئة والقدرة والموافقة والنطاق
 tests/google-gateway.test.js            18 اختباراً — الخزينة والحصة والتسريب
-tests/google-attacks.test.js            10 اختبارات — كل هجوم في اختبار مستقل
+tests/google-attacks.test.js           10 اختبارات — كل هجوم في اختبار مستقل
+tests/google-invariants.test.js        7 اختبارات — ثوابت الإغلاق السبعة (GI-1 … GI-7)
+spec/google/closure-g0.md              سجل إغلاق G0: البنود المنجزة + الثوابت + حالة النشر
 spec/vectors/google.json                 المتجهات المثبّتة (9 مشاهد رفض + 16 صف نطاق + 8 هجمات)
 ```
 
 ### الحصيلة المقيسة
 
 ```text
-npm test         307/307        (منها 100 اختبار لهذه المرحلة)
+npm test         314/314        (منها 107 اختبار لهذه المرحلة)
 npm run attacks  31/31 مصدودة  (اثنتا عشرة فئة، منها 8 هجمات انتحال هوية)
 npm run verify   exit 0         + المتجهات متزامنة
 posture          6 بوابات مغلقة · 12 فئة · 84 رمز خطأ · 32 نوع دليل

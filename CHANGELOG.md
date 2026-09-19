@@ -3,6 +3,35 @@
 All notable changes to NEXA are recorded here. The format follows Keep a Changelog,
 and the project uses semantic versioning once it leaves `0.x`.
 
+## [0.4.1] — 2026-09-18 — G0 closure record
+
+The G0 gate is closed. Its design was reviewed line by line (four mandatory amendments, adopted
+verbatim), its implementation shipped in 0.4.0, and every clause of the definition of done is met.
+No code changed in this release — a closure is a record, and a record whose invariants live only in
+prose is a promise, so the invariants ship with their tests.
+
+### Added
+
+* **Closure record** (`spec/google/closure-g0.md`) — what G0 closed, clause by clause against
+  § H.6 of the spec; the invariants the gate fixes and where each one is enforced; and the
+  publishing-status note (nothing in the tree is published, nothing is registered anywhere, the
+  gate is the publish).
+* **GI invariants suite** (`tests/google-invariants.test.js`, 7) — one test per invariant the gate
+  fixes (GI-1 … GI-7): the identity/authority split; `sub` as anchor with `email` as display
+  metadata; the stored-identity digest; owner identity ≠ capability subject; the class as a
+  property of the triple with `max_class` a kernel invariant; the class-D stack with evidence
+  before write and the approval consumed with the call; and break-glass as a time-bounded
+  recovery state that is never Authority.
+* **Vectors** — the `invariants` block of `spec/vectors/google.json` now carries the full set the
+  closure record asserts, so record, vector and code must agree.
+
+### Verified
+
+`npm run verify` → posture (6 gates CLOSED, 84 error codes, 32 record kinds) → **314/314 tests**
+(307 of 0.4.0 + 7 closure invariants; 107 of them Google) → audit 16/16 → three demos →
+adversarial suite **31/31 blocked** → gate report. `node tools/google-vectors.mjs --check`
+reports "google vectors are in sync".
+
 ## [0.4.0] — 2026-09-18 — GOOGLE IDENTITY CELL v1 (the first external organ)
 
 Google becomes an **external organ** of the organism rather than a set of APIs: an identity

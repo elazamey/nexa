@@ -400,7 +400,7 @@ the pinned bytes drift apart.
 ## Verify it yourself
 
 ```bash
-npm test                      # 307 tests (68 of them Ω, 26 cellular, 100 Google)
+npm test                      # 314 tests (68 of them Ω, 26 cellular, 107 Google)
 npm run audit                 # 16 adversarial probes (attacks that must keep failing)
 npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
 npm run proof:permission      # runs the protocol flow while the runtime denies fs write,
@@ -437,6 +437,11 @@ release.
 `GOOGLE IDENTITY CELL v1` (packages `0.4.0`) — the first external organ, and with it the
 twelfth attack category: identity that arrives from outside the system. **307 tests, plus a
 31-attack suite across 12 categories**, once again entirely inside `npm run verify`.
+
+`G0 closure` (packages `0.4.1`) — the gate that designed and shipped the identity cell is
+closed: every clause of its definition of done, the invariants it fixes held by seven new
+tests, and the publishing-status note. **314 tests.** No code changed: a closure is a record,
+and a record that is not tested is a promise (`spec/google/closure-g0.md`).
 
 The honest summary of the security posture is the one the repository can *demonstrate*,
 not the one it can assert:

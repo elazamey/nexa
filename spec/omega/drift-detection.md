@@ -12,7 +12,39 @@ to retrospective relabelling while leaving current-metric enforcement read-only.
 
 This document does **not** change `tools/check-metrics.mjs`, CI, or any metric value.
 
-## 2. Anchor the claim to an immutable commit
+## 2. Initial inventory item: Ω∞ `207 tests at that release`
+
+This is an inventory record, not yet an automated baseline or a G1 pass condition.
+The repository was first deepened with `git fetch --unshallow origin`; it is no longer
+shallow. A full-history search with `git log -S'207 tests' -- README.md` identifies the
+introducing commit as:
+
+```text
+3b323ddc841a4dd3a0e7f8665dffaec206c9900b
+```
+
+At that commit, `README.md:433-435` contains the Ω∞ paragraph and the sentence
+`**207 tests** at that release.` The same commit's verification summary states `207/207`
+and decomposes it as `113 v0.1 + 68 Ω + 26 cellular`. The root `package.json` declares
+zero runtime dependencies, and no package manifest currently declares dependency sections;
+therefore the eventual historical installer may be simpler than a networked dependency
+reconstruction, subject to verifying the exact historical tree before implementation.
+
+Inventory fields for this first item are:
+
+- `claim_id`: `omega-infinity-tests-207-at-release`;
+- `commit`: `3b323ddc841a4dd3a0e7f8665dffaec206c9900b`;
+- `suite`: `npm test` (the commit's summary also refers to `npm run verify`);
+- `expected`: `207/207`, with `113 v0.1`, `68 Ω`, and `26 cellular` as the recorded
+  decomposition;
+- `provenance`: the introducing commit and its README verification summary; and
+- `status`: **inventory only — rerun and explicit review still required**.
+
+This item does not claim that the prose alone proves the result. The SHA is now available
+for a future isolated rerun. The historical checker must resolve and execute this SHA before
+G1 can rely on it; until then, the item remains unresolved and must not pass a gate.
+
+## 3. Anchor the claim to an immutable commit
 
 Each historical claim should be represented by a versioned, machine-readable record (for
 example, a future `spec/omega/metrics-history.json`). A record should contain at least:
@@ -38,7 +70,7 @@ annotated-tag target, mutable ref, or “nearest commit” fallback is an error.
 has been rewritten or the object is unavailable, the check must fail rather than silently
 substitute another revision.
 
-## 3. Re-measure the suite at that commit
+## 4. Re-measure the suite at that commit
 
 A future `check-metrics` mode (or a dedicated historical checker invoked by it) should:
 
@@ -80,7 +112,7 @@ known to be reproducible. Unsupported historical records should fail closed with
 “not reproducible” diagnostic; they should not be deleted or downgraded to a text-only
 check.
 
-## 4. Existing prose exemptions are not evidence
+## 5. Existing prose exemptions are not evidence
 
 The current `tools/check-metrics.mjs` has no exemption path for historical prose: it reads
 only the two explicit `NEXA_METRICS` blocks in `README.md` and `SECURITY.md`, measures the
@@ -97,7 +129,7 @@ reported separately from current metrics. During migration, prose claims without
 record are inventory items only: they cannot satisfy G1, and their omission from the
 current-metric block must not be interpreted as verification.
 
-## 5. Prevent the retrospective-tagging attack
+## 6. Prevent the retrospective-tagging attack
 
 The checker must distinguish evidence from annotation:
 
@@ -119,7 +151,7 @@ A stronger optional control is to store the measured result, command digest, and
 metadata in a signed attestation. Verification still reruns the suite when possible; the
 signature authenticates provenance and does not turn a text label into a measurement.
 
-## 6. What remains manual, and why
+## 7. What remains manual, and why
 
 Automation can establish what a checked-out commit produces. It cannot by itself decide
 that a commit is the correct product/release boundary, that the intended suite was selected,
@@ -137,7 +169,7 @@ and reason automation could not decide it. It may approve metadata, but must not
 failed automated rerun without recording the exception and keeping the result visibly
 non-automated.
 
-## 7. Effect on G1 and later gates
+## 8. Effect on G1 and later gates
 
 G1 should consume an immutable, machine-checked historical baseline rather than a Markdown
 assertion. Its pass condition should require that every required claim resolves to the

@@ -52,6 +52,7 @@ Nothing in Ω claims to make a system unbreakable. The goal is narrower and achi
 | [`authority.md`](authority.md) | capability binding: agents, instruments, grants, decision order, budget |
 | [`evidence.md`](evidence.md) | CLAIM / OBSERVATION / EVIDENCE / VERDICT, the Ω ledger, receipts |
 | [`mcp.md`](mcp.md) | MCP as a first-class namespace: declaration, call path, evidence |
+| [`execution.md`](execution.md) | REAL EXECUTION: the declared-operations channel — how a declared operation becomes a real effect (**design, awaiting verdicts**) |
 | [`evolution.md`](evolution.md) | proposals, immutable versions, the eight-stage Evolution Gate, canary, rollback |
 | [`learning.md`](learning.md) | observation, patterns, hypotheses, reflection, knowledge, replay, benchmarks |
 | [`threat-model.md`](threat-model.md) | assets, adversaries, trust boundaries, the attack suite, residual risk |

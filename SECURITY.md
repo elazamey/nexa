@@ -77,3 +77,14 @@ data. If you find a security bug — a way past a gate, an amplification path th
 attenuation, or a signature that verifies when it should not — open an issue with
 `[security]` in the title and a failing test. A reproduction in `tests/` is the most
 useful possible report.
+
+
+## Measured security metrics (enforced by CI)
+
+<!-- NEXA_METRICS:START -->
+- Total tests: 314
+- Security tests: 16
+- Ω attacks: 31
+- Google identity attacks: 8
+- Closed gates: 6
+<!-- NEXA_METRICS:END -->

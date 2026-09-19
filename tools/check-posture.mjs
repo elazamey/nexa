@@ -254,3 +254,14 @@ process.stdout.write(`posture check OK: ${report.posture.gates.length} gates CLO
   `${KERNEL_MODULES.length} immutable kernel modules, ` +
   `${Object.keys(OMEGA_ERROR_CODES).length} Ω error codes, ` +
   `${MEMBRANE_STEPS.length} membrane steps, ${CELL_STATES.length} cell states\n`);
+
+// Machine-readable metrics for check-metrics.mjs — no defaults, explicit values
+process.stdout.write(`NEXA_METRIC closed_gates=${report.posture.gates.length}\n`);
+process.stdout.write(`NEXA_METRIC gated_namespaces=${Object.keys(GATED_RESOURCES).length}\n`);
+process.stdout.write(`NEXA_METRIC gated_actions=${Object.keys(GATED_ACTIONS).length}\n`);
+process.stdout.write(`NEXA_METRIC omega_gate_stages=${GATE_STAGES.length}\n`);
+process.stdout.write(`NEXA_METRIC attack_categories=${ATTACK_CATEGORIES.length}\n`);
+process.stdout.write(`NEXA_METRIC kernel_modules=${KERNEL_MODULES.length}\n`);
+process.stdout.write(`NEXA_METRIC omega_error_codes=${Object.keys(OMEGA_ERROR_CODES).length}\n`);
+process.stdout.write(`NEXA_METRIC membrane_steps=${MEMBRANE_STEPS.length}\n`);
+process.stdout.write(`NEXA_METRIC cell_states=${CELL_STATES.length}\n`);

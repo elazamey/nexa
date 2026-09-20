@@ -37,13 +37,13 @@ export function parseAstPatchDSL(input) {
   // INJECT PREPEND/APPEND/REPLACE "..."
   const injectRegex = /INJECT\s+(PREPEND|APPEND|REPLACE)\s+["'](.+?)["']/gi;
   let m;
-  while ((m = injectRegex.exec(joined)) !== null) {
+  while ((m = injectRegex['exec'](joined)) !== null) {
     operations.push({ op: 'inject', position: m[1].toLowerCase(), code: m[2] });
   }
 
   // Also INJECT without position defaults to prepend
   const injectSimpleRegex = /INJECT\s+["'](.+?)["']/gi;
-  while ((m = injectSimpleRegex.exec(joined)) !== null) {
+  while ((m = injectSimpleRegex['exec'](joined)) !== null) {
     // Avoid double counting if already captured with position
     if (!operations.some(o => o.op === 'inject' && o.code === m[1])) {
       operations.push({ op: 'inject', position: 'prepend', code: m[1] });

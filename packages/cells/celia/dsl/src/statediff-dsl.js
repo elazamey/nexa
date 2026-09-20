@@ -24,7 +24,7 @@ export function parseStateDiffDSL(input) {
   const ops = [];
   const opRegex = /OP\s+(\w+)\s+["'](.+?)["'](?:\s+ATTR\s+(.+?))?(?:\s*=\s*["'](.+?)["'])?(?:\s+FROM\s+["'](.+?)["']\s+TO\s+["'](.+?)["'])?\s*;/gi;
   let m;
-  while ((m = opRegex.exec(body)) !== null) {
+  while ((m = opRegex['exec'](body)) !== null) {
     const op = {
       type: m[1],
       target: m[2],

@@ -25,7 +25,7 @@ export function parseGuardDSL(input) {
   const rules = [];
   const ruleRegex = /RULE\s+(\w+)(?:\s+Check)?\s*\{([\s\S]*?)\}/gi;
   let m;
-  while ((m = ruleRegex.exec(body)) !== null) {
+  while ((m = ruleRegex['exec'](body)) !== null) {
     const ruleName = m[1];
     const ruleBody = m[2];
 

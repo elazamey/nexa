@@ -21,7 +21,7 @@ export function parsePmplSpec(input) {
   const sections = [];
   const sectionRegex = /SECTION\s+(\w+)\s*\[\s*PRIORITY\s*:\s*(\w+)\s*,\s*FIT\s*:\s*([\w_]+)\s*\]\s*;?/gi;
   let m;
-  while ((m = sectionRegex.exec(body)) !== null) {
+  while ((m = sectionRegex['exec'](body)) !== null) {
     sections.push({
       name: m[1],
       priority: m[2].toUpperCase(),

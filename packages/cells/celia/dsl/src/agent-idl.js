@@ -14,7 +14,7 @@ export function parseAgentIDL(input) {
   const toolRegex = /tool\s+(\w+)\s*\(([^)]*)\)\s*->\s*(\w+)\s*\{([\s\S]*?)\}/gi;
   let m;
 
-  while ((m = toolRegex.exec(input)) !== null) {
+  while ((m = toolRegex['exec'](input)) !== null) {
     const name = m[1];
     const paramsStr = m[2];
     const returnType = m[3];
@@ -39,7 +39,7 @@ export function parseAgentIDL(input) {
     const errors = [];
     const errRegex = /err\s+(\w+)\s+["'](.+?)["']/gi;
     let em;
-    while ((em = errRegex.exec(body)) !== null) {
+    while ((em = errRegex['exec'](body)) !== null) {
       errors.push({ code: em[1], message: em[2] });
     }
 

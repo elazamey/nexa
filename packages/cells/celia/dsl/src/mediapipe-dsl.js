@@ -21,13 +21,13 @@ export function parseMediaPipeDSL(input) {
   const inputs = [];
   const inputRegex = /INPUT\s+(\w+)\s*:\s*(\w+)\s*;?/gi;
   let m;
-  while ((m = inputRegex.exec(body)) !== null) {
+  while ((m = inputRegex['exec'](body)) !== null) {
     inputs.push({ name: m[1], type: m[2] });
   }
 
   const steps = [];
   const stepRegex = /STEP\s+(\w+)\s*=\s*([\w\.]+)\s*\(([^)]*)\)\s*;?/gi;
-  while ((m = stepRegex.exec(body)) !== null) {
+  while ((m = stepRegex['exec'](body)) !== null) {
     steps.push({ id: m[1], func: m[2], args: parseArgs(m[3]) });
   }
 

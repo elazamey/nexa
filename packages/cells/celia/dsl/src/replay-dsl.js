@@ -23,7 +23,7 @@ export function parseReplayDSL(input) {
   const overrides = [];
   const overrideRegex = /OVERRIDE INPUT\s+["'](.+?)["']\s*=\s*([^\s]+(?:\s+[^\s]+)*?)(?=\s+BRANCH|\s+EXECUTE|;|$)/gi;
   let m;
-  while ((m = overrideRegex.exec(normalized)) !== null) {
+  while ((m = overrideRegex['exec'](normalized)) !== null) {
     overrides.push({ input: m[1], value: parseValue(m[2]) });
   }
 

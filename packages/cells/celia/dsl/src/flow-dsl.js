@@ -30,19 +30,19 @@ export function parseFlowDSL(input) {
   // STEP name = AGENT.run(Model.X, "task")
   const stepRegex = /STEP\s+(\w+)\s*=\s*AGENT\.run\s*\(\s*Model\.(\w+)\s*,\s*["'](.+?)["']\s*\)\s*;?/gi;
   let m;
-  while ((m = stepRegex.exec(body)) !== null) {
+  while ((m = stepRegex['exec'](body)) !== null) {
     steps.push({ id: m[1], model: m[2], task: m[3], type: 'step' });
   }
 
   // BRANCH WHEN condition { ... }
   const branchRegex = /BRANCH\s+WHEN\s+(.+?)\s*\{([\s\S]*?)\}/gi;
-  while ((m = branchRegex.exec(body)) !== null) {
+  while ((m = branchRegex['exec'](body)) !== null) {
     const condition = m[1].trim();
     const inner = m[2];
     const innerSteps = [];
     const innerStepRegex = /STEP\s+(\w+)\s*=\s*AGENT\.run\s*\(\s*Model\.(\w+)\s*,\s*["'](.+?)["']\s*\)/gi;
     let im;
-    while ((im = innerStepRegex.exec(inner)) !== null) {
+    while ((im = innerStepRegex['exec'](inner)) !== null) {
       innerSteps.push({ id: im[1], model: im[2], task: im[3] });
     }
     branches.push({ condition, steps: innerSteps });
@@ -50,12 +50,12 @@ export function parseFlowDSL(input) {
 
   // PARALLEL { STEP ... STEP ... }
   const parallelRegex = /PARALLEL\s*\{([\s\S]*?)\}/gi;
-  while ((m = parallelRegex.exec(body)) !== null) {
+  while ((m = parallelRegex['exec'](body)) !== null) {
     const inner = m[1];
     const innerSteps = [];
     const innerStepRegex = /STEP\s+(\w+)\s*=\s*AGENT\.run\s*\(\s*Model\.(\w+)\s*,\s*["'](.+?)["']\s*\)/gi;
     let im;
-    while ((im = innerStepRegex.exec(inner)) !== null) {
+    while ((im = innerStepRegex['exec'](inner)) !== null) {
       innerSteps.push({ id: im[1], model: im[2], task: im[3] });
     }
     parallels.push({ steps: innerSteps });
@@ -63,7 +63,7 @@ export function parseFlowDSL(input) {
 
   // ASSERT x PASSED "..." ELSE ROLLBACK
   const assertRegex = /ASSERT\s+(\w+)\s+(PASSED|FAILED)?\s*["']?([^"';]+)?["']?\s*(?:ELSE\s+(\w+))?;?/gi;
-  while ((m = assertRegex.exec(body)) !== null) {
+  while ((m = assertRegex['exec'](body)) !== null) {
     asserts.push({ target: m[1], status: m[2] || 'PASSED', check: (m[3] || '').trim(), elseAction: m[4] || null });
   }
 

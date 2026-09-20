@@ -23,7 +23,7 @@ export function parseCapLang(input) {
 
   const allowRegex = /ALLOW\s+([\w\.]+)\s+ON\s+\[([^\]]+)\](?:\s+MAX_BYTES\s+(\w+))?;?/gi;
   let m;
-  while ((m = allowRegex.exec(body)) !== null) {
+  while ((m = allowRegex['exec'](body)) !== null) {
     allows.push({
       action: m[1],
       paths: m[2].split(',').map(s => s.trim().replace(/["']/g, '')),
@@ -32,7 +32,7 @@ export function parseCapLang(input) {
   }
 
   const denyRegex = /DENY\s+([\w\.]+)(?:\s+EXCEPT\s+\[([^\]]+)\])?;?/gi;
-  while ((m = denyRegex.exec(body)) !== null) {
+  while ((m = denyRegex['exec'](body)) !== null) {
     denies.push({
       action: m[1],
       except: m[2] ? m[2].split(',').map(s => s.trim().replace(/["']/g, '')) : []

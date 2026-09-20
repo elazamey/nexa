@@ -34,7 +34,7 @@ fi
 
 echo ""
 echo "[3/5] vectors_sync + design_record_exists - checking spec vectors and design records..."
-PLAN_FILE="publish-v0.1.plan.json"
+PLAN_FILE="${1:-publish-v0.1.plan.json}"
 if [[ ! -f "$PLAN_FILE" ]]; then
   check_fail "design_record_exists" "missing $PLAN_FILE"
 else

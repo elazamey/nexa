@@ -72,7 +72,7 @@ const ceremony = runStep('Step 5: Execute Publishing Ceremony', join(root, 'cere
 if (!ceremony.ok) allOk = false;
 
 // Step 6: Promotion Verifier (Must be 5/5)
-const verifier = runStep('Step 6: Promotion Verifier (5/5 Checks)', join(root, 'pub-verifier.sh'), []);
+const verifier = runStep('Step 6: Promotion Verifier (5/5 Checks)', join(root, 'pub-verifier.sh'), [planFile]);
 if (!verifier.ok) allOk = false;
 
 // Step 7: Release Workflow Check

@@ -31,6 +31,25 @@ INSPECT -> CREATE -> TEST -> VERIFY -> REPORT
 * **Provable afterwards.** Tamper-evident chain + signed receipts for both outcomes.
 * **No ambient power.** The six gates below are closed in code, not in configuration.
 
+## Celia — unified advisory interface
+
+`node tools/celia-system.mjs --help` exposes local `status`, `catalog`, `advise`,
+`fingerprint`, `verify`, explicit offline `train`, and read-only `research` commands.
+It joins real Ω policy/capability/evidence machinery to supplied-plan assessment and
+optional experimental ranking. No shell execution, patch application, COMMIT or model
+activation. The 200-entry catalog distinguishes audit maturity from runtime integration;
+registration does **not** mean implementation. See the [Arabic operator guide](docs/celia-system.ar.md).
+
+**2026-09-20 verification (before the research-library addition):** 39/39 advisory/learning tests and 59/59 boundary regression
+tests pass. Full verification is **413 PASS / 2 FAIL of 415**, with six gates CLOSED.
+H2 atomicity and H3 external-writer concurrency remain unresolved; no production-readiness
+or deployment claim.
+
+The later [research/skills advisory library](docs/celia-research-skills.ar.md) adds
+10 source-linked references and 10 non-executable skill cards (`library`, `skills`).
+Latest verification: **426 PASS / 2 KNOWN FAIL of 428**; targeted advisory/learning
+52/52 and boundary regression 59/59. H2/H3 and the P00 provenance HOLD remain unresolved.
+
 ## NEXA Ω — language · runtime · Evolution Gate · learning
 
 > **NEXA does not trust itself. NEXA proves itself.**

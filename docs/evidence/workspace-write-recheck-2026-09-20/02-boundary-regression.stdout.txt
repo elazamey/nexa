@@ -1,0 +1,369 @@
+TAP version 13
+# Subtest: commit auth: exact approved bytes and base yield only the intended root mutations
+ok 1 - commit auth: exact approved bytes and base yield only the intended root mutations
+  ---
+  duration_ms: 319.772387
+  type: 'test'
+  ...
+# Subtest: commit auth: anonymous is 401 and signed identity without capability is 403
+ok 2 - commit auth: anonymous is 401 and signed identity without capability is 403
+  ---
+  duration_ms: 259.64896
+  type: 'test'
+  ...
+# Subtest: commit auth: WRITE capability in a signed COMMIT request is not sufficient
+ok 3 - commit auth: WRITE capability in a signed COMMIT request is not sufficient
+  ---
+  duration_ms: 206.613149
+  type: 'test'
+  ...
+# Subtest: commit auth: genuine COMMIT grant for A cannot authorize workspace B
+ok 4 - commit auth: genuine COMMIT grant for A cannot authorize workspace B
+  ---
+  duration_ms: 256.452864
+  type: 'test'
+  ...
+# Subtest: commit auth: expired capability in a fresh signed envelope is denied
+ok 5 - commit auth: expired capability in a fresh signed envelope is denied
+  ---
+  duration_ms: 212.366407
+  type: 'test'
+  ...
+# Subtest: commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+ok 6 - commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+  ---
+  duration_ms: 238.360551
+  type: 'test'
+  ...
+# Subtest: commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+ok 7 - commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+  ---
+  duration_ms: 197.135421
+  type: 'test'
+  ...
+# Subtest: commit auth: re-signing a new staging hash cannot change the grant constraints
+ok 8 - commit auth: re-signing a new staging hash cannot change the grant constraints
+  ---
+  duration_ms: 211.298592
+  type: 'test'
+  ...
+# Subtest: commit auth: added or removed staging files invalidate the full manifest
+ok 9 - commit auth: added or removed staging files invalidate the full manifest
+  ---
+  duration_ms: 233.993433
+  type: 'test'
+  ...
+# Subtest: commit auth: changed base content or base permissions invalidates approval
+ok 10 - commit auth: changed base content or base permissions invalidates approval
+  ---
+  duration_ms: 218.694908
+  type: 'test'
+  ...
+# Subtest: commit auth: expected absent target that appears before commit invalidates the base
+ok 11 - commit auth: expected absent target that appears before commit invalidates the base
+  ---
+  duration_ms: 189.43201
+  type: 'test'
+  ...
+# Subtest: commit auth: a grant and intent for another root cannot target this server
+ok 12 - commit auth: a grant and intent for another root cannot target this server
+  ---
+  duration_ms: 196.276801
+  type: 'test'
+  ...
+# Subtest: commit auth: valid signature and grant cannot bypass empty or denying policy
+ok 13 - commit auth: valid signature and grant cannot bypass empty or denying policy
+  ---
+  duration_ms: 205.353006
+  type: 'test'
+  ...
+# Subtest: commit auth: untrusted issuer and an empty issuer list fail closed
+ok 14 - commit auth: untrusted issuer and an empty issuer list fail closed
+  ---
+  duration_ms: 250.804185
+  type: 'test'
+  ...
+# Subtest: commit auth: holder, audience, signature and operation are independently checked
+ok 15 - commit auth: holder, audience, signature and operation are independently checked
+  ---
+  duration_ms: 300.556499
+  type: 'test'
+  ...
+# Subtest: commit auth: wrong resource, missing state constraints and wider budgets are denied
+ok 16 - commit auth: wrong resource, missing state constraints and wider budgets are denied
+  ---
+  duration_ms: 285.829249
+  type: 'test'
+  ...
+# Subtest: commit auth: root target symlinks are rejected before any file is applied
+ok 17 - commit auth: root target symlinks are rejected before any file is applied
+  ---
+  duration_ms: 200.135915
+  type: 'test'
+  ...
+# Subtest: commit auth: staging symlinks are rejected before any file is applied
+ok 18 - commit auth: staging symlinks are rejected before any file is applied
+  ---
+  duration_ms: 224.445737
+  type: 'test'
+  ...
+# Subtest: commit auth: concurrent requests cannot apply the same single-use authorization twice
+ok 19 - commit auth: concurrent requests cannot apply the same single-use authorization twice
+  ---
+  duration_ms: 211.613351
+  type: 'test'
+  ...
+# Subtest: workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+ok 20 - workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+  ---
+  duration_ms: 281.28382
+  type: 'test'
+  ...
+# {"status":401,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mua9ymfc","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+ok 21 - workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+  ---
+  duration_ms: 276.546944
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mua9ymng","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+ok 22 - workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+  ---
+  duration_ms: 261.392597
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mua9ymu4","changedEntries":[],"metadataUnchanged":true},{"workspaceId":"ws_commit-red-b_mua9ymur","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+ok 23 - H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+  ---
+  duration_ms: 264.785585
+  type: 'test'
+  ...
+# {"oldPid":1855,"restartedPid":1864,"oldAuthorization":"DENY","reSignedSpentGrant":"DENY","freshGrantSameState":"ALLOW","durableConsumptions":2}
+# Subtest: H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+ok 24 - H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+  ---
+  duration_ms: 224.352764
+  type: 'test'
+  ...
+# Subtest: H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+ok 25 - H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+  ---
+  duration_ms: 305.111391
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+ok 26 - H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 246.367486
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+ok 27 - H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 215.802072
+  type: 'test'
+  ...
+# Subtest: H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+ok 28 - H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 215.513088
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing initialization is never treated as a fresh empty ledger
+ok 29 - H1 persistence: missing initialization is never treated as a fresh empty ledger
+  ---
+  duration_ms: 188.567585
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing journal is never treated as a fresh empty ledger
+ok 30 - H1 persistence: missing journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 204.660464
+  type: 'test'
+  ...
+# Subtest: H1 persistence: torn record is never treated as a fresh empty ledger
+ok 31 - H1 persistence: torn record is never treated as a fresh empty ledger
+  ---
+  duration_ms: 209.901716
+  type: 'test'
+  ...
+# Subtest: H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+ok 32 - H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+  ---
+  duration_ms: 196.770156
+  type: 'test'
+  ...
+# Subtest: H1 persistence: corrupted head is never treated as a fresh empty ledger
+ok 33 - H1 persistence: corrupted head is never treated as a fresh empty ledger
+  ---
+  duration_ms: 202.92954
+  type: 'test'
+  ...
+# Subtest: H1 persistence: non-private directory is never treated as a fresh empty ledger
+ok 34 - H1 persistence: non-private directory is never treated as a fresh empty ledger
+  ---
+  duration_ms: 186.419225
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unwritable journal is never treated as a fresh empty ledger
+ok 35 - H1 persistence: unwritable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 182.333891
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unreadable journal is never treated as a fresh empty ledger
+ok 36 - H1 persistence: unreadable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 187.951105
+  type: 'test'
+  ...
+# Subtest: H1 persistence: symlink journal is never treated as a fresh empty ledger
+ok 37 - H1 persistence: symlink journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 193.700941
+  type: 'test'
+  ...
+# Subtest: H1 persistence: wrong root binding is never treated as a fresh empty ledger
+ok 38 - H1 persistence: wrong root binding is never treated as a fresh empty ledger
+  ---
+  duration_ms: 198.630587
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+ok 39 - H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+  ---
+  duration_ms: 120.508681
+  type: 'test'
+  ...
+# Subtest: H1 persistence: provisioning refuses reset of an existing consumed store
+ok 40 - H1 persistence: provisioning refuses reset of an existing consumed store
+  ---
+  duration_ms: 111.148912
+  type: 'test'
+  ...
+# Subtest: H1 persistence: absent state-directory configuration has no in-memory fallback
+ok 41 - H1 persistence: absent state-directory configuration has no in-memory fallback
+  ---
+  duration_ms: 114.863929
+  type: 'test'
+  ...
+# Subtest: H1 persistence: anonymous denial does not mutate the consumption store
+ok 42 - H1 persistence: anonymous denial does not mutate the consumption store
+  ---
+  duration_ms: 138.226342
+  type: 'test'
+  ...
+# Subtest: workspace HTTP: unauthenticated write is denied without filesystem changes
+ok 43 - workspace HTTP: unauthenticated write is denied without filesystem changes
+  ---
+  duration_ms: 248.205074
+  type: 'test'
+  ...
+# Anonymous write returned HTTP 401; changed paths: []
+# Subtest: workspace write auth: anonymous requests preserve filesystem and metadata
+ok 44 - workspace write auth: anonymous requests preserve filesystem and metadata
+  ---
+  duration_ms: 276.802658
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a signed identity without a capability is insufficient
+ok 45 - workspace write auth: a signed identity without a capability is insufficient
+  ---
+  duration_ms: 198.31922
+  type: 'test'
+  ...
+# Subtest: workspace write auth: no server configuration means default deny even with a signed grant
+ok 46 - workspace write auth: no server configuration means default deny even with a signed grant
+  ---
+  duration_ms: 208.090775
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a valid capability cannot bypass an empty policy
+ok 47 - workspace write auth: a valid capability cannot bypass an empty policy
+  ---
+  duration_ms: 199.223402
+  type: 'test'
+  ...
+# Subtest: workspace write auth: unsigned, forged or stale identity proofs cannot write
+ok 48 - workspace write auth: unsigned, forged or stale identity proofs cannot write
+  ---
+  duration_ms: 239.806091
+  type: 'test'
+  ...
+# Subtest: workspace write auth: untrusted issuers and forged capabilities are denied
+ok 49 - workspace write auth: untrusted issuers and forged capabilities are denied
+  ---
+  duration_ms: 226.960819
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an empty trusted issuer list denies otherwise valid grants
+ok 50 - workspace write auth: an empty trusted issuer list denies otherwise valid grants
+  ---
+  duration_ms: 198.974755
+  type: 'test'
+  ...
+# Subtest: workspace write auth: capability holder and audience are bound to the request
+ok 51 - workspace write auth: capability holder and audience are bound to the request
+  ---
+  duration_ms: 201.038887
+  type: 'test'
+  ...
+# Subtest: workspace write auth: exact workspace, path and content are signature-bound
+ok 52 - workspace write auth: exact workspace, path and content are signature-bound
+  ---
+  duration_ms: 217.727293
+  type: 'test'
+  ...
+# Subtest: workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+ok 53 - workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+  ---
+  duration_ms: 239.12449
+  type: 'test'
+  ...
+# Subtest: workspace write auth: ambiguous paths and unenforced constraints fail closed
+ok 54 - workspace write auth: ambiguous paths and unenforced constraints fail closed
+  ---
+  duration_ms: 294.402804
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an issuer-approved caller excluded by policy is denied
+ok 55 - workspace write auth: an issuer-approved caller excluded by policy is denied
+  ---
+  duration_ms: 175.982653
+  type: 'test'
+  ...
+# Subtest: workspace write auth: authorized HTTP calls really overwrite and create staging files only
+ok 56 - workspace write auth: authorized HTTP calls really overwrite and create staging files only
+  ---
+  duration_ms: 220.261021
+  type: 'test'
+  ...
+# Subtest: workspace write auth: replaying a successful signed write has no second filesystem effect
+ok 57 - workspace write auth: replaying a successful signed write has no second filesystem effect
+  ---
+  duration_ms: 195.697655
+  type: 'test'
+  ...
+# Subtest: workspace write auth: concurrent calls cannot spend a one-use grant twice
+ok 58 - workspace write auth: concurrent calls cannot spend a one-use grant twice
+  ---
+  duration_ms: 234.072914
+  type: 'test'
+  ...
+# Subtest: workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+ok 59 - workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+  ---
+  duration_ms: 198.817683
+  type: 'test'
+  ...
+1..59
+# tests 59
+# suites 0
+# pass 59
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13299.433999

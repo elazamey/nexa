@@ -1,0 +1,165 @@
+{
+  "P00ProvenanceReconciled": false,
+  "P01Gate": "HOLD; not advanced by WRITE revalidation",
+  "anonymousWrite": {
+    "changedPaths": [],
+    "evidence": "01-write.tap",
+    "status": 401
+  },
+  "authorizedControl": "HTTP 200 with actual staging-only overwrite/create and unchanged root counterpart",
+  "baseline": "426 PASS / 2 KNOWN FAIL of 428",
+  "gitBranch": "arena/01a0bf94-nexa",
+  "gitHead": "4e2f018a42d0fdcb409faa3345258b3b4aa09c6b",
+  "knownFailures": [
+    "H2_ATOMICITY",
+    "H3_CONCURRENCY"
+  ],
+  "limits": [
+    "HTTP WRITE boundary only",
+    "WRITE replay guard is in-process",
+    "No general filesystem-confinement or crash-consistency proof",
+    "Source hash lock is not independent attestation"
+  ],
+  "newFixMade": false,
+  "newRedArtificiallyIntroduced": false,
+  "noAuthorizationFor": [
+    "create hardening",
+    "rollback hardening",
+    "H2/H3 repair",
+    "Git commit",
+    "push",
+    "merge",
+    "deploy"
+  ],
+  "noChangesTo": [
+    "source",
+    "tests",
+    "fixtures",
+    "config",
+    "H2",
+    "H3"
+  ],
+  "node": "v22.22.3",
+  "npm": "10.9.8",
+  "overallSystemGreen": false,
+  "posture": "6 CLOSED; measured by npm run verify",
+  "recordedAtUTC": "2026-09-20T20:37:20.860555+00:00",
+  "scope": "USER_SELECTED_VERIFY_EXISTING_WRITE_ONLY",
+  "stateComparison": {
+    "initial-test-boundary-lock.json": {
+      "changed": [],
+      "checkedFiles": 49,
+      "missing": []
+    },
+    "source-lock.json": {
+      "changed": [],
+      "checkedFiles": 415,
+      "missing": []
+    }
+  },
+  "testRuns": [
+    {
+      "argv": [
+        "node",
+        "--test",
+        "tests/celia-workspace-http.test.js",
+        "tests/celia-workspace-write-auth.test.js"
+      ],
+      "counts": {
+        "cancelled": 0,
+        "fail": 0,
+        "pass": 17,
+        "skipped": 0,
+        "tests": 17,
+        "todo": 0
+      },
+      "exitCode": 0,
+      "name": "01-write",
+      "stdout": "01-write.tap",
+      "timing": "not separately recorded; run completed earlier in this turn"
+    },
+    {
+      "argv": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-persistence.test.js",
+        "tests/celia-workspace-commit-auth.test.js",
+        "tests/celia-workspace-commit-http.test.js",
+        "tests/celia-workspace-http.test.js",
+        "tests/celia-workspace-write-auth.test.js"
+      ],
+      "counts": {
+        "cancelled": 0,
+        "fail": 0,
+        "pass": 59,
+        "skipped": 0,
+        "tests": 59,
+        "todo": 0
+      },
+      "cwd": "/home/user/nexa",
+      "durationSeconds": 13.34,
+      "endedAtUTC": "2026-09-20T20:34:42.409682+00:00",
+      "exitCode": 0,
+      "failedTests": [],
+      "name": "02-boundary-regression",
+      "startedAtUTC": "2026-09-20T20:34:29.070112+00:00",
+      "stderr": "02-boundary-regression.stderr.txt",
+      "stdout": "02-boundary-regression.stdout.txt"
+    },
+    {
+      "argv": [
+        "node",
+        "--test",
+        "tests/celia-library.test.js",
+        "tests/celia-system.test.js",
+        "tests/celia-learning.test.js"
+      ],
+      "counts": {
+        "cancelled": 0,
+        "fail": 0,
+        "pass": 52,
+        "skipped": 0,
+        "tests": 52,
+        "todo": 0
+      },
+      "cwd": "/home/user/nexa",
+      "durationSeconds": 6.045,
+      "endedAtUTC": "2026-09-20T20:34:48.455823+00:00",
+      "exitCode": 0,
+      "failedTests": [],
+      "name": "03-advisory-regression",
+      "startedAtUTC": "2026-09-20T20:34:42.410632+00:00",
+      "stderr": "03-advisory-regression.stderr.txt",
+      "stdout": "03-advisory-regression.stdout.txt"
+    },
+    {
+      "argv": [
+        "npm",
+        "run",
+        "verify"
+      ],
+      "counts": {
+        "cancelled": 0,
+        "fail": 2,
+        "pass": 426,
+        "skipped": 0,
+        "tests": 428,
+        "todo": 0
+      },
+      "cwd": "/home/user/nexa",
+      "durationSeconds": 24.149,
+      "endedAtUTC": "2026-09-20T20:35:12.605802+00:00",
+      "exitCode": 1,
+      "failedTests": [
+        "COMMIT H2: disk failure on the second file cannot leave a half-applied root",
+        "COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes"
+      ],
+      "name": "04-full-verify",
+      "startedAtUTC": "2026-09-20T20:34:48.456732+00:00",
+      "stderr": "04-full-verify.stderr.txt",
+      "stdout": "04-full-verify.stdout.txt"
+    }
+  ],
+  "verifyDownstreamStages": "NOT REACHED after npm test exit 1",
+  "writeVerdict": "PASSED_CURRENT_SCOPED_CHECKS"
+}

@@ -1,0 +1,63 @@
+{
+  "artifacts": {
+    "../../celia-workspace-write-recheck.ar.md": {
+      "bytes": 9893,
+      "sha256": "1d7dfb8c032259c4c049499eae6a00f6898d7d2f0de17267b7057d3511c9c63f"
+    },
+    "01-write.tap": {
+      "bytes": 4111,
+      "sha256": "300124170db3ec753b659ecb0baea8fe29a7c61d5fea6cf477637355678cd0f6"
+    },
+    "02-boundary-regression.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "02-boundary-regression.stdout.txt": {
+      "bytes": 14565,
+      "sha256": "fe6e9916c251a37b3e7cee20999d8a890b5576fcbb54e0facdb9b289be3da95b"
+    },
+    "03-advisory-regression.stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "03-advisory-regression.stdout.txt": {
+      "bytes": 13262,
+      "sha256": "a30898042439066284f0ac4d727f4cd1f74d531bedc46fe914ee9a40523551f0"
+    },
+    "04-full-verify.stderr.txt": {
+      "bytes": 208,
+      "sha256": "ea1459f5efae90125f581fb4ad7a08d389754aa1861589940e246843f777cae8"
+    },
+    "04-full-verify.stdout.txt": {
+      "bytes": 101142,
+      "sha256": "5a12c0d2391eada12ed051e37ba405ec353b2afae29f0edff3c2620ec82b456d"
+    },
+    "comparison.json": {
+      "bytes": 199,
+      "sha256": "e6e1eed8668d115db625c5645dca0ea3b3b76ab1710cc1d526b6d7cdca9e67f0"
+    },
+    "initial-test-boundary-lock.json": {
+      "bytes": 5013,
+      "sha256": "d694b790a5ceffd036096f425d54b127acbd2d746fffc4bed9a94047e1f94ca6"
+    },
+    "runs.json": {
+      "bytes": 2629,
+      "sha256": "5c65632f215b2ba0a01795ab4d4e2739c948aa698fad1891daca509ef805cfd8"
+    },
+    "source-lock.json": {
+      "bytes": 45237,
+      "sha256": "f51dcbfb5eaf76c6811cc5542b92c8e2f0c91073d84d02ce3e6a5678a8c5d316"
+    },
+    "verification.json": {
+      "bytes": 4490,
+      "sha256": "17e81344f5668e934def8b403bad1c1cabbb5d7c641b0c0ec3af2c627fed4650"
+    }
+  },
+  "exclusions": [
+    "manifest.json (self)",
+    "SHA256SUMS (index checksum)"
+  ],
+  "format": "WORKSPACE-WRITE-RECHECK-v1",
+  "scope": "USER_SELECTED_VERIFY_EXISTING_WRITE_ONLY",
+  "trust": "LOCAL_HASH_COMMITMENT_NOT_ATTESTATION_OR_PERMISSION"
+}

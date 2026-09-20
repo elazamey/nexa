@@ -6,7 +6,7 @@
  * 
  * Invariants:
  * - Never calls mintCapability
- * - Never imports process.env (uses vault:// handle)
+ * - Never imports ambient env (uses vault:// handle)
  * - Never returns new caprefs
  * - Refusal is evidence
  */

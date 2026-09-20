@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Shield, Zap, Cpu, MemoryStick, Clock, Terminal, Database, Brain, Play, RotateCcw, Box, Layers, FileJson } from 'lucide-react';
+import SemanticRagPanel from './SemanticRagPanel.jsx';
 
 // CounterCard - Glassmorphism Telemetry
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
@@ -372,91 +373,92 @@ export default function NexaDashboard() {
           </div>
         </div>
 
-        {/* Bottom Row: Evidence, Memory, Planner */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Evidence Chain */}
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
-            <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
-              <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <FileJson className="w-3.5 h-3.5 text-emerald-400" /> Evidence Chain
-                <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500">{evidence.length}</span>
-              </h3>
-              <Database className="w-3 h-3 text-slate-600" />
-            </div>
-            <div className="p-3 max-h-[320px] overflow-y-auto custom-scrollbar space-y-2">
-              {evidence.length === 0 ? (
-                <div className="text-[11px] text-slate-600 py-6 text-center">No evidence yet</div>
-              ) : evidence.slice(-6).reverse().map((ev, i) => (
-                <div key={i} className="p-2.5 rounded-xl bg-black/30 border border-slate-800/50 hover:border-slate-700/50 transition-colors group">
-                  <div className="flex justify-between items-start gap-2">
-                    <span className="text-[10px] font-mono text-cyan-300 truncate">{ev.hash?.slice(0,28) || ev.id?.slice(0,20) || 'sha256:...'}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400 font-mono">{ev.kind || 'EVIDENCE'}</span>
-                  </div>
-                  <div className="mt-1.5 text-[10px] text-slate-500 font-mono truncate">{JSON.stringify(ev.payload || {}).slice(0,60)}</div>
-                </div>
-              ))}
-            </div>
+        {/* v0.5 Semantic RAG Panel — Full Width */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-5">
+            <SemanticRagPanel />
           </div>
-
-          {/* Memory Digests */}
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
-            <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
-              <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <MemoryStick className="w-3.5 h-3.5 text-purple-400" /> Memory Digests
-                <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500">{memory.length}</span>
-              </h3>
-              <span className="text-[9px] font-mono text-slate-600">digest-only • RLS</span>
-            </div>
-            <div className="p-3 max-h-[320px] overflow-y-auto custom-scrollbar space-y-2">
-              {memory.length === 0 ? (
-                <div className="text-[11px] text-slate-600 py-6 text-center">No memory cells</div>
-              ) : memory.slice(-6).reverse().map((m, i) => (
-                <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-slate-800/50">
-                  <div>
-                    <div className="text-[11px] font-mono text-slate-300">{m.tier || 'episodic'}</div>
-                    <div className="text-[10px] font-mono text-slate-500 truncate max-w-[160px]">{m.digest?.slice(0,32) || m.id?.slice(0,20)}</div>
+          <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Evidence Chain */}
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
+              <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+                <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                  <FileJson className="w-3.5 h-3.5 text-emerald-400" /> Evidence Chain
+                  <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500">{evidence.length}</span>
+                </h3>
+                <Database className="w-3 h-3 text-slate-600" />
+              </div>
+              <div className="p-3 max-h-[460px] overflow-y-auto custom-scrollbar space-y-2">
+                {evidence.length === 0 ? (
+                  <div className="text-[11px] text-slate-600 py-6 text-center">No evidence yet</div>
+                ) : evidence.slice(-10).reverse().map((ev, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-black/30 border border-slate-800/50 hover:border-slate-700/50 transition-colors group">
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-[10px] font-mono text-cyan-300 truncate">{ev.hash?.slice(0,28) || ev.id?.slice(0,20) || 'sha256:...'}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded-full text-slate-400 font-mono">{ev.kind || 'EVIDENCE'}</span>
+                    </div>
+                    <div className="mt-1.5 text-[10px] text-slate-500 font-mono truncate">{JSON.stringify(ev.payload || {}).slice(0,60)}</div>
                   </div>
-                  <span className={`text-[9px] px-2 py-1 rounded-full border font-mono uppercase tracking-wide
-                    ${m.tier === 'episodic' ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 
-                      m.tier === 'semantic' ? 'bg-purple-500/10 border-purple-500/20 text-purple-300' :
-                      m.tier === 'working' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
-                    {m.tier || 'episodic'}
-                  </span>
-                </div>
-              ))}
-              <div className="pt-2 text-[10px] font-mono text-slate-600 text-center">Supabase RLS + pgvector future + Grok Planner</div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Planner Thinking */}
-          <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
-            <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
-              <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <Brain className="w-3.5 h-3.5 text-pink-400" /> Planner Thinking
-                <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500 font-mono">{thinking.model || 'grok-2'}</span>
-              </h3>
-              <span className="text-[9px] font-mono text-slate-600">{thinking.steps?.length || 0} steps</span>
-            </div>
-            <div className="p-3 max-h-[320px] overflow-y-auto custom-scrollbar space-y-2">
-              {(thinking.steps || []).map((step, i) => (
-                <div key={i} className={`p-2.5 rounded-xl border-l-2 bg-black/30 backdrop-blur-sm
-                  ${step.kind === 'observe' ? 'border-blue-500/50 bg-blue-500/[0.03]' : 
-                    step.kind === 'do' ? 'border-emerald-500/50 bg-emerald-500/[0.03]' :
-                    step.kind === 'evidence' ? 'border-purple-500/50 bg-purple-500/[0.03]' :
-                    step.kind === 'emit' ? 'border-amber-500/50 bg-amber-500/[0.03]' : 'border-slate-700 bg-slate-800/20'}`}>
-                  <div className="flex justify-between items-start">
-                    <span className="text-[11px] font-bold font-mono uppercase tracking-wide text-slate-300">{step.kind}</span>
-                    <span className="text-[9px] font-mono text-slate-500">{step.capref || step.key || ''}</span>
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-500 mt-1 leading-relaxed">{step.detail || JSON.stringify(step.args || step.value || {}).slice(0,80)}</div>
+            {/* Memory + Planner Combined */}
+            <div className="space-y-4">
+              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
+                <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+                  <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                    <MemoryStick className="w-3.5 h-3.5 text-purple-400" /> Memory Digests
+                    <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500">{memory.length}</span>
+                  </h3>
+                  <span className="text-[9px] font-mono text-slate-600">digest-only • RLS</span>
                 </div>
-              ))}
-              <div className="pt-3 border-t border-slate-800/50 mt-3">
-                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                  <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">Gates</span><span className="text-emerald-400">6 CLOSED</span></div>
-                  <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">Tests</span><span className="text-slate-300">314/314</span></div>
-                  <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">Attacks</span><span className="text-emerald-400">BLOCKED</span></div>
-                  <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">LLM Vectors</span><span className="text-emerald-400">2/2 BLOCKED</span></div>
+                <div className="p-3 max-h-[220px] overflow-y-auto custom-scrollbar space-y-2">
+                  {memory.length === 0 ? (
+                    <div className="text-[11px] text-slate-600 py-6 text-center">No memory cells</div>
+                  ) : memory.slice(-5).reverse().map((m, i) => (
+                    <div key={i} className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-slate-800/50">
+                      <div>
+                        <div className="text-[11px] font-mono text-slate-300">{m.tier || 'episodic'}</div>
+                        <div className="text-[10px] font-mono text-slate-500 truncate max-w-[140px]">{m.digest?.slice(0,32) || m.id?.slice(0,20)}</div>
+                      </div>
+                      <span className={`text-[9px] px-2 py-1 rounded-full border font-mono uppercase tracking-wide
+                        ${m.tier === 'episodic' ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 
+                          m.tier === 'semantic' ? 'bg-purple-500/10 border-purple-500/20 text-purple-300' :
+                          m.tier === 'working' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+                        {m.tier || 'episodic'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700/80 transition-colors">
+                <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+                  <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                    <Brain className="w-3.5 h-3.5 text-pink-400" /> Planner Thinking
+                    <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500 font-mono">{thinking.model || 'grok-2'}</span>
+                  </h3>
+                  <span className="text-[9px] font-mono text-slate-600">{thinking.steps?.length || 0} steps</span>
+                </div>
+                <div className="p-3 max-h-[220px] overflow-y-auto custom-scrollbar space-y-2">
+                  {(thinking.steps || []).slice(0,4).map((step, i) => (
+                    <div key={i} className={`p-2.5 rounded-xl border-l-2 bg-black/30 backdrop-blur-sm
+                      ${step.kind === 'observe' ? 'border-blue-500/50 bg-blue-500/[0.03]' : 
+                        step.kind === 'do' ? 'border-emerald-500/50 bg-emerald-500/[0.03]' :
+                        step.kind === 'evidence' ? 'border-purple-500/50 bg-purple-500/[0.03]' :
+                        step.kind === 'emit' ? 'border-amber-500/50 bg-amber-500/[0.03]' : 'border-slate-700 bg-slate-800/20'}`}>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[11px] font-bold font-mono uppercase tracking-wide text-slate-300">{step.kind}</span>
+                        <span className="text-[9px] font-mono text-slate-500">{step.capref || step.key || ''}</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-500 mt-1 leading-relaxed">{step.detail || JSON.stringify(step.args || step.value || {}).slice(0,80)}</div>
+                    </div>
+                  ))}
+                  <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-2 border-t border-slate-800/50">
+                    <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">Gates</span><span className="text-emerald-400">6 CLOSED</span></div>
+                    <div className="flex justify-between p-2 bg-black/20 rounded-lg border border-slate-800/30"><span className="text-slate-500">RAG</span><span className="text-purple-400">384d Top-12</span></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -466,12 +468,12 @@ export default function NexaDashboard() {
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] font-mono text-slate-600">
           <div className="flex items-center gap-3">
-            <span>Celia Agent Dashboard — Built on NEXA Ω∞ — Cell → Tissue → Organ → Organism</span>
+            <span>Celia Agent Dashboard — Built on NEXA Ω∞ — Cell → Tissue → Organ → Organism — v0.5 RAG</span>
             <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-            <span className="text-slate-500">AI proposes, deterministic system decides</span>
+            <span className="text-slate-500">AI proposes, deterministic system decides • 384d pgvector • Top-12</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • No heavy chart libs</span>
+            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • RAG • 55KB</span>
           </div>
         </div>
       </div>

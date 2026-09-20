@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Celia Dashboard Server — Serves frontend + API for evidence, memory, planner + DAG SSE
+ * Celia Dashboard Server — Serves frontend + API for evidence, memory, planner + DAG SSE + Semantic RAG
  * 
  * This server lives in tools/ (allowed to use fs, net, child_process)
  * It does NOT open any NEXA gates — it only reads evidence and memory via ports
@@ -16,6 +16,10 @@
  *   GET  /api/posture — gate posture
  *   GET  /api/v1/dag-stream — SSE stream for DAG execution (real-time)
  *   POST /api/v1/dag-run — runs DAG executor and streams via SSE
+ *   GET  /api/v1/semantic/memory — list semantic facts
+ *   POST /api/v1/semantic/store — store fact with embedding
+ *   POST /api/v1/semantic/recall — RAG recall Top-12
+ *   POST /api/v1/semantic/rag-demo — run RAG demo
  */
 
 import { createServer } from 'node:http';
@@ -23,6 +27,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
+import { createVectorSupabasePort } from './celia-vector-port.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -31,6 +36,40 @@ const PORT = process.env.PORT || 3001;
 // Global event emitter for DAG updates — shared with executor
 export const dagEventEmitter = new EventEmitter();
 dagEventEmitter.setMaxListeners(50);
+
+// v0.5 — Semantic Memory Port (mock by default, real Supabase if env set)
+const vectorPort = createVectorSupabasePort({
+  url: process.env.SUPABASE_URL || 'mock://memory',
+  key: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || 'mock-key'
+});
+
+// Seed semantic memory with initial facts if empty
+let semanticSeeded = false;
+async function seedSemanticMemory() {
+  if (semanticSeeded) return;
+  if (vectorPort._store && vectorPort._store.length > 0) {
+    semanticSeeded = true;
+    return;
+  }
+  const facts = [
+    { content: 'NEXA execution requires evidence_ref for all filesystem writes.', meta: { type: 'policy', tier: 'semantic' } },
+    { content: 'Grok planner produces parallel DAGs with max 3 concurrent nodes, topological sort.', meta: { type: 'architecture', tier: 'semantic' } },
+    { content: 'Memory is digest-only, never raw content, with RLS, evidence-bound.', meta: { type: 'policy', tier: 'semantic' } },
+    { content: 'Tool registry default deny, allow-listed paths, 9 tools including semantic recall.', meta: { type: 'policy', tier: 'working' } },
+    { content: 'SSE stream provides real-time DAG visualization, heartbeat 15s.', meta: { type: 'architecture', tier: 'working' } },
+    { content: 'Speculative execution PASTE 48.5% latency saved, maxParallel 3.', meta: { type: 'architecture', tier: 'working' } },
+    { content: 'Security gates 6 CLOSED, 314 tests, 2 LLM vectors BLOCKED.', meta: { type: 'security', tier: 'episodic' } },
+    { content: 'Glassmorphism dashboard: HUD + Telemetry + Arena, Tailwind + lucide-react, 55KB gzip.', meta: { type: 'ui', tier: 'working' } },
+    { content: 'Supabase pgvector 384d embeddings, cosine similarity, Top-12 RAG for planner.', meta: { type: 'architecture', tier: 'semantic' } },
+    { content: 'Evidence chain hash-chained, signed receipts, ledger records every message.', meta: { type: 'policy', tier: 'semantic' } },
+  ];
+  for (const f of facts) {
+    try { await vectorPort.storeFact(f.content, f.meta); } catch {}
+  }
+  semanticSeeded = true;
+  console.log(`[semantic] seeded ${facts.length} facts`);
+}
+seedSemanticMemory();
 
 export function updateNodeState(nodeId, state, evidenceRef = null) {
   dagEventEmitter.emit('dag_update', {
@@ -71,8 +110,10 @@ let mockState = {
     tests: '314/314',
     promotion: '5/5 READY',
     llm_vectors: '2/2 BLOCKED',
-    version: 'v0.4-dag-sse'
-  }
+    version: 'v0.5-semantic-rag',
+    rag: 'Top-12 RAG • 384d • pgvector'
+  },
+  semanticMemory: []
 };
 
 function getPosture() {
@@ -237,20 +278,134 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // === v0.5 Semantic Memory & RAG Endpoints ===
+  if (url.pathname === '/api/v1/semantic/memory' && req.method === 'GET') {
+    await seedSemanticMemory();
+    const store = vectorPort._store || [];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ count: store.length, facts: store.map(f => ({
+      id: f.id,
+      digest: f.digest,
+      content: f.content,
+      tier: f.tier,
+      metadata: f.metadata,
+      created_at: f.created_at
+    })) }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/semantic/store' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { content, tier, metadata } = JSON.parse(body || '{}');
+        if (!content) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'content required' }));
+          return;
+        }
+        await seedSemanticMemory();
+        const result = await vectorPort.storeFact(content, { tier: tier || 'working', ...(metadata || {}) });
+        emitDagEvent('SEMANTIC_STORED', { digest: result.digest, tier: result.tier });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/semantic/recall' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { query, limit = 12, threshold = 0.3, tier } = JSON.parse(body || '{}');
+        if (!query) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'query required' }));
+          return;
+        }
+        await seedSemanticMemory();
+        const facts = await vectorPort.recallContext(query, limit, threshold);
+        let filtered = facts;
+        if (tier) filtered = facts.filter(f => f.tier === tier);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, query, count: filtered.length, facts: filtered }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/semantic/rag-demo' && req.method === 'POST') {
+    try {
+      await seedSemanticMemory();
+      const query = url.searchParams.get('q') || 'How to handle execution evidence and DAG concurrency?';
+      const facts = await vectorPort.recallContext(query, 12, 0.3);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: true,
+        flow: 'Task → Generate Embedding → Retrieve Top-12 → Pass to Planner → Execute',
+        query,
+        count: facts.length,
+        facts,
+        plannerContext: facts.map(f => `- [${f.tier}] ${f.content}`).join('\n')
+      }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/v1/semantic/embedding' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { text } = JSON.parse(body || '{}');
+        if (!text) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'text required' }));
+          return;
+        }
+        const { generateEmbedding } = await import('../packages/cells/celia/memory/src/vector-store.js');
+        const embedding = await generateEmbedding(text);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, dim: embedding.length, embedding: embedding.slice(0,10), full: false, text: text.slice(0,100) }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
 <html>
-<head><title>Celia Dashboard API</title></head>
+<head><title>Celia Dashboard API v0.5</title></head>
 <body style="font-family: monospace; padding: 20px; background: #0a0a0b; color: #e4e4e7;">
-<h1>Celia Dashboard Server — NEXA v0.4 DAG SSE</h1>
+<h1>Celia Dashboard Server — NEXA v0.5 Semantic RAG</h1>
 <p>API running on port ${PORT}</p>
 <ul>
   <li><a href="/api/celia/state">/api/celia/state</a> — full state</li>
   <li><a href="/api/celia/evidence">/api/celia/evidence</a> — evidence chain</li>
   <li><a href="/api/celia/memory">/api/celia/memory</a> — memory digests</li>
+  <li><a href="/api/v1/semantic/memory">/api/v1/semantic/memory</a> — semantic facts (RAG)</li>
+  <li>POST /api/v1/semantic/store — store fact { content, tier, metadata }</li>
+  <li>POST /api/v1/semantic/recall — RAG recall { query, limit=12, threshold=0.3 }</li>
+  <li>POST /api/v1/semantic/rag-demo — RAG demo Top-12</li>
+  <li>POST /api/v1/semantic/embedding — generate 384d embedding</li>
   <li><a href="/api/posture">/api/posture</a> — gate posture</li>
   <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream (real-time)</li>
   <li>POST <a href="/api/v1/dag-run">/api/v1/dag-run</a> — trigger DAG execution</li>
@@ -268,11 +423,14 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌟 Celia Dashboard Server running (v0.4 DAG SSE)`);
+  console.log(`🌟 Celia Dashboard Server running (v0.5 Semantic RAG)`);
   console.log(`   API: http://localhost:${PORT}`);
   console.log(`   State: http://localhost:${PORT}/api/celia/state`);
   console.log(`   DAG Stream (SSE): http://localhost:${PORT}/api/v1/dag-stream`);
   console.log(`   DAG Run: POST http://localhost:${PORT}/api/v1/dag-run`);
+  console.log(`   Semantic Memory: http://localhost:${PORT}/api/v1/semantic/memory`);
+  console.log(`   RAG Recall: POST http://localhost:${PORT}/api/v1/semantic/recall`);
+  console.log(`   RAG Demo: POST http://localhost:${PORT}/api/v1/semantic/rag-demo`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY`);
+  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, RAG: Top-12 384d`);
 });

@@ -4,9 +4,10 @@
 
 * **NEXA v0.1** — a signed, capability-gated *protocol* for agent tooling. Default-deny,
   evidence-first, Ed25519 from commit one, zero runtime dependencies. (This document.)
-* **NEXA Ω** — a *language*, a runtime, an immutable kernel, an Evolution Gate and a
-  learning layer on top of that protocol. A program can ask; it can never grant itself
-  anything. → [jump to NEXA Ω](#nexa-ω--language--runtime--evolution-gate--learning)
+* **NEXA Ω** — a *language* (`.nexa`), a deterministic compiler, a capability-aware
+  runtime, an immutable kernel, an Evolution Gate and a learning layer on top of that
+  protocol. A program can **propose** intent and request authority; it can never grant
+  itself anything, mint a capability, or mutate the kernel. → [jump to NEXA Ω](#nexa-ω--language--runtime--evolution-gate--learning)
 
 NEXA is the layer between an autonomous agent and the tools it wants to use.
 Every request is an *envelope*: canonicalized, Ed25519-signed, time-boxed, nonce-protected.
@@ -34,9 +35,11 @@ INSPECT -> CREATE -> TEST -> VERIFY -> REPORT
 
 > **NEXA does not trust itself. NEXA proves itself.**
 
-Ω is a front end that can only ever *ask*. The wire protocol, the capability algebra,
-the policy engine and the evidence chain of v0.1 are unchanged and remain the only things
-that can authorize anything.
+Ω is a front end that can only ever *propose*. It compiles intent to a signed,
+typed IR and asks the deterministic kernel to decide. The wire protocol, the capability
+algebra, the policy engine and the evidence chain of v0.1 are unchanged and remain the
+only things that can authorize anything — Ω never mints, never verifies itself, and
+never bypasses a gate.
 
 ```text
 .nexa source ──► compiler (pure) ──► typed IR ──► manifest (signed) ──► Evolution Gate

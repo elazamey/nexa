@@ -10,13 +10,16 @@
 
 NEXA v0.1 is a signed, capability-gated *protocol* for agent tooling: envelopes,
 capability tokens, a default-deny policy engine, an evidence chain, and six closed hard
-gates. NEXA Ω is the layer above it: a **language** in which intent, authority,
-types, evidence and self-evolution are grammar, compiled by a deterministic compiler and
-executed by a runtime that owns no authority of its own.
+gates. NEXA Ω is the layer above it: a **language** (`.nexa`) in which intent, authority,
+types, evidence and self-evolution are grammar, compiled by a deterministic, pure compiler
+into a signed, typed IR, and executed by a runtime that owns no authority of its own.
 
 Ω does not replace v0.1 and does not modify it. The wire protocol, the capability
 algebra, the policy engine and the evidence chain are unchanged and remain the only
-things that can *authorize* anything. Ω is a front end that can only ever **ask**.
+things that can *authorize* anything. Ω is a front end that can only ever **propose**:
+it compiles intent, requests capabilities from the authority, and records evidence.
+It never mints, never verifies itself, and never bypasses a gate. A program can ask;
+it can never grant itself anything.
 
 ```text
 intent  ──►  compiler  ──►  typed IR  ──►  runtime  ──►  kernel (NEXA v0.1)

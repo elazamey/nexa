@@ -3,7 +3,9 @@
  * Celia Dashboard Server — Serves frontend + API for evidence, memory, planner + DAG SSE + Semantic RAG + Governed Memory
  * 
  * This server lives in tools/ (allowed to use fs, net, child_process)
- * It does NOT open any NEXA gates — it only reads evidence and memory via ports
+ * It does NOT open NEXA core gates. These tools-layer ports do perform I/O;
+ * workspace/write and workspace/commit have independent default-deny boundaries.
+ * Other legacy mutation routes still need hardening; this is not a production-safe API.
  * 
  *   node tools/celia-dashboard-server.mjs
  *   → http://localhost:3001 (API) + http://localhost:5173 (Vite frontend)
@@ -37,6 +39,9 @@ import { EventEmitter } from 'node:events';
 import { createVectorSupabasePort } from './celia-vector-port.mjs';
 import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/governed-engine.js';
 import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
+import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
+import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
+import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
 import { ContractEngine } from '../packages/cells/celia/executor/src/contract-engine.js';
 import { AdaptiveDagEngine, DagNodeStatus } from '../packages/cells/celia/executor/src/adaptive-dag.js';
@@ -50,6 +55,12 @@ import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const PORT = process.env.PORT || 3001;
+
+// Trusted operator configuration, never derived from request headers/body.
+// Missing configuration denies every workspace write; invalid config stops startup.
+const authorizeWorkspaceWrite = createWorkspaceWriteAuthorizer(
+  JSON.parse(process.env.CELIA_WORKSPACE_WRITE_AUTH || '{}')
+);
 
 // Global event emitter for DAG updates — shared with executor
 export const dagEventEmitter = new EventEmitter();
@@ -66,6 +77,10 @@ const governedEngine = new NexaGovernedMemoryEngine({ maxNodes: 500, ownerKid: '
 
 // v0.6 Transactional Workspace + Contract + Adaptive DAG + Event Sourcing + AST
 const workspacePort = createTransactionalWorkspacePort({ root });
+// Separate COMMIT configuration; WRITE grants/configuration never enable it.
+const commitWorkspace = createWorkspaceCommitter({
+  root, workspacePort, config: JSON.parse(process.env.CELIA_WORKSPACE_COMMIT_AUTH || '{}')
+});
 const astPort = createAstPort({ root });
 const contractEngine = new ContractEngine();
 const adaptiveDagEngine = new AdaptiveDagEngine({ maxDepth: 5, maxInjections: 20, maxNodes: 100 });
@@ -705,39 +720,90 @@ const server = createServer(async (req, res) => {
   }
 
   if (url.pathname === '/api/v1/workspace/write' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
+    const chunks = [];
+    let bytes = 0;
+    let rejected = false;
+    req.on('data', chunk => {
+      if (rejected) return;
+      bytes += chunk.length;
+      if (bytes > 128 * 1024) {
+        rejected = true;
+        chunks.length = 0;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'WORKSPACE_REQUEST_TOO_LARGE' }));
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on('end', async () => {
+      if (rejected) return;
+      let input;
       try {
-        const { workspaceId, path, content, evidenceRef } = JSON.parse(body || '{}');
-        if (!workspaceId || !path) throw new Error('workspaceId and path required');
-        const result = await workspacePort.writeFile(workspaceId, path, content || '', evidenceRef || 'evidence:workspace-write-api');
-        eventSourcingEngine.record(EventType.TOOL_OUTPUT, { workspaceId, path, digest: result.digest }, evidenceRef);
+        input = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'WORKSPACE_JSON_INVALID' }));
+        return;
+      }
+      try {
+        // This is the only path to writeFile in this route. No filesystem or
+        // workspace bookkeeping is touched until signature/capability/policy pass.
+        const authorization = authorizeWorkspaceWrite(input);
+        const { workspaceId, path, content } = input;
+        const result = await workspacePort.writeFile(workspaceId, path, content, authorization.authorizationRef);
+        eventSourcingEngine.record(EventType.TOOL_OUTPUT, {
+          workspaceId, path, digest: result.digest,
+          subject: authorization.subject, capabilityId: authorization.capabilityId, rule: authorization.rule
+        }, authorization.authorizationRef);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, ...result }));
+        res.end(JSON.stringify({ ok: true, ...result, authorizationRef: authorization.authorizationRef }));
       } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: e.message }));
+        const status = e instanceof WorkspaceWriteError ? e.status : 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: e instanceof WorkspaceWriteError ? e.code : 'WORKSPACE_WRITE_FAILED' }));
       }
     });
     return;
   }
 
   if (url.pathname === '/api/v1/workspace/commit' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', async () => {
+    const chunks = [];
+    let bytes = 0;
+    let rejected = false;
+    req.on('data', chunk => {
+      if (rejected) return;
+      bytes += chunk.length;
+      if (bytes > 128 * 1024) {
+        rejected = true;
+        chunks.length = 0;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'COMMIT_REQUEST_TOO_LARGE' }));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (rejected) return;
+      let input;
       try {
-        const { workspaceId, evidenceRef } = JSON.parse(body || '{}');
-        if (!workspaceId) throw new Error('workspaceId required');
-        const result = await workspacePort.commit(workspaceId, evidenceRef || 'evidence:workspace-commit-api');
-        eventSourcingEngine.record(EventType.WORKSPACE_COMMIT, { workspaceId, changedFiles: result.changedFiles }, evidenceRef);
+        input = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'COMMIT_JSON_INVALID' }));
+        return;
+      }
+      try {
+        // Identity -> capability -> policy -> exact state -> synchronous executor.
+        // Never dispatch to the legacy port's unchecked commit().
+        const result = commitWorkspace(input);
+        const event = eventSourcingEngine.record(EventType.WORKSPACE_COMMIT, result, result.authorizationRef);
         emitDagEvent('WORKSPACE_COMMIT', result);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, ...result }));
+        res.end(JSON.stringify({ ...result, evidenceEventHash: event.hash }));
       } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: e.message }));
+        const status = e instanceof WorkspaceCommitError ? e.status : 500;
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: e instanceof WorkspaceCommitError ? e.code : 'COMMIT_EXECUTION_FAILED' }));
       }
     });
     return;

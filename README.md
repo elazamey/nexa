@@ -403,7 +403,7 @@ the pinned bytes drift apart.
 ## Verify it yourself
 
 ```bash
-npm test                      # 314 tests (68 of them Ω, 26 cellular, 107 Google)
+npm test                      # H1 PASS; H2/H3 still RED; last all-green baseline: 353
 npm run audit                 # 16 adversarial probes (attacks that must keep failing)
 npm run posture               # CI gate: all six gates CLOSED, no ambient authority in the tree
 npm run proof:permission      # runs the protocol flow while the runtime denies fs write,
@@ -460,8 +460,18 @@ not the one it can assert:
                                        dependencies
 ```
 
+> Hardening status: **H1 persistence now passes**, including actual restart/ABA,
+> consume-before-effects and fresh-grant acceptance for the same changeSet.
+> H2 atomicity and H3 external-writer concurrency remain RED, not skipped.
+> Latest `verify` after the isolated learning addition: **392 PASS / 2 FAIL of 394**.
+> WRITE/COMMIT + H1 persistence regression: **59/59** (39 + 20).
+> The metrics block below remains the historical all-green baseline, not current acceptance.
+> COMMIT now also requires a pre-provisioned, external persistent `CELIA_COMMIT_STATE_DIR`.
+> See [H1 evidence, storage contract and limits](docs/celia-workspace-commit-h1-persistence.ar.md)
+> and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
+
 <!-- NEXA_METRICS:START -->
-- Total tests: 314
+- Total tests: 353
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8
@@ -471,6 +481,28 @@ not the one it can assert:
 Deliberately **not** in v0.1 or Ω v1: any execution of arbitrary code, filesystem or
 terminal capability, durable evidence storage, cross-endpoint evidence reconciliation, and
 WASM compilation.
+
+## Celia adaptive plan learning — collection first
+
+An isolated, **advisory-only** module can collect pre-registered repair plans,
+actual Node TAP results and explicit human reviews. It includes real CPU
+logistic-regression training and a small two-hidden-layer neural network, with
+task-group-separated evaluation. It does not execute plans, promote models,
+change policies, or update an external LLM's weights.
+
+```bash
+npm run learning -- --help
+# The operator supplies a private, persistent directory OUTSIDE the repository.
+node tools/celia-learning.mjs status --state /path/to/initialized-learning-data
+node tools/celia-learning.mjs research --query "software repair"
+```
+
+Collection is empty initially; training refuses insufficient/unreviewed data.
+Numerical tests use explicitly synthetic fixtures, not claimed real repair gains.
+Research retrieval is read-only, fixed-source and bounded; live arXiv access
+failed with `ECONNRESET` in this sandbox, despite passing connector unit tests.
+See [Arabic setup, data schemas, research references and measured limits](docs/celia-adaptive-learning.ar.md).
+H2/H3 remain unresolved; this module does not reopen the execution gates.
 
 ## License
 

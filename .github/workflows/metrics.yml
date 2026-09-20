@@ -20,11 +20,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # No cache: actions/setup-node's npm caching requires a lockfile
+          # (package-lock.json), and NEXA ships without one by design —
+          # zero runtime and zero development dependencies.
 
       - name: Install dependencies
-        # NEXA has zero dependencies, but npm ci ensures clean state if lockfile appears
-        run: npm ci || npm install
+        # npm install works with or without a lockfile; npm ci requires one.
+        run: npm install
 
       - name: Run Tests & Gather TAP output
         run: npm test

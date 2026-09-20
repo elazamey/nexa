@@ -1,0 +1,248 @@
+TAP version 13
+# Subtest: commit auth: exact approved bytes and base yield only the intended root mutations
+ok 1 - commit auth: exact approved bytes and base yield only the intended root mutations
+  ---
+  duration_ms: 286.868372
+  type: 'test'
+  ...
+# Subtest: commit auth: anonymous is 401 and signed identity without capability is 403
+ok 2 - commit auth: anonymous is 401 and signed identity without capability is 403
+  ---
+  duration_ms: 259.574109
+  type: 'test'
+  ...
+# Subtest: commit auth: WRITE capability in a signed COMMIT request is not sufficient
+ok 3 - commit auth: WRITE capability in a signed COMMIT request is not sufficient
+  ---
+  duration_ms: 178.993906
+  type: 'test'
+  ...
+# Subtest: commit auth: genuine COMMIT grant for A cannot authorize workspace B
+ok 4 - commit auth: genuine COMMIT grant for A cannot authorize workspace B
+  ---
+  duration_ms: 226.818317
+  type: 'test'
+  ...
+# Subtest: commit auth: expired capability in a fresh signed envelope is denied
+ok 5 - commit auth: expired capability in a fresh signed envelope is denied
+  ---
+  duration_ms: 181.158545
+  type: 'test'
+  ...
+# Subtest: commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+ok 6 - commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+  ---
+  duration_ms: 217.542438
+  type: 'test'
+  ...
+# Subtest: commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+ok 7 - commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+  ---
+  duration_ms: 165.832201
+  type: 'test'
+  ...
+# Subtest: commit auth: re-signing a new staging hash cannot change the grant constraints
+ok 8 - commit auth: re-signing a new staging hash cannot change the grant constraints
+  ---
+  duration_ms: 179.535835
+  type: 'test'
+  ...
+# Subtest: commit auth: added or removed staging files invalidate the full manifest
+ok 9 - commit auth: added or removed staging files invalidate the full manifest
+  ---
+  duration_ms: 189.602073
+  type: 'test'
+  ...
+# Subtest: commit auth: changed base content or base permissions invalidates approval
+ok 10 - commit auth: changed base content or base permissions invalidates approval
+  ---
+  duration_ms: 192.097748
+  type: 'test'
+  ...
+# Subtest: commit auth: expected absent target that appears before commit invalidates the base
+ok 11 - commit auth: expected absent target that appears before commit invalidates the base
+  ---
+  duration_ms: 172.192502
+  type: 'test'
+  ...
+# Subtest: commit auth: a grant and intent for another root cannot target this server
+ok 12 - commit auth: a grant and intent for another root cannot target this server
+  ---
+  duration_ms: 203.934113
+  type: 'test'
+  ...
+# Subtest: commit auth: valid signature and grant cannot bypass empty or denying policy
+ok 13 - commit auth: valid signature and grant cannot bypass empty or denying policy
+  ---
+  duration_ms: 196.461291
+  type: 'test'
+  ...
+# Subtest: commit auth: untrusted issuer and an empty issuer list fail closed
+ok 14 - commit auth: untrusted issuer and an empty issuer list fail closed
+  ---
+  duration_ms: 176.546987
+  type: 'test'
+  ...
+# Subtest: commit auth: holder, audience, signature and operation are independently checked
+ok 15 - commit auth: holder, audience, signature and operation are independently checked
+  ---
+  duration_ms: 239.907872
+  type: 'test'
+  ...
+# Subtest: commit auth: wrong resource, missing state constraints and wider budgets are denied
+ok 16 - commit auth: wrong resource, missing state constraints and wider budgets are denied
+  ---
+  duration_ms: 231.300757
+  type: 'test'
+  ...
+# Subtest: commit auth: root target symlinks are rejected before any file is applied
+ok 17 - commit auth: root target symlinks are rejected before any file is applied
+  ---
+  duration_ms: 198.788024
+  type: 'test'
+  ...
+# Subtest: commit auth: staging symlinks are rejected before any file is applied
+ok 18 - commit auth: staging symlinks are rejected before any file is applied
+  ---
+  duration_ms: 206.455206
+  type: 'test'
+  ...
+# Subtest: commit auth: concurrent requests cannot apply the same single-use authorization twice
+ok 19 - commit auth: concurrent requests cannot apply the same single-use authorization twice
+  ---
+  duration_ms: 210.488255
+  type: 'test'
+  ...
+# Subtest: workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+ok 20 - workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+  ---
+  duration_ms: 294.46679
+  type: 'test'
+  ...
+# {"status":401,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_muaamus1","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+ok 21 - workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+  ---
+  duration_ms: 242.846145
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_muaamuzf","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+ok 22 - workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+  ---
+  duration_ms: 210.909895
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_muaamv4w","changedEntries":[],"metadataUnchanged":true},{"workspaceId":"ws_commit-red-b_muaamv5g","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace HTTP: unauthenticated write is denied without filesystem changes
+ok 23 - workspace HTTP: unauthenticated write is denied without filesystem changes
+  ---
+  duration_ms: 223.351
+  type: 'test'
+  ...
+# Anonymous write returned HTTP 401; changed paths: []
+# Subtest: workspace write auth: anonymous requests preserve filesystem and metadata
+ok 24 - workspace write auth: anonymous requests preserve filesystem and metadata
+  ---
+  duration_ms: 244.836868
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a signed identity without a capability is insufficient
+ok 25 - workspace write auth: a signed identity without a capability is insufficient
+  ---
+  duration_ms: 191.013435
+  type: 'test'
+  ...
+# Subtest: workspace write auth: no server configuration means default deny even with a signed grant
+ok 26 - workspace write auth: no server configuration means default deny even with a signed grant
+  ---
+  duration_ms: 166.479665
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a valid capability cannot bypass an empty policy
+ok 27 - workspace write auth: a valid capability cannot bypass an empty policy
+  ---
+  duration_ms: 165.719508
+  type: 'test'
+  ...
+# Subtest: workspace write auth: unsigned, forged or stale identity proofs cannot write
+ok 28 - workspace write auth: unsigned, forged or stale identity proofs cannot write
+  ---
+  duration_ms: 212.817932
+  type: 'test'
+  ...
+# Subtest: workspace write auth: untrusted issuers and forged capabilities are denied
+ok 29 - workspace write auth: untrusted issuers and forged capabilities are denied
+  ---
+  duration_ms: 194.924087
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an empty trusted issuer list denies otherwise valid grants
+ok 30 - workspace write auth: an empty trusted issuer list denies otherwise valid grants
+  ---
+  duration_ms: 155.086621
+  type: 'test'
+  ...
+# Subtest: workspace write auth: capability holder and audience are bound to the request
+ok 31 - workspace write auth: capability holder and audience are bound to the request
+  ---
+  duration_ms: 176.713668
+  type: 'test'
+  ...
+# Subtest: workspace write auth: exact workspace, path and content are signature-bound
+ok 32 - workspace write auth: exact workspace, path and content are signature-bound
+  ---
+  duration_ms: 189.021612
+  type: 'test'
+  ...
+# Subtest: workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+ok 33 - workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+  ---
+  duration_ms: 208.681399
+  type: 'test'
+  ...
+# Subtest: workspace write auth: ambiguous paths and unenforced constraints fail closed
+ok 34 - workspace write auth: ambiguous paths and unenforced constraints fail closed
+  ---
+  duration_ms: 239.213249
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an issuer-approved caller excluded by policy is denied
+ok 35 - workspace write auth: an issuer-approved caller excluded by policy is denied
+  ---
+  duration_ms: 160.488407
+  type: 'test'
+  ...
+# Subtest: workspace write auth: authorized HTTP calls really overwrite and create staging files only
+ok 36 - workspace write auth: authorized HTTP calls really overwrite and create staging files only
+  ---
+  duration_ms: 167.64891
+  type: 'test'
+  ...
+# Subtest: workspace write auth: replaying a successful signed write has no second filesystem effect
+ok 37 - workspace write auth: replaying a successful signed write has no second filesystem effect
+  ---
+  duration_ms: 181.992458
+  type: 'test'
+  ...
+# Subtest: workspace write auth: concurrent calls cannot spend a one-use grant twice
+ok 38 - workspace write auth: concurrent calls cannot spend a one-use grant twice
+  ---
+  duration_ms: 184.031618
+  type: 'test'
+  ...
+# Subtest: workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+ok 39 - workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+  ---
+  duration_ms: 175.557802
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8162.118075

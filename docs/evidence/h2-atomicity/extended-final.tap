@@ -1,0 +1,84 @@
+TAP version 13
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-mfhDo4/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-zhWlAY/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-oAxomT/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-jqAu7J/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-0AGA4G/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-WByRrD/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-t3bMn4/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-BOUNev/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: failure at target 1 restores only attempted changes
+ok 1 - H2 recovery: failure at target 1 restores only attempted changes
+  ---
+  duration_ms: 31.332514
+  type: 'test'
+  ...
+# {"faultAt":"a.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 2 restores only attempted changes
+ok 2 - H2 recovery: failure at target 2 restores only attempted changes
+  ---
+  duration_ms: 15.767348
+  type: 'test'
+  ...
+# {"faultAt":"b.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 3 restores only attempted changes
+ok 3 - H2 recovery: failure at target 3 restores only attempted changes
+  ---
+  duration_ms: 13.453933
+  type: 'test'
+  ...
+# {"faultAt":"c.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: partially written failing target is restored, not just successful previous writes
+ok 4 - H2 recovery: partially written failing target is restored, not just successful previous writes
+  ---
+  duration_ms: 13.058102
+  type: 'test'
+  ...
+# Subtest: H2 recovery: removes new files and only its own empty directories after apply failure
+ok 5 - H2 recovery: removes new files and only its own empty directories after apply failure
+  ---
+  duration_ms: 13.610035
+  type: 'test'
+  ...
+# Subtest: H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+ok 6 - H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+  ---
+  duration_ms: 12.953781
+  type: 'test'
+  ...
+# Subtest: H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+ok 7 - H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+  ---
+  duration_ms: 17.291253
+  type: 'test'
+  ...
+# Recovery latch is process-local, not durable restart quarantine. P03 remains required.
+# Subtest: H2 recovery: positive authorized control writes real existing and nested new files
+ok 8 - H2 recovery: positive authorized control writes real existing and nested new files
+  ---
+  duration_ms: 14.924881
+  type: 'test'
+  ...
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-p37LgN/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+ok 9 - H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+  ---
+  duration_ms: 197.950107
+  type: 'test'
+  ...
+# {"oldPid":8530,"newPid":8539,"rollback":true,"oldGrant":"DENY","freshGrantSameChanges":"ALLOW"}
+# Subtest: H2 recovery: restores original permission bits when the operating system clears them on write
+ok 10 - H2 recovery: restores original permission bits when the operating system clears them on write
+  ---
+  duration_ms: 11.432898
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 406.589636

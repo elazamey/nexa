@@ -1,0 +1,113 @@
+TAP version 13
+# Subtest: workspace HTTP: unauthenticated write is denied without filesystem changes
+ok 1 - workspace HTTP: unauthenticated write is denied without filesystem changes
+  ---
+  duration_ms: 278.848464
+  type: 'test'
+  ...
+# Anonymous write returned HTTP 401; changed paths: []
+# Subtest: workspace write auth: anonymous requests preserve filesystem and metadata
+ok 2 - workspace write auth: anonymous requests preserve filesystem and metadata
+  ---
+  duration_ms: 254.86701
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a signed identity without a capability is insufficient
+ok 3 - workspace write auth: a signed identity without a capability is insufficient
+  ---
+  duration_ms: 203.26835
+  type: 'test'
+  ...
+# Subtest: workspace write auth: no server configuration means default deny even with a signed grant
+ok 4 - workspace write auth: no server configuration means default deny even with a signed grant
+  ---
+  duration_ms: 182.15859
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a valid capability cannot bypass an empty policy
+ok 5 - workspace write auth: a valid capability cannot bypass an empty policy
+  ---
+  duration_ms: 170.488567
+  type: 'test'
+  ...
+# Subtest: workspace write auth: unsigned, forged or stale identity proofs cannot write
+ok 6 - workspace write auth: unsigned, forged or stale identity proofs cannot write
+  ---
+  duration_ms: 224.670364
+  type: 'test'
+  ...
+# Subtest: workspace write auth: untrusted issuers and forged capabilities are denied
+ok 7 - workspace write auth: untrusted issuers and forged capabilities are denied
+  ---
+  duration_ms: 207.830328
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an empty trusted issuer list denies otherwise valid grants
+ok 8 - workspace write auth: an empty trusted issuer list denies otherwise valid grants
+  ---
+  duration_ms: 177.480559
+  type: 'test'
+  ...
+# Subtest: workspace write auth: capability holder and audience are bound to the request
+ok 9 - workspace write auth: capability holder and audience are bound to the request
+  ---
+  duration_ms: 194.322856
+  type: 'test'
+  ...
+# Subtest: workspace write auth: exact workspace, path and content are signature-bound
+ok 10 - workspace write auth: exact workspace, path and content are signature-bound
+  ---
+  duration_ms: 218.956526
+  type: 'test'
+  ...
+# Subtest: workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+ok 11 - workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+  ---
+  duration_ms: 211.865217
+  type: 'test'
+  ...
+# Subtest: workspace write auth: ambiguous paths and unenforced constraints fail closed
+ok 12 - workspace write auth: ambiguous paths and unenforced constraints fail closed
+  ---
+  duration_ms: 262.122298
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an issuer-approved caller excluded by policy is denied
+ok 13 - workspace write auth: an issuer-approved caller excluded by policy is denied
+  ---
+  duration_ms: 182.901549
+  type: 'test'
+  ...
+# Subtest: workspace write auth: authorized HTTP calls really overwrite and create staging files only
+ok 14 - workspace write auth: authorized HTTP calls really overwrite and create staging files only
+  ---
+  duration_ms: 194.130388
+  type: 'test'
+  ...
+# Subtest: workspace write auth: replaying a successful signed write has no second filesystem effect
+ok 15 - workspace write auth: replaying a successful signed write has no second filesystem effect
+  ---
+  duration_ms: 205.66302
+  type: 'test'
+  ...
+# Subtest: workspace write auth: concurrent calls cannot spend a one-use grant twice
+ok 16 - workspace write auth: concurrent calls cannot spend a one-use grant twice
+  ---
+  duration_ms: 200.591603
+  type: 'test'
+  ...
+# Subtest: workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+ok 17 - workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+  ---
+  duration_ms: 187.511221
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3724.030912

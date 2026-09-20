@@ -1,0 +1,12 @@
+{
+  "initial-test-boundary-lock.json": {
+    "checkedFiles": 49,
+    "changed": [],
+    "missing": []
+  },
+  "source-lock.json": {
+    "checkedFiles": 415,
+    "changed": [],
+    "missing": []
+  }
+}

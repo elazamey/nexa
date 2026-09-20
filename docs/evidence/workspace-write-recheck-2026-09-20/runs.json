@@ -1,0 +1,103 @@
+[
+  {
+    "name": "01-write",
+    "argv": [
+      "node",
+      "--test",
+      "tests/celia-workspace-http.test.js",
+      "tests/celia-workspace-write-auth.test.js"
+    ],
+    "exitCode": 0,
+    "timing": "not separately recorded; run completed earlier in this turn",
+    "stdout": "01-write.tap",
+    "counts": {
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  {
+    "name": "02-boundary-regression",
+    "argv": [
+      "node",
+      "--test",
+      "tests/celia-workspace-commit-persistence.test.js",
+      "tests/celia-workspace-commit-auth.test.js",
+      "tests/celia-workspace-commit-http.test.js",
+      "tests/celia-workspace-http.test.js",
+      "tests/celia-workspace-write-auth.test.js"
+    ],
+    "cwd": "/home/user/nexa",
+    "startedAtUTC": "2026-09-20T20:34:29.070112+00:00",
+    "endedAtUTC": "2026-09-20T20:34:42.409682+00:00",
+    "durationSeconds": 13.34,
+    "exitCode": 0,
+    "stdout": "02-boundary-regression.stdout.txt",
+    "stderr": "02-boundary-regression.stderr.txt",
+    "counts": {
+      "tests": 59,
+      "pass": 59,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failedTests": []
+  },
+  {
+    "name": "03-advisory-regression",
+    "argv": [
+      "node",
+      "--test",
+      "tests/celia-library.test.js",
+      "tests/celia-system.test.js",
+      "tests/celia-learning.test.js"
+    ],
+    "cwd": "/home/user/nexa",
+    "startedAtUTC": "2026-09-20T20:34:42.410632+00:00",
+    "endedAtUTC": "2026-09-20T20:34:48.455823+00:00",
+    "durationSeconds": 6.045,
+    "exitCode": 0,
+    "stdout": "03-advisory-regression.stdout.txt",
+    "stderr": "03-advisory-regression.stderr.txt",
+    "counts": {
+      "tests": 52,
+      "pass": 52,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failedTests": []
+  },
+  {
+    "name": "04-full-verify",
+    "argv": [
+      "npm",
+      "run",
+      "verify"
+    ],
+    "cwd": "/home/user/nexa",
+    "startedAtUTC": "2026-09-20T20:34:48.456732+00:00",
+    "endedAtUTC": "2026-09-20T20:35:12.605802+00:00",
+    "durationSeconds": 24.149,
+    "exitCode": 1,
+    "stdout": "04-full-verify.stdout.txt",
+    "stderr": "04-full-verify.stderr.txt",
+    "counts": {
+      "tests": 428,
+      "pass": 426,
+      "fail": 2,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failedTests": [
+      "COMMIT H2: disk failure on the second file cannot leave a half-applied root",
+      "COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes"
+    ]
+  }
+]

@@ -1,0 +1,112 @@
+{
+  "node": "v22.22.3",
+  "npm": "10.9.8",
+  "runs": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=COMMIT H2:",
+        "tests/celia-workspace-commit-hardening.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:23.317146+00:00",
+      "exitCode": 0,
+      "log": "original-green.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=original permission bits",
+        "tests/celia-workspace-commit-h2.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:23.562112+00:00",
+      "exitCode": 0,
+      "log": "mode-green.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-h2.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:23.676900+00:00",
+      "exitCode": 0,
+      "log": "extended-final.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-h2.test.js",
+        "tests/celia-workspace-commit-persistence.test.js",
+        "tests/celia-workspace-commit-auth.test.js",
+        "tests/celia-workspace-commit-http.test.js",
+        "tests/celia-workspace-http.test.js",
+        "tests/celia-workspace-write-auth.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:24.109292+00:00",
+      "exitCode": 0,
+      "log": "security-regression.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-library.test.js",
+        "tests/celia-system.test.js",
+        "tests/celia-learning.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:35.958445+00:00",
+      "exitCode": 0,
+      "log": "advisory-regression.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-hardening.test.js"
+      ],
+      "startedAt": "2026-09-20T20:52:41.192250+00:00",
+      "exitCode": 1,
+      "log": "hardening-final.tap"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "verify"
+      ],
+      "startedAt": "2026-09-20T20:52:41.777129+00:00",
+      "exitCode": 1,
+      "log": "after-verify.txt"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-auth.test.js",
+        "tests/celia-workspace-commit-http.test.js",
+        "tests/celia-workspace-http.test.js",
+        "tests/celia-workspace-write-auth.test.js"
+      ],
+      "startedAt": "2026-09-20T20:53:20.162595+00:00",
+      "exitCode": 0,
+      "log": "previous-boundaries.tap"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/celia-workspace-commit-auth.test.js",
+        "tests/celia-workspace-commit-http.test.js",
+        "tests/celia-workspace-http.test.js",
+        "tests/celia-workspace-write-auth.test.js",
+        "tests/celia-workspace-commit-persistence.test.js"
+      ],
+      "startedAt": "2026-09-20T20:53:28.353503+00:00",
+      "exitCode": 0,
+      "log": "persistence-boundaries.tap"
+    }
+  ]
+}

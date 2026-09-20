@@ -104,6 +104,8 @@ observe → reflect → hypothesize → propose → [ replay · benchmark · adv
 
 ### Quickstart
 
+📘 Full quickstart: [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
+
 ```bash
 node tools/nexa.mjs check   examples/omega/repository-review.nexa
 node tools/nexa.mjs explain examples/omega/repository-review.nexa   # the authority table

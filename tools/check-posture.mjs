@@ -55,6 +55,9 @@ const FORBIDDEN = [
   /\b(spawnSync|execSync|execFileSync|exec)\s*\(/,
   /\b(writeFileSync|appendFileSync|unlinkSync|rmSync|mkdirSync|createWriteStream|createWriteStreamSync)\s*\(/,
   /\bprocess\.binding\b/,
+  /\bFunction\.prototype\.constructor\s*\.constructor\s*\(/,
+  /\bnew\s+Function\s*\(/,
+  /\beval\s*\(/,
 ];
 
 const checks = [

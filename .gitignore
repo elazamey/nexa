@@ -3,3 +3,7 @@ coverage/
 *.log
 .DS_Store
 .env
+.coverage/
+.phase/
+dashboard/dist/
+npm-debug.log*

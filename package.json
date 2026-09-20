@@ -34,7 +34,13 @@
     "dashboard": "node tools/celia-dashboard-server.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",
     "demo:celia": "node tools/celia-demo.mjs",
-    "celia:vectors": "node tools/permission-probe.mjs --security"
+    "celia:vectors": "node tools/permission-probe.mjs --security",
+    "verify:ci": "npm test && npm run posture && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run attacks:google && node tools/permission-probe.mjs --run-proof && npm run vectors && git diff --exit-code -- spec/vectors",
+    "verify:quick": "npm test && npm run posture && npm run audit",
+    "cover": "node tools/dev/measure-coverage.mjs",
+    "setup": "cd dashboard && npm install",
+    "phase": "node tools/dev/run-phase.mjs",
+    "smoke": "node tools/dev/smoke.mjs"
   },
   "keywords": [
     "protocol",

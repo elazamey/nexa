@@ -1,0 +1,77 @@
+name: Automated Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. v0.2)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify Baseline (5/5)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Posture
+        run: npm run posture
+      - name: Preview Baseline
+        run: node tools/preview-baseline.mjs
+      - name: Permission Probe
+        run: node tools/permission-probe.mjs --run-proof
+      - name: Tests
+        run: npm test
+      - name: Attacks
+        run: npm run attacks
+      - name: Pub Verifier
+        run: ./pub-verifier.sh
+
+  ceremony:
+    name: Owner Ceremony (requires approval)
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Publish Plan
+        run: node tools/generate-publish-plan.mjs --version ${{ inputs.version }}
+      - name: Execute Ceremony
+        run: ./ceremony.sh --plan publish-${{ inputs.version }}.plan.json --execute
+      - name: Verify 5/5
+        run: ./pub-verifier.sh
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-plan
+          path: |
+            publish-*.plan.json
+            .ceremony-approval.json
+
+  release:
+    name: Tag and Release
+    needs: ceremony
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-plan
+      - name: Tag
+        run: |
+          git tag -a ${{ inputs.version }} -m "Release ${{ inputs.version }}: Celia Agent"
+          git push origin ${{ inputs.version }}
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          files: |
+            publish-*.plan.json
+            .ceremony-approval.json

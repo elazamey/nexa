@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Activity, Shield, Zap, Cpu, MemoryStick, Clock, Terminal, Database, Brain, Play, RotateCcw, Box, Layers, FileJson } from 'lucide-react';
 import SemanticRagPanel from './SemanticRagPanel.jsx';
 import GovernedMemoryPanel from './GovernedMemoryPanel.jsx';
+import TransactionalWorkspacePanel from './TransactionalWorkspacePanel.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
   <div className="relative overflow-hidden bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col justify-between group hover:border-slate-700 transition-all duration-300">
@@ -129,6 +130,16 @@ export default function NexaDashboard() {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔄 Belief revised ${data.payload.previous} → ${data.payload.current}`, ...prev].slice(0,30));
         } else if (data.type === 'FORGETTING_SWEEP') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🧹 Forgetting sweep retired ${data.payload.swept}`, ...prev].slice(0,30));
+        } else if (data.type === 'DAG_NODE_INJECTED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔀 DAG injected ${data.payload.failedNodeId} → ${data.payload.injectedIds?.join(',')} v${data.payload.version}`, ...prev].slice(0,30));
+        } else if (data.type === 'WORKSPACE_CREATED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] 📦 Workspace created ${data.payload.workspaceId} task=${data.payload.taskId}`, ...prev].slice(0,30));
+        } else if (data.type === 'WORKSPACE_COMMIT') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ Workspace committed ${data.payload.workspaceId} ${data.payload.changedFiles} files atomic`, ...prev].slice(0,30));
+        } else if (data.type === 'WORKSPACE_ROLLBACK') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔄 Workspace rollback ${data.payload.workspaceId} zero side effects`, ...prev].slice(0,30));
+        } else if (data.type === 'REPLAY') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⏪ Replay from ${data.payload.fromIndex} checkpoint ${data.payload.checkpointIndex} no LLM calls`, ...prev].slice(0,30));
         }
       } catch (e) {
         console.error('SSE parse error', e);
@@ -193,9 +204,9 @@ export default function NexaDashboard() {
                 <span className="text-slate-600 font-mono text-sm font-normal">KERNEL</span>
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.5 governed-memory // self-evolving</p>
+                <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.6 transactional // CoW + Contract + Adaptive DAG + AST + Time-Travel</p>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 9 tools • 384d</p>
+                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 14 tools • CoW atomic</p>
               </div>
             </div>
           </div>
@@ -339,6 +350,12 @@ export default function NexaDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
+            <TransactionalWorkspacePanel />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
           <div className="lg:col-span-6">
             <GovernedMemoryPanel />
           </div>
@@ -420,12 +437,12 @@ export default function NexaDashboard() {
 
         <div className="mt-8 pt-6 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] font-mono text-slate-600">
           <div className="flex items-center gap-3">
-            <span>Celia Agent Dashboard — NEXA Ω∞ — Self-Evolving Agent OS — v0.5 Governed Memory</span>
+            <span>Celia Agent Dashboard — NEXA Ω∞ — Self-Evolving Agent OS — v0.6 Transactional + Contract + Adaptive DAG + AST + Time-Travel</span>
             <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-            <span className="text-slate-500">State Machine • Procedural • Failure • Belief • Forgetting • Ledger</span>
+            <span className="text-slate-500">CoW • Contract-First • DAG Injection • AST • Event Sourcing • Governed Memory</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • Governed Memory • 56KB</span>
+            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • Transactional • 62KB</span>
           </div>
         </div>
       </div>

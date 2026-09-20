@@ -36,6 +36,11 @@ import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { createVectorSupabasePort } from './celia-vector-port.mjs';
 import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/governed-engine.js';
+import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
+import { createAstPort } from './celia-ast-port.mjs';
+import { ContractEngine } from '../packages/cells/celia/executor/src/contract-engine.js';
+import { AdaptiveDagEngine, DagNodeStatus } from '../packages/cells/celia/executor/src/adaptive-dag.js';
+import { EventSourcingEngine, EventType } from '../packages/cells/celia/executor/src/event-sourcing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -53,6 +58,29 @@ const vectorPort = createVectorSupabasePort({
 
 // v0.5 Governed Memory Engine — Self-Evolving Agent OS (no pgvector needed)
 const governedEngine = new NexaGovernedMemoryEngine({ maxNodes: 500, ownerKid: 'nexa:governed:api:v0.5' });
+
+// v0.6 Transactional Workspace + Contract + Adaptive DAG + Event Sourcing + AST
+const workspacePort = createTransactionalWorkspacePort({ root });
+const astPort = createAstPort({ root });
+const contractEngine = new ContractEngine();
+const adaptiveDagEngine = new AdaptiveDagEngine({ maxDepth: 5, maxInjections: 20, maxNodes: 100 });
+const eventSourcingEngine = new EventSourcingEngine({ seed: 'nexa_v06_api_seed' });
+
+// Seed adaptive DAG
+adaptiveDagEngine.initialize(
+  [
+    { id: 'discover', tool: 'fs.read', critical: false },
+    { id: 'build', tool: 'build', critical: false },
+    { id: 'test', tool: 'test', critical: false },
+    { id: 'deploy', tool: 'deploy', critical: true }
+  ],
+  [
+    { from: 'discover', to: 'build' },
+    { from: 'build', to: 'test' },
+    { from: 'test', to: 'deploy' }
+  ]
+);
+eventSourcingEngine.record(EventType.DAG_START, { dagId: adaptiveDagEngine.dag.id, version: 'v0.6' }, 'evidence:v06-dag-start');
 
 // Seed governed memory with initial strategies and failures
 let governedSeeded = false;
@@ -172,9 +200,9 @@ let mockState = {
     tests: '314/314',
     promotion: '5/5 READY',
     llm_vectors: '2/2 BLOCKED',
-    version: 'v0.5-governed-memory',
-    rag: 'Governed State Machine • Procedural • Failure • Belief • Forgetting',
-    memoryEngine: 'PROPOSED→ACTIVE→WEAKENED→RETIRED'
+    version: 'v0.6-transactional',
+    rag: 'Governed State Machine + Transactional Workspace + Contract-First + Adaptive DAG + AST + Time-Travel',
+    memoryEngine: 'PROPOSED→ACTIVE→WEAKENED→RETIRED + CoW + Contract + DAG Injection + Event Sourcing'
   },
   semanticMemory: [],
   governedMemory: []
@@ -613,16 +641,284 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // === v0.6 Transactional Workspace Endpoints ===
+  if (url.pathname === '/api/v1/workspace' && req.method === 'GET') {
+    const status = await workspacePort.status();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...status }));
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/v1/workspace/') && req.method === 'GET') {
+    const workspaceId = url.pathname.split('/').pop();
+    if (workspaceId && workspaceId !== 'workspace') {
+      try {
+        const status = await workspacePort.status(workspaceId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(status));
+      } catch (e) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+  }
+
+  if (url.pathname === '/api/v1/workspace/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { taskId, evidenceRef } = JSON.parse(body || '{}');
+        if (!taskId) throw new Error('taskId required');
+        const result = await workspacePort.createWorkspace(taskId, { evidenceRef: evidenceRef || 'evidence:workspace-create-api' });
+        eventSourcingEngine.record(EventType.WORKSPACE_CREATED, { workspaceId: result.workspaceId, taskId }, evidenceRef || 'evidence:workspace-create-api');
+        emitDagEvent('WORKSPACE_CREATED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/workspace/write' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { workspaceId, path, content, evidenceRef } = JSON.parse(body || '{}');
+        if (!workspaceId || !path) throw new Error('workspaceId and path required');
+        const result = await workspacePort.writeFile(workspaceId, path, content || '', evidenceRef || 'evidence:workspace-write-api');
+        eventSourcingEngine.record(EventType.TOOL_OUTPUT, { workspaceId, path, digest: result.digest }, evidenceRef);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/workspace/commit' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { workspaceId, evidenceRef } = JSON.parse(body || '{}');
+        if (!workspaceId) throw new Error('workspaceId required');
+        const result = await workspacePort.commit(workspaceId, evidenceRef || 'evidence:workspace-commit-api');
+        eventSourcingEngine.record(EventType.WORKSPACE_COMMIT, { workspaceId, changedFiles: result.changedFiles }, evidenceRef);
+        emitDagEvent('WORKSPACE_COMMIT', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/workspace/rollback' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { workspaceId, evidenceRef, reason } = JSON.parse(body || '{}');
+        if (!workspaceId) throw new Error('workspaceId required');
+        const result = await workspacePort.rollback(workspaceId, evidenceRef || 'evidence:workspace-rollback-api');
+        eventSourcingEngine.record(EventType.WORKSPACE_ROLLBACK, { workspaceId, reason }, evidenceRef);
+        emitDagEvent('WORKSPACE_ROLLBACK', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // === v0.6 Contract Engine Endpoints ===
+  if (url.pathname === '/api/v1/contract/check' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { contract, beforeContext, afterContext, changes } = JSON.parse(body || '{}');
+        if (!contract) throw new Error('contract required');
+        const result = await contractEngine.verify(contract, beforeContext || {}, afterContext || {}, changes || {});
+        eventSourcingEngine.record(result.status === 'POST_PASSED' ? EventType.CONTRACT_CHECK_POST : EventType.CONTRACT_CHECK_PRE, { contractId: contract.id, ok: result.ok }, 'evidence:contract-check');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // === v0.6 Adaptive DAG Endpoints ===
+  if (url.pathname === '/api/v1/adaptive-dag' && req.method === 'GET') {
+    const stats = adaptiveDagEngine.getStats();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, dag: adaptiveDagEngine.dag, stats, injectionHistory: adaptiveDagEngine.injectionHistory }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/adaptive-dag/inject' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { failedNodeId, newNodes, evidenceRef } = JSON.parse(body || '{}');
+        if (!failedNodeId) throw new Error('failedNodeId required');
+        // If newNodes not provided, auto-generate
+        let nodesToInject = newNodes;
+        if (!nodesToInject) {
+          const failedNode = adaptiveDagEngine.dag.nodes.find(n => n.id === failedNodeId);
+          if (!failedNode) throw new Error(`Node not found: ${failedNodeId}`);
+          nodesToInject = adaptiveDagEngine.generateRecoveryNodes(failedNode, new Error('auto recovery'));
+        }
+        const result = adaptiveDagEngine.injectNodes(failedNodeId, nodesToInject, evidenceRef || 'evidence:adaptive-injection');
+        eventSourcingEngine.record(EventType.DAG_NODE_INJECTED, { failedNodeId, injectedIds: result.injected.map(n=>n.id), injected: result.injected }, evidenceRef);
+        emitDagEvent('DAG_NODE_INJECTED', result.injection);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/adaptive-dag/status' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { nodeId, status, evidenceRef } = JSON.parse(body || '{}');
+        if (!nodeId || !status) throw new Error('nodeId and status required');
+        const node = adaptiveDagEngine.updateNodeStatus(nodeId, status, evidenceRef);
+        eventSourcingEngine.record(status === 'FAILED' ? EventType.NODE_FAILED : status === 'SUCCESS' ? EventType.NODE_COMPLETE : EventType.NODE_START, { nodeId, status }, evidenceRef);
+        emitDagEvent(status === 'FAILED' ? 'NODE_FAILED' : 'NODE_COMPLETE', { nodeId, status });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, node }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // === v0.6 AST Port Endpoints ===
+  if (url.pathname === '/api/v1/ast/parse' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { code, file } = JSON.parse(body || '{}');
+        const input = code || file;
+        if (!input) throw new Error('code or file required');
+        const result = astPort.parse(input);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result, ast: { type: result.ast.type, bodyLength: result.ast.body?.length, method: result.method } }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/ast/validate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { code } = JSON.parse(body || '{}');
+        if (!code) throw new Error('code required');
+        const result = astPort.validateSyntax(code);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // === v0.6 Event Sourcing Endpoints ===
+  if (url.pathname === '/api/v1/events' && req.method === 'GET') {
+    const from = parseInt(url.searchParams.get('from') || '0');
+    const to = url.searchParams.get('to') ? parseInt(url.searchParams.get('to')) : null;
+    const type = url.searchParams.get('type');
+    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const events = eventSourcingEngine.getEvents({ from, to, type, limit });
+    const stats = eventSourcingEngine.getStats();
+    const chain = eventSourcingEngine.verifyChain();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, count: events.length, total: stats.total, chainValid: chain.valid, events, stats }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/events/replay' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { index, overrides, evidenceRef } = JSON.parse(body || '{}');
+        if (index === undefined) throw new Error('index required');
+        const result = eventSourcingEngine.replayFrom(index, overrides || {}, evidenceRef || 'evidence:replay-api');
+        emitDagEvent('REPLAY', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/events/state' && req.method === 'GET') {
+    const index = parseInt(url.searchParams.get('index') || '0');
+    try {
+      const result = eventSourcingEngine.getStateAt(index);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...result }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/v1/events/verify' && req.method === 'GET') {
+    const chain = eventSourcingEngine.verifyChain();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...chain }));
+    return;
+  }
+
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
 <html>
-<head><title>Celia Dashboard API v0.5 Governed Memory</title></head>
+<head><title>Celia Dashboard API v0.6 Transactional</title></head>
 <body style="font-family: monospace; padding: 20px; background: #0a0a0b; color: #e4e4e7;">
-<h1>Celia Dashboard Server — NEXA v0.5 Governed Memory State Machine</h1>
-<p>API running on port ${PORT} — Self-Evolving Agent OS</p>
+<h1>Celia Dashboard Server — NEXA v0.6 Transactional Workspace + Contract + Adaptive DAG + AST + Time-Travel</h1>
+<p>API running on port ${PORT} — Self-Evolving Agent OS + Transactional</p>
 <ul>
   <li><a href="/api/celia/state">/api/celia/state</a> — full state</li>
   <li><a href="/api/celia/evidence">/api/celia/evidence</a> — evidence chain</li>
@@ -632,16 +928,28 @@ const server = createServer(async (req, res) => {
   <li><a href="/api/v1/governed/memory">/api/v1/governed/memory</a> — governed memories (State Machine)</li>
   <li><a href="/api/v1/governed/stats">/api/v1/governed/stats</a> — engine stats</li>
   <li><a href="/api/v1/governed/ledger">/api/v1/governed/ledger</a> — audit trail hash-chained</li>
-  <li>POST /api/v1/governed/recall — state-aware recall { taskIntent, currentSystemState }</li>
-  <li>POST /api/v1/governed/register — register { kind: procedural|failure|belief, ... }</li>
-  <li>POST /api/v1/governed/revise — belief revision { oldId, newContent, evidenceRef }</li>
-  <li>POST /api/v1/governed/sweep — forgetting { threshold, options }</li>
+  <li>POST /api/v1/governed/recall — state-aware recall</li>
+  <li><a href="/api/v1/workspace">/api/v1/workspace</a> — transactional workspaces (CoW)</li>
+  <li>POST /api/v1/workspace/create — create workspace { taskId, evidenceRef }</li>
+  <li>POST /api/v1/workspace/write — write file { workspaceId, path, content, evidenceRef }</li>
+  <li>POST /api/v1/workspace/commit — atomic commit { workspaceId, evidenceRef }</li>
+  <li>POST /api/v1/workspace/rollback — atomic rollback { workspaceId, evidenceRef }</li>
+  <li>POST /api/v1/contract/check — contract verification { contract, beforeContext, afterContext }</li>
+  <li><a href="/api/v1/adaptive-dag">/api/v1/adaptive-dag</a> — adaptive DAG with injection history</li>
+  <li>POST /api/v1/adaptive-dag/inject — inject recovery nodes { failedNodeId, newNodes, evidenceRef }</li>
+  <li>POST /api/v1/adaptive-dag/status — update node status { nodeId, status, evidenceRef }</li>
+  <li>POST /api/v1/ast/parse — AST parse { code or file }</li>
+  <li>POST /api/v1/ast/validate — syntax validation { code }</li>
+  <li><a href="/api/v1/events">/api/v1/events</a> — event sourcing log hash-chained</li>
+  <li><a href="/api/v1/events/verify">/api/v1/events/verify</a> — chain verification</li>
+  <li>POST /api/v1/events/replay — replayFrom { index, overrides, evidenceRef }</li>
+  <li>GET /api/v1/events/state?index=3 — get state at index</li>
   <li><a href="/api/posture">/api/posture</a> — gate posture</li>
-  <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream (real-time)</li>
+  <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream (real-time) including DAG_NODE_INJECTED, WORKSPACE_COMMIT, CONTRACT_CHECK</li>
   <li>POST <a href="/api/v1/dag-run">/api/v1/dag-run</a> — trigger DAG execution</li>
 </ul>
 <p>Frontend: cd dashboard && npm run dev → http://localhost:5173</p>
-<p>NEXA MEMORY v0.5 ENGINE: State Machine → Procedural → Failure → Belief Revision → Forgetting → Ledger</p>
+<p>NEXA v0.6 ENGINE: Governed Memory State Machine + Transactional Workspace CoW + Contract-First + Adaptive DAG Dynamic Injection + AST-Aware Patching + Time-Travel Event Sourcing</p>
 <pre>${JSON.stringify(mockState, null, 2).slice(0,2000)}...</pre>
 </body>
 </html>
@@ -654,7 +962,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌟 Celia Dashboard Server running (v0.5 Governed Memory State Machine)`);
+  console.log(`🌟 Celia Dashboard Server running (v0.6 Transactional + Contract + Adaptive DAG + AST + Time-Travel)`);
   console.log(`   API: http://localhost:${PORT}`);
   console.log(`   State: http://localhost:${PORT}/api/celia/state`);
   console.log(`   DAG Stream (SSE): http://localhost:${PORT}/api/v1/dag-stream`);
@@ -663,7 +971,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Governed Memory: http://localhost:${PORT}/api/v1/governed/memory`);
   console.log(`   Governed Stats: http://localhost:${PORT}/api/v1/governed/stats`);
   console.log(`   Governed Ledger: http://localhost:${PORT}/api/v1/governed/ledger`);
-  console.log(`   Governed Recall: POST http://localhost:${PORT}/api/v1/governed/recall`);
+  console.log(`   Workspace (CoW): http://localhost:${PORT}/api/v1/workspace`);
+  console.log(`   Contract: POST http://localhost:${PORT}/api/v1/contract/check`);
+  console.log(`   Adaptive DAG: http://localhost:${PORT}/api/v1/adaptive-dag`);
+  console.log(`   AST Port: POST http://localhost:${PORT}/api/v1/ast/parse`);
+  console.log(`   Events (Time-Travel): http://localhost:${PORT}/api/v1/events`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: State Machine → Procedural → Failure → Belief → Forgetting → Ledger`);
+  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: Governed + CoW + Contract + DAG Injection + AST + Event Sourcing`);
 });

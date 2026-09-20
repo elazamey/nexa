@@ -85,6 +85,8 @@ export const OMEGA_ERROR_CODES = Object.freeze({
   OMEGA_E_POLICY: 'the receptor policy refused the message (audience, tenant or role)',
   OMEGA_E_LIFECYCLE: 'the cell lifecycle does not allow this transition',
   OMEGA_E_ISOLATED: 'the cell is isolated: it does not serve traffic',
+  OMEGA_E_NOT_FOUND: 'the addressed resource does not exist',
+  OMEGA_E_STATE: 'the resource is in a state that does not allow this operation',
   OMEGA_E_HANDLER: 'a receptor or handler threw an error that carries no Ω code',
   OMEGA_E_HOMEOSTASIS: 'the homeostasis policy is malformed or names an unknown signal',
   OMEGA_E_CELL_AMPLIFY: 'a cell, tissue or organ tried to hold authority it was not granted',

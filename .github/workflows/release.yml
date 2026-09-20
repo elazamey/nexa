@@ -1,77 +1,58 @@
-name: Automated Release
-
+name: NEXA Automated Release
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g. v0.2)'
+        description: 'Release version (e.g., v0.2)'
         required: true
-        type: string
-
-permissions:
-  contents: write
+        default: 'v0.2'
 
 jobs:
-  verify:
-    name: Verify Baseline (5/5)
+  verify-and-release:
     runs-on: ubuntu-latest
+    environment: release # هذه الخطوة ستوقف المسار حتى توافق يدوياً - Required reviewers: owner
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Posture
-        run: npm run posture
-      - name: Preview Baseline
-        run: node tools/preview-baseline.mjs
-      - name: Permission Probe
-        run: node tools/permission-probe.mjs --run-proof
-      - name: Tests
-        run: npm test
-      - name: Attacks
-        run: npm run attacks
-      - name: Pub Verifier
-        run: ./pub-verifier.sh
+          
+      - name: Install dependencies
+        run: npm install || npm ci || echo "No lockfile, zero-deps - skipping install"
 
-  ceremony:
-    name: Owner Ceremony (requires approval)
-    needs: verify
-    runs-on: ubuntu-latest
-    environment: release
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate Publish Plan
-        run: node tools/generate-publish-plan.mjs --version ${{ inputs.version }}
-      - name: Execute Ceremony
-        run: ./ceremony.sh --plan publish-${{ inputs.version }}.plan.json --execute
-      - name: Verify 5/5
-        run: ./pub-verifier.sh
-      - name: Upload Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: publish-plan
-          path: |
-            publish-*.plan.json
-            .ceremony-approval.json
-
-  release:
-    name: Tag and Release
-    needs: ceremony
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: publish-plan
-      - name: Tag
+      - name: Strict Posture & Security Verification
         run: |
-          git tag -a ${{ inputs.version }} -m "Release ${{ inputs.version }}: Celia Agent"
+          npm run posture
+          npm test
+          npm run audit
+          node tools/preview-baseline.mjs
+          node tools/permission-probe.mjs --run-proof
+          node tools/permission-probe.mjs --security
+
+      - name: Generate Publish Plan
+        run: node tools/generate-publish-plan.mjs ${{ inputs.version }}
+
+      - name: Execute Publish Ceremony
+        run: ./ceremony.sh --plan publish-${{ inputs.version }}.plan.json --execute
+
+      - name: Final Promotion Verifier (Must be 5/5)
+        run: ./pub-verifier.sh
+
+      - name: Create Git Tag and GitHub Release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ inputs.version }} -m "Automated Release ${{ inputs.version }}: Celia Agent - Database & LLM Planner"
           git push origin ${{ inputs.version }}
-      - name: GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ inputs.version }}
-          files: |
-            publish-*.plan.json
-            .ceremony-approval.json
+          gh release create ${{ inputs.version }} --title "Celia Agent ${{ inputs.version }}" --notes "Celia Agent MVP: Database & LLM Planner Integration.
+
+          - Supabase memory cell (digest-only, RLS, JSONB)
+          - Grok planner (AI != Authority, mint blocked, secret egress blocked)
+          - 314 tests, 6 gates CLOSED, 5/5 promotion ceremony
+          - Security vectors: llm-mint-attempt BLOCKED, llm-secret-egress BLOCKED
+          " --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

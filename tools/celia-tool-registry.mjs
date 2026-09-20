@@ -38,7 +38,7 @@ export function createGitPort() {
       if (base && head) {
         console.log(`[git-port] diff ${base}..${head}`);
         try {
-          const diff = execSync(`git diff ${base}..${head} --stat`, { encoding: 'utf8', maxBuffer: 1024*100 }).slice(0,10240);
+          const diff = execSync(`git diff ${base}..${head} --stat`, { encoding: 'utf8', maxBuffer: 1024*100, stdio: ['ignore', 'pipe', 'ignore'] }).slice(0,10240);
           return { ok: true, diff, digest: `sha256:diff-${base}-${head}` };
         } catch (e) {
           return { ok: true, diff: '', digest: `sha256:empty-diff` };

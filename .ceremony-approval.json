@@ -1,0 +1,19 @@
+{
+  "ceremony": "NEXA v0.1 publish",
+  "plan": "publish-v0.1.plan.json",
+  "plan_hash": "6790cf39b745bf902753f54722346094335a4e112eb637cecd63fb3fcea98fdc",
+  "plan_digest#1": "9011cf1d09175d0f9329b9a56af973effb89a2d4285062f5d9aa7be75995e83b",
+  "branch": "preview/pub-followups",
+  "commit": "56f017077dc934258484503d484e0fe0107c32fa",
+  "owner_kid": "nexa:key:ed25519:z6MkOwnerCeremonyKey2026",
+  "timestamp": "2026-09-20T11:17:43Z",
+  "checks": {
+    "digest#1_provenance": "VERIFIED",
+    "design_record_exists": "VERIFIED",
+    "gates_closed": "VERIFIED",
+    "tests_green": "VERIFIED",
+    "vectors_sync": "VERIFIED"
+  },
+  "signature": "NEXA-SIG-ED25519-3923afdabe3f8acf29608fe841db1382f1346a1e22894cc36a05f467c2a06794",
+  "status": "APPROVED"
+}

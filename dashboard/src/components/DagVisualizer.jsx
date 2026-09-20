@@ -6,8 +6,8 @@ export default function DagVisualizer() {
   const [dagStats, setDagStats] = useState({ passed: 0, failed: 0, total: 0 });
 
   useEffect(() => {
-    // التعامل مع الـ Edge cases مثل انقطاع الاتصال
-    const eventSource = new EventSource('http://localhost:3001/api/v1/dag-stream');
+    // التعامل مع الـ Edge cases مثل انقطاع الاتصال - relative URL for E2B preview
+    const eventSource = new EventSource('/api/v1/dag-stream');
 
     eventSource.onopen = () => {
       setConnectionStatus('Live');
@@ -73,7 +73,7 @@ export default function DagVisualizer() {
     try {
       setConnectionStatus('Starting DAG...');
       setNodes({});
-      const res = await fetch('http://localhost:3001/api/v1/dag-run', { method: 'POST' });
+      const res = await fetch('/api/v1/dag-run', { method: 'POST' });
       const data = await res.json();
       console.log('[DagVisualizer] DAG run triggered', data);
       setConnectionStatus('Live - DAG Running');

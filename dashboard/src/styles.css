@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #0a0a0b;
   --card: #151518;
@@ -14,12 +18,13 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: #000;
+  color: #e4e4e7;
   font-family: 'JetBrains Mono', 'SF Mono', monospace;
   line-height: 1.5;
 }
 
+/* Legacy classes kept for EvidenceChain etc */
 .header {
   border-bottom: 1px solid var(--border);
   padding: 16px 24px;
@@ -189,4 +194,26 @@ body {
   color: var(--muted);
   border-top: 1px solid var(--border);
   margin-top: 16px;
+}
+
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Scrollbar styling for terminal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
 }

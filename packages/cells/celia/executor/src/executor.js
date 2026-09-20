@@ -14,6 +14,24 @@
 
 import { OmegaError } from '../../../../compiler/index.js';
 
+// Try to import dagEventEmitter from API server if available, fallback to no-op
+let dagEventEmitter = null;
+let updateNodeState = () => {};
+try {
+  // Dynamic import to avoid hard dependency — executor can work without API server
+  const api = await import('../../api/server.js');
+  dagEventEmitter = api.dagEventEmitter;
+  updateNodeState = api.updateNodeState;
+} catch {
+  // Fallback: no-op emitter for when API server not present (e.g., tests)
+  dagEventEmitter = { emit: () => {} };
+  updateNodeState = (nodeId, state, evidenceRef) => {
+    console.log(`[executor] ${nodeId} → ${state} ${evidenceRef ? evidenceRef.slice(0,16) : ''}`);
+  };
+}
+
+export { dagEventEmitter, updateNodeState };
+
 export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, speculative = true } = {}) {
   if (!toolRegistry) throw new OmegaError('OMEGA_E_SCHEMA', 'executor needs toolRegistry');
 
@@ -51,6 +69,12 @@ export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, sp
       const results = [];
       const evidenceChain = [];
 
+      // Emit DAG_START
+      dagEventEmitter.emit('dag_update', {
+        type: 'DAG_START',
+        payload: { nodes: dag.nodes.length, timestamp: Date.now(), id: dag.id || 'dag' }
+      });
+
       // Group nodes by level (independent nodes can run in parallel)
       const levels = buildLevels(dag.nodes);
 
@@ -63,9 +87,19 @@ export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, sp
           level.map(async (node) => {
             const evidence_ref = `${evidenceRefPrefix}-${node.id}-${Date.now()}`;
 
+            // Emit PENDING → RUNNING
+            updateNodeState(node.id, 'PENDING');
+            // Small delay to show PENDING in UI
+            await new Promise(r => setTimeout(r, 50));
+            updateNodeState(node.id, 'RUNNING', evidence_ref);
+
             // Speculative: if node has speculative flag, start early
             if (speculative && node.speculative) {
               console.log(`[executor] speculative start ${node.id}`);
+              dagEventEmitter.emit('dag_update', {
+                type: 'SPECULATIVE_START',
+                payload: { nodeId: node.id, evidenceRef: evidence_ref, timestamp: Date.now() }
+              });
             }
 
             try {
@@ -84,6 +118,13 @@ export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, sp
                 evidence_ref,
                 digest: result.digest,
                 ok: true
+              });
+
+              // Emit SUCCESS
+              updateNodeState(node.id, 'SUCCESS', evidence_ref);
+              dagEventEmitter.emit('dag_update', {
+                type: 'NODE_COMPLETE',
+                payload: { nodeId: node.id, state: 'SUCCESS', evidenceRef: evidence_ref, digest: result.digest, timestamp: Date.now() }
               });
 
               return { id: node.id, ok: true, result };
@@ -109,6 +150,13 @@ export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, sp
                 });
               }
 
+              // Emit FAILED
+              updateNodeState(node.id, 'FAILED', evidence_ref);
+              dagEventEmitter.emit('dag_update', {
+                type: 'NODE_COMPLETE',
+                payload: { nodeId: node.id, state: 'FAILED', evidenceRef: evidence_ref, error: error.message, timestamp: Date.now() }
+              });
+
               return { id: node.id, ok: false, error: error.message, code: error.code };
             }
           })
@@ -126,6 +174,12 @@ export function createSecureExecutor({ toolRegistry, ledger, maxParallel = 3, sp
 
       const passed = results.filter(r => r.ok).length;
       const failed = results.filter(r => !r.ok).length;
+
+      // Emit DAG_COMPLETE
+      dagEventEmitter.emit('dag_update', {
+        type: 'DAG_COMPLETE',
+        payload: { passed, failed, total: results.length, timestamp: Date.now() }
+      });
 
       return {
         ok: failed === 0,

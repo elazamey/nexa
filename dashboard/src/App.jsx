@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EvidenceChain } from './components/EvidenceChain.jsx';
 import { MemoryDigests } from './components/MemoryDigests.jsx';
 import { PlannerThinking } from './components/PlannerThinking.jsx';
+import DagVisualizer from './components/DagVisualizer.jsx';
 
 export default function App() {
   const [evidence, setEvidence] = useState([]);
@@ -89,6 +90,7 @@ export default function App() {
       </div>
 
       <div className="grid">
+        <DagVisualizer />
         <PlannerThinking thinking={thinking} />
         <EvidenceChain evidence={evidence} />
         <MemoryDigests memory={memory} />

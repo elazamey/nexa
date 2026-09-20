@@ -6,6 +6,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    strictPort: true,
+    cors: true,
+    allowedHosts: true,
+    hmr: {
+      host: 'localhost',
+      clientPort: 443
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -15,6 +22,7 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    port: 4173
+    port: 4173,
+    cors: true
   }
 });

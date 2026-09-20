@@ -49,16 +49,11 @@ jobs:
         run: npm run audit
 
       # Runtime-enforced proof: the protocol flow completes while the runtime denies
-      # filesystem writes, child processes and network access. `--permission` exists
-      # on modern Node; older releases spell it `--experimental-permission`.
+      # filesystem writes, child processes and network access. The flag name changed
+      # across Node versions (--permission vs --experimental-permission), so we probe
+      # robustly via tools/permission-probe.mjs instead of a fragile inline shell check.
       - name: Ambient-authority proof (no fs write, no child process, no network)
-        shell: bash
-        run: |
-          if node --permission -e 'true' 2>/dev/null; then
-            npm run proof:permission
-          else
-            npm run proof:permission:legacy
-          fi
+        run: node tools/permission-probe.mjs --run-proof
 
       # The cellular layer, live: topology, a real crossing, five refusals, homeostasis,
       # learning, division/fusion and the attack suite.

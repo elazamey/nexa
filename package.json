@@ -30,7 +30,11 @@
     "report:json": "node tools/gate-report.mjs --json",
     "vectors": "node tools/vectors.mjs && node tools/omega-vectors.mjs && node tools/cellular-vectors.mjs && node tools/google-vectors.mjs",
     "metrics": "node tools/check-metrics.mjs",
-    "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report"
+    "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
+    "dashboard": "node tools/celia-dashboard-server.mjs",
+    "dashboard:dev": "cd dashboard && npm install && npm run dev",
+    "demo:celia": "node tools/celia-demo.mjs",
+    "celia:vectors": "node tools/permission-probe.mjs --security"
   },
   "keywords": [
     "protocol",

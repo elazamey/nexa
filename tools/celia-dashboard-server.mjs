@@ -41,6 +41,7 @@ import { createAstPort } from './celia-ast-port.mjs';
 import { ContractEngine } from '../packages/cells/celia/executor/src/contract-engine.js';
 import { AdaptiveDagEngine, DagNodeStatus } from '../packages/cells/celia/executor/src/adaptive-dag.js';
 import { EventSourcingEngine, EventType } from '../packages/cells/celia/executor/src/event-sourcing.js';
+import { createDslPort } from './celia-dsl-port.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -65,6 +66,9 @@ const astPort = createAstPort({ root });
 const contractEngine = new ContractEngine();
 const adaptiveDagEngine = new AdaptiveDagEngine({ maxDepth: 5, maxInjections: 20, maxNodes: 100 });
 const eventSourcingEngine = new EventSourcingEngine({ seed: 'nexa_v06_api_seed' });
+
+// v0.7 DSL Engine — 16 DSLs + Binary Tokenizer + Speculative
+const dslPort = createDslPort({ root });
 
 // Seed adaptive DAG
 adaptiveDagEngine.initialize(
@@ -200,9 +204,9 @@ let mockState = {
     tests: '314/314',
     promotion: '5/5 READY',
     llm_vectors: '2/2 BLOCKED',
-    version: 'v0.6-transactional',
-    rag: 'Governed State Machine + Transactional Workspace + Contract-First + Adaptive DAG + AST + Time-Travel',
-    memoryEngine: 'PROPOSED→ACTIVE→WEAKENED→RETIRED + CoW + Contract + DAG Injection + Event Sourcing'
+    version: 'v0.7-dsl',
+    rag: '16 DSLs/IRs: AIR 50-70% saving, CtxQL, AST-Patch 100% stable, FlowDSL, CapLang, AssertDSL, NanoDSL, MemLang, AgentIDL 60%, Consensus, Guard, StateDiff, Replay, MediaPipe, PmplSpec, Binary 400-800%, Speculative near zero latency',
+    memoryEngine: 'Governed + CoW + Contract + DAG Injection + Event Sourcing + 16 DSLs + Binary Tokenizer + Speculative'
   },
   semanticMemory: [],
   governedMemory: []
@@ -909,16 +913,170 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // === v0.7 DSL Engine Endpoints ===
+  if (url.pathname === '/api/v1/dsl/list' && req.method === 'GET') {
+    const list = dslPort.list();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, count: list.length, dsls: list }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/compile' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { type, input, evidenceRef } = JSON.parse(body || '{}');
+        if (!type || !input) throw new Error('type and input required');
+        const result = dslPort.compile(type, input, evidenceRef || 'evidence:dsl-compile-api');
+        eventSourcingEngine.record(EventType.TOOL_OUTPUT, { dslType: type, ok: result.ok, metrics: result.metrics }, evidenceRef);
+        emitDagEvent('DSL_COMPILED', { type, ok: result.ok, metrics: result.metrics });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/validate' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { type, input } = JSON.parse(body || '{}');
+        if (!type || !input) throw new Error('type and input required');
+        const result = dslPort.validate(type, input);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/compile-all' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { inputs, evidenceRef } = JSON.parse(body || '{}');
+        if (!inputs) throw new Error('inputs map required: { AIR: "...", CtxQL: "..." }');
+        const results = dslPort.compileAll(inputs, evidenceRef || 'evidence:dsl-compile-all');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, count: Object.keys(results).length, results }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/air/execute' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { input, evidenceRef } = JSON.parse(body || '{}');
+        if (!input) throw new Error('input required');
+        const result = await dslPort.executeAir(input, evidenceRef || 'evidence:air-execute');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/ctxql/query' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { input, evidenceRef } = JSON.parse(body || '{}');
+        if (!input) throw new Error('input required');
+        const result = await dslPort.queryCtx(input, evidenceRef || 'evidence:ctxql-query');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/tokenize' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { code } = JSON.parse(body || '{}');
+        if (!code) throw new Error('code required');
+        const result = dslPort.tokenize(code);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result, buffer: result.buffer?.toString('hex').slice(0,100) }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/speculative/predict' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { context, step } = JSON.parse(body || '{}');
+        const branches = dslPort.speculative.predict(context || {}, step || 1);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, count: branches.length, branches }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/dsl/speculative/resolve' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { decision } = JSON.parse(body || '{}');
+        if (!decision) throw new Error('decision required: { tool: "fs.patch" }');
+        const result = dslPort.speculative.resolve(decision);
+        emitDagEvent('SPECULATIVE_RESOLVED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
 <html>
-<head><title>Celia Dashboard API v0.6 Transactional</title></head>
+<head><title>Celia Dashboard API v0.7 DSL</title></head>
 <body style="font-family: monospace; padding: 20px; background: #0a0a0b; color: #e4e4e7;">
-<h1>Celia Dashboard Server — NEXA v0.6 Transactional Workspace + Contract + Adaptive DAG + AST + Time-Travel</h1>
-<p>API running on port ${PORT} — Self-Evolving Agent OS + Transactional</p>
+<h1>Celia Dashboard Server — NEXA v0.7 DSL/IR Engine — 16 DSLs + Binary Tokenizer + Speculative</h1>
+<p>API running on port ${PORT} — Self-Evolving Agent OS + Transactional + DSLs</p>
 <ul>
   <li><a href="/api/celia/state">/api/celia/state</a> — full state</li>
   <li><a href="/api/celia/evidence">/api/celia/evidence</a> — evidence chain</li>
@@ -944,12 +1102,21 @@ const server = createServer(async (req, res) => {
   <li><a href="/api/v1/events/verify">/api/v1/events/verify</a> — chain verification</li>
   <li>POST /api/v1/events/replay — replayFrom { index, overrides, evidenceRef }</li>
   <li>GET /api/v1/events/state?index=3 — get state at index</li>
+  <li><a href="/api/v1/dsl/list">/api/v1/dsl/list</a> — list 16 DSLs/IRs</li>
+  <li>POST /api/v1/dsl/compile — compile DSL { type, input, evidenceRef } types: AIR, CtxQL, AstPatchDSL, FlowDSL, CapLang, AssertDSL, NanoDSL, MemLang, AgentIDL, ConsensusDSL, GuardDSL, StateDiffDSL, ReplayDSL, MediaPipeDSL, PmplSpec, BinaryTokenizer, Speculative</li>
+  <li>POST /api/v1/dsl/validate — validate DSL { type, input }</li>
+  <li>POST /api/v1/dsl/compile-all — compile all { inputs: { AIR: "...", CtxQL: "..." } }</li>
+  <li>POST /api/v1/dsl/air/execute — execute AIR { input, evidenceRef }</li>
+  <li>POST /api/v1/dsl/ctxql/query — query CtxQL { input, evidenceRef }</li>
+  <li>POST /api/v1/dsl/tokenize — binary tokenizer { code }</li>
+  <li>POST /api/v1/dsl/speculative/predict — predict branches { context, step }</li>
+  <li>POST /api/v1/dsl/speculative/resolve — resolve { decision: { tool: "fs.patch" } }</li>
   <li><a href="/api/posture">/api/posture</a> — gate posture</li>
-  <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream (real-time) including DAG_NODE_INJECTED, WORKSPACE_COMMIT, CONTRACT_CHECK</li>
+  <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream including DAG_NODE_INJECTED, WORKSPACE_COMMIT, DSL_COMPILED, SPECULATIVE_RESOLVED</li>
   <li>POST <a href="/api/v1/dag-run">/api/v1/dag-run</a> — trigger DAG execution</li>
 </ul>
 <p>Frontend: cd dashboard && npm run dev → http://localhost:5173</p>
-<p>NEXA v0.6 ENGINE: Governed Memory State Machine + Transactional Workspace CoW + Contract-First + Adaptive DAG Dynamic Injection + AST-Aware Patching + Time-Travel Event Sourcing</p>
+<p>NEXA v0.7 ENGINE: 16 DSLs/IRs — AIR 50-70% token saving, CtxQL precise AST, AST-Patch 100% stable, FlowDSL adaptive DAG, CapLang kernel isolation, AssertDSL no false success, NanoDSL pure WASM JIT, MemLang decay control, AgentIDL 60% vs OpenAPI, Consensus voting, Guard real-time safety, StateDiff fast rollback, Replay time-travel, MediaPipe multi-modal, PmplSpec budget, Binary 400-800% context, Speculative near zero latency + Governed Memory + Transactional Workspace + Adaptive DAG + AST + Time-Travel</p>
 <pre>${JSON.stringify(mockState, null, 2).slice(0,2000)}...</pre>
 </body>
 </html>
@@ -962,7 +1129,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌟 Celia Dashboard Server running (v0.6 Transactional + Contract + Adaptive DAG + AST + Time-Travel)`);
+  console.log(`🌟 Celia Dashboard Server running (v0.7 DSL/IR — 16 DSLs + Binary + Speculative)`);
   console.log(`   API: http://localhost:${PORT}`);
   console.log(`   State: http://localhost:${PORT}/api/celia/state`);
   console.log(`   DAG Stream (SSE): http://localhost:${PORT}/api/v1/dag-stream`);
@@ -976,6 +1143,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Adaptive DAG: http://localhost:${PORT}/api/v1/adaptive-dag`);
   console.log(`   AST Port: POST http://localhost:${PORT}/api/v1/ast/parse`);
   console.log(`   Events (Time-Travel): http://localhost:${PORT}/api/v1/events`);
+  console.log(`   DSL List: http://localhost:${PORT}/api/v1/dsl/list`);
+  console.log(`   DSL Compile: POST http://localhost:${PORT}/api/v1/dsl/compile { type, input }`);
+  console.log(`   DSL Tokenize: POST http://localhost:${PORT}/api/v1/dsl/tokenize { code }`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: Governed + CoW + Contract + DAG Injection + AST + Event Sourcing`);
+  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: 16 DSLs + Governed + CoW + Contract + DAG + AST + Time-Travel + Binary + Speculative`);
 });

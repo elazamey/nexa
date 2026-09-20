@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Celia Dashboard Server — Serves frontend + API for evidence, memory, planner + DAG SSE + Semantic RAG
+ * Celia Dashboard Server — Serves frontend + API for evidence, memory, planner + DAG SSE + Semantic RAG + Governed Memory
  * 
  * This server lives in tools/ (allowed to use fs, net, child_process)
  * It does NOT open any NEXA gates — it only reads evidence and memory via ports
@@ -16,10 +16,17 @@
  *   GET  /api/posture — gate posture
  *   GET  /api/v1/dag-stream — SSE stream for DAG execution (real-time)
  *   POST /api/v1/dag-run — runs DAG executor and streams via SSE
- *   GET  /api/v1/semantic/memory — list semantic facts
+ *   GET  /api/v1/semantic/memory — list semantic facts (legacy pgvector)
  *   POST /api/v1/semantic/store — store fact with embedding
  *   POST /api/v1/semantic/recall — RAG recall Top-12
  *   POST /api/v1/semantic/rag-demo — run RAG demo
+ *   GET  /api/v1/governed/memory — list governed memories (State Machine)
+ *   POST /api/v1/governed/recall — state-aware recall (preventions + strategies)
+ *   POST /api/v1/governed/register — register procedural/failure/belief
+ *   POST /api/v1/governed/revise — belief revision
+ *   POST /api/v1/governed/sweep — forgetting/weakening sweep
+ *   GET  /api/v1/governed/ledger — audit trail
+ *   GET  /api/v1/governed/stats — engine stats
  */
 
 import { createServer } from 'node:http';
@@ -28,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { createVectorSupabasePort } from './celia-vector-port.mjs';
+import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/governed-engine.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -42,6 +50,60 @@ const vectorPort = createVectorSupabasePort({
   url: process.env.SUPABASE_URL || 'mock://memory',
   key: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || 'mock-key'
 });
+
+// v0.5 Governed Memory Engine — Self-Evolving Agent OS (no pgvector needed)
+const governedEngine = new NexaGovernedMemoryEngine({ maxNodes: 500, ownerKid: 'nexa:governed:api:v0.5' });
+
+// Seed governed memory with initial strategies and failures
+let governedSeeded = false;
+async function seedGovernedMemory() {
+  if (governedSeeded) return;
+  if (governedEngine.proceduralStore.store.size > 0) {
+    governedSeeded = true;
+    return;
+  }
+  try {
+    await governedEngine.registerStrategy({
+      taskIntent: 'read file with evidence',
+      condition: { tool: 'fs.read', requiresEvidence: true },
+      strategyDAG: { nodes: [{ id: 'observe', kind: 'observe' }, { id: 'read', kind: 'do', tool: 'fs.read' }], maxParallel: 1 },
+      evidenceRef: 'evidence:fs-read-v0.5',
+      confidence: 0.9
+    });
+    await governedEngine.registerStrategy({
+      taskIntent: 'parallel DAG execution',
+      condition: { maxParallel: 3, speculative: true },
+      strategyDAG: { nodes: [{ id: 'discover' }, { id: 'inspect', parallel: true }, { id: 'verify', critical: true }], maxParallel: 3, pasteSaving: '48.5%' },
+      evidenceRef: 'evidence:dag-v0.4',
+      confidence: 0.95
+    });
+    await governedEngine.registerFailure({
+      failurePattern: 'fs write without evidence',
+      cause: 'REAL_EXECUTION gate violation',
+      preventiveFix: 'Require evidence_ref, use port in tools/, check tool-registry',
+      contextState: { gate: 'REAL_EXECUTION' },
+      evidenceRef: 'evidence:failure-001'
+    });
+    await governedEngine.registerFailure({
+      failurePattern: 'secret egress',
+      cause: 'Raw content without digest',
+      preventiveFix: 'Return digest only, OMEGA_E_SECRET_EGRESS',
+      contextState: { tier: 'memory' },
+      evidenceRef: 'evidence:failure-002'
+    });
+    await governedEngine.registerBelief({
+      belief: 'Tool registry default deny + evidence_ref + allow-list + RLS + digest-only is required (defense in depth)',
+      condition: { gates: '6 CLOSED', tests: '314/314' },
+      evidenceRef: 'evidence:belief-v0.5',
+      confidence: 0.9
+    });
+    governedSeeded = true;
+    console.log(`[governed] seeded ${governedEngine.proceduralStore.store.size} memories (procedural + failure + belief)`);
+  } catch (e) {
+    console.warn('[governed] seed failed', e.message);
+  }
+}
+seedGovernedMemory();
 
 // Seed semantic memory with initial facts if empty
 let semanticSeeded = false;
@@ -110,10 +172,12 @@ let mockState = {
     tests: '314/314',
     promotion: '5/5 READY',
     llm_vectors: '2/2 BLOCKED',
-    version: 'v0.5-semantic-rag',
-    rag: 'Top-12 RAG • 384d • pgvector'
+    version: 'v0.5-governed-memory',
+    rag: 'Governed State Machine • Procedural • Failure • Belief • Forgetting',
+    memoryEngine: 'PROPOSED→ACTIVE→WEAKENED→RETIRED'
   },
-  semanticMemory: []
+  semanticMemory: [],
+  governedMemory: []
 };
 
 function getPosture() {
@@ -387,30 +451,197 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // === v0.5 Governed Memory Engine Endpoints ===
+  if (url.pathname === '/api/v1/governed/memory' && req.method === 'GET') {
+    await seedGovernedMemory();
+    const type = url.searchParams.get('type');
+    const state = url.searchParams.get('state');
+    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const memories = governedEngine.listMemories({ type, state, limit });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ count: memories.length, total: governedEngine.proceduralStore.store.size, memories }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/stats' && req.method === 'GET') {
+    await seedGovernedMemory();
+    const stats = governedEngine.getStats();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, stats }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/ledger' && req.method === 'GET') {
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const entries = governedEngine.getLedgerEntries({ limit });
+    const verification = governedEngine.verifyLedger();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ count: entries.length, valid: verification.valid, entries, verification }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/recall' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { taskIntent, currentSystemState, options } = JSON.parse(body || '{}');
+        if (!taskIntent) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'taskIntent required' }));
+          return;
+        }
+        await seedGovernedMemory();
+        const result = governedEngine.recallRelevantKnowledge(taskIntent, currentSystemState || {}, options || {});
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, taskIntent, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/register' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { kind, ...payload } = JSON.parse(body || '{}');
+        await seedGovernedMemory();
+        let node;
+        if (kind === 'procedural' || kind === 'strategy') {
+          node = await governedEngine.registerStrategy(payload);
+        } else if (kind === 'failure') {
+          node = await governedEngine.registerFailure(payload);
+        } else if (kind === 'belief') {
+          node = await governedEngine.registerBelief(payload);
+        } else {
+          throw new Error('kind must be procedural, failure, or belief');
+        }
+        emitDagEvent('GOVERNED_REGISTERED', { id: node.id, type: node.type, state: node.state });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, id: node.id, type: node.type, state: node.state, node: node.toJSON() }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/revise' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { oldId, newContent, evidenceRef } = JSON.parse(body || '{}');
+        if (!oldId || !newContent) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'oldId and newContent required' }));
+          return;
+        }
+        const revision = governedEngine.reviseBelief(oldId, newContent, evidenceRef || 'evidence:revision-api');
+        emitDagEvent('BELIEF_REVISED', revision);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...revision }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/sweep' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { kind = 'forgetting', threshold = 0.1, options = {} } = JSON.parse(body || '{}');
+        let result;
+        if (kind === 'weakening') {
+          result = governedEngine.runWeakeningSweep(threshold);
+        } else {
+          result = governedEngine.runForgettingSweep(threshold, options);
+        }
+        emitDagEvent('FORGETTING_SWEEP', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, kind, ...result }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/success' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { id, evidenceRef } = JSON.parse(body || '{}');
+        if (!id) throw new Error('id required');
+        const node = governedEngine.recordSuccess(id, evidenceRef);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, id, state: node?.state, successCount: node?.successCount, utility: node?.calculateUtility() }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/governed/failure' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { id, evidenceRef, cause } = JSON.parse(body || '{}');
+        if (!id) throw new Error('id required');
+        const node = governedEngine.recordFailure(id, evidenceRef, cause);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, id, state: node?.state, failureCount: node?.failureCount, utility: node?.calculateUtility() }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
 <html>
-<head><title>Celia Dashboard API v0.5</title></head>
+<head><title>Celia Dashboard API v0.5 Governed Memory</title></head>
 <body style="font-family: monospace; padding: 20px; background: #0a0a0b; color: #e4e4e7;">
-<h1>Celia Dashboard Server — NEXA v0.5 Semantic RAG</h1>
-<p>API running on port ${PORT}</p>
+<h1>Celia Dashboard Server — NEXA v0.5 Governed Memory State Machine</h1>
+<p>API running on port ${PORT} — Self-Evolving Agent OS</p>
 <ul>
   <li><a href="/api/celia/state">/api/celia/state</a> — full state</li>
   <li><a href="/api/celia/evidence">/api/celia/evidence</a> — evidence chain</li>
   <li><a href="/api/celia/memory">/api/celia/memory</a> — memory digests</li>
-  <li><a href="/api/v1/semantic/memory">/api/v1/semantic/memory</a> — semantic facts (RAG)</li>
-  <li>POST /api/v1/semantic/store — store fact { content, tier, metadata }</li>
-  <li>POST /api/v1/semantic/recall — RAG recall { query, limit=12, threshold=0.3 }</li>
-  <li>POST /api/v1/semantic/rag-demo — RAG demo Top-12</li>
-  <li>POST /api/v1/semantic/embedding — generate 384d embedding</li>
+  <li><a href="/api/v1/semantic/memory">/api/v1/semantic/memory</a> — semantic facts (legacy pgvector RAG)</li>
+  <li>POST /api/v1/semantic/recall — RAG recall Top-12</li>
+  <li><a href="/api/v1/governed/memory">/api/v1/governed/memory</a> — governed memories (State Machine)</li>
+  <li><a href="/api/v1/governed/stats">/api/v1/governed/stats</a> — engine stats</li>
+  <li><a href="/api/v1/governed/ledger">/api/v1/governed/ledger</a> — audit trail hash-chained</li>
+  <li>POST /api/v1/governed/recall — state-aware recall { taskIntent, currentSystemState }</li>
+  <li>POST /api/v1/governed/register — register { kind: procedural|failure|belief, ... }</li>
+  <li>POST /api/v1/governed/revise — belief revision { oldId, newContent, evidenceRef }</li>
+  <li>POST /api/v1/governed/sweep — forgetting { threshold, options }</li>
   <li><a href="/api/posture">/api/posture</a> — gate posture</li>
   <li><a href="/api/v1/dag-stream">/api/v1/dag-stream</a> — SSE DAG stream (real-time)</li>
   <li>POST <a href="/api/v1/dag-run">/api/v1/dag-run</a> — trigger DAG execution</li>
 </ul>
 <p>Frontend: cd dashboard && npm run dev → http://localhost:5173</p>
+<p>NEXA MEMORY v0.5 ENGINE: State Machine → Procedural → Failure → Belief Revision → Forgetting → Ledger</p>
 <pre>${JSON.stringify(mockState, null, 2).slice(0,2000)}...</pre>
 </body>
 </html>
@@ -423,14 +654,16 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌟 Celia Dashboard Server running (v0.5 Semantic RAG)`);
+  console.log(`🌟 Celia Dashboard Server running (v0.5 Governed Memory State Machine)`);
   console.log(`   API: http://localhost:${PORT}`);
   console.log(`   State: http://localhost:${PORT}/api/celia/state`);
   console.log(`   DAG Stream (SSE): http://localhost:${PORT}/api/v1/dag-stream`);
   console.log(`   DAG Run: POST http://localhost:${PORT}/api/v1/dag-run`);
-  console.log(`   Semantic Memory: http://localhost:${PORT}/api/v1/semantic/memory`);
-  console.log(`   RAG Recall: POST http://localhost:${PORT}/api/v1/semantic/recall`);
-  console.log(`   RAG Demo: POST http://localhost:${PORT}/api/v1/semantic/rag-demo`);
+  console.log(`   Semantic (legacy): http://localhost:${PORT}/api/v1/semantic/memory`);
+  console.log(`   Governed Memory: http://localhost:${PORT}/api/v1/governed/memory`);
+  console.log(`   Governed Stats: http://localhost:${PORT}/api/v1/governed/stats`);
+  console.log(`   Governed Ledger: http://localhost:${PORT}/api/v1/governed/ledger`);
+  console.log(`   Governed Recall: POST http://localhost:${PORT}/api/v1/governed/recall`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, RAG: Top-12 384d`);
+  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: State Machine → Procedural → Failure → Belief → Forgetting → Ledger`);
 });

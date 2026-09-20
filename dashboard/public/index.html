@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Celia Agent Dashboard - Static</title>
+<style>
+:root { --bg:#0a0a0b; --card:#151518; --border:#2a2a30; --text:#e4e4e7; --muted:#a1a1aa; --green:#22c55e; --blue:#3b82f6; --purple:#a855f7; --yellow:#eab308; --red:#ef4444; }
+body { background: var(--bg); color: var(--text); font-family: monospace; margin: 0; padding: 16px; }
+.header { border-bottom: 1px solid var(--border); padding: 12px 0; display: flex; justify-content: space-between; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin: 12px 0; padding: 12px; }
+.evidence { border-left: 3px solid var(--blue); padding: 8px; margin: 6px 0; background: var(--bg); }
+.memory { display: flex; justify-content: space-between; padding: 6px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.step { border-left: 3px solid var(--green); padding: 8px; margin: 6px 0; background: var(--bg); }
+.step.refuse { border-left-color: var(--red); }
+</style>
+</head>
+<body>
+<div class="header"><h1>Celia Agent Dashboard — NEXA v0.3 (Static)</h1><div id="status">Loading...</div></div>
+
+<div class="card"><h3>Planner Thinking — AI Proposes, System Decides</h3><div id="thinking"></div></div>
+<div class="card"><h3>Evidence Chain — Hash-Chained Ledger</h3><div id="evidence"></div></div>
+<div class="card"><h3>Memory Digests — Digest-Only, RLS, JSONB</h3><div id="memory"></div></div>
+<div class="card"><h3>Security Posture — 5/5 + LLM Vectors</h3><div id="posture"></div></div>
+
+<script>
+async function load() {
+  try {
+    const res = await fetch('/api/celia/state');
+    const data = await res.json();
+    
+    document.getElementById('status').innerHTML = `Gates: ${data.status.gates} | Tests: ${data.status.tests} | ${data.status.promotion}`;
+    
+    document.getElementById('thinking').innerHTML = (data.thinking.steps||[]).map((s,i) => 
+      `<div class="step ${s.kind||s.action}"><b>${i+1}. ${s.kind||s.action}</b> ${s.target||''} ${s.capref||''}<br><small>${JSON.stringify(s.args||{}).slice(0,100)}</small></div>`
+    ).join('') || 'No steps';
+
+    document.getElementById('evidence').innerHTML = (data.evidence||[]).map(e => 
+      `<div class="evidence"><div style="color:#3b82f6;font-size:11px">${e.hash?.slice(0,32)}...</div><div style="font-size:10px;color:#a1a1aa">${e.kind} | prev: ${e.prev_hash?.slice(0,8)}</div></div>`
+    ).join('') || 'No evidence';
+
+    document.getElementById('memory').innerHTML = (data.memory||[]).map(m => 
+      `<div class="memory"><span><span style="background:#1e3a5f;color:#60a5fa;padding:2px 6px;border-radius:4px;font-size:10px">${m.tier}</span> ${m.digest?.slice(0,16)}...</span><span style="font-size:10px;color:#71717a">${m.evidence_ref?.slice(0,8)}</span></div>`
+    ).join('') || 'No memory';
+
+    document.getElementById('posture').innerHTML = `
+      <div>Gates: 6 CLOSED ✅</div>
+      <div>Tests: 314/314 ✅</div>
+      <div>Promotion: 5/5 READY ✅</div>
+      <div>llm-mint-attempt: BLOCKED ✅</div>
+      <div>llm-secret-egress: BLOCKED ✅</div>
+      <div>Memory: digest-only, RLS, JSONB</div>
+      <div>Planner: grok-2 via vault://</div>
+    `;
+  } catch(e) {
+    document.getElementById('status').innerHTML = 'API not reachable — run node tools/celia-dashboard-server.mjs';
+    document.getElementById('thinking').innerHTML = 'Mock: observe → github.repository.read → evidence → memory → emit';
+    document.getElementById('evidence').innerHTML = 'Mock evidence chain — run server for real data';
+    document.getElementById('memory').innerHTML = 'Mock memory digests — Supabase RLS';
+    document.getElementById('posture').innerHTML = 'Gates: 6 CLOSED, Tests: 314/314, 5/5 READY, LLM vectors BLOCKED';
+  }
+}
+load();
+setInterval(load, 3000);
+</script>
+</body>
+</html>

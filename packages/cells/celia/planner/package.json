@@ -1,0 +1,6 @@
+{
+  "name": "@nexa/celia-planner",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Celia planner port - Grok/xAI as NEXA planner, never mints"
+}

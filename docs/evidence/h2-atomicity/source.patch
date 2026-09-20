@@ -1,0 +1,131 @@
+--- before/tools/celia-workspace-commit-port.mjs
++++ after/tools/celia-workspace-commit-port.mjs
+@@ -1,9 +1,10 @@
+ /**
+  * Bounded COMMIT executor for the HTTP boundary. Captures and verifies all bytes
+  * before mutation; never calls legacy commit(), which re-reads mutable staging.
+- * Single-process/exclusive-root contract, not a multi-file atomic transaction.
++ * H2: compensating rollback for synchronous apply errors under exclusive-root
++ * ownership. Not atomic visibility, crash recovery or external-writer protection.
+  */
+-import { lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
++import { chmodSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
+ import { dirname, join, resolve } from 'node:path';
+ import { canonicalBytes } from '../packages/ast/index.js';
+ import { sha256Multihash } from '../packages/crypto/index.js';
+@@ -11,6 +12,9 @@
+ 
+ import { createCommitConsumptionStore } from './celia-commit-consumption-store.mjs';
+ 
++// A failed rollback blocks every committer for this root in this process.
++// This latch is NOT durable quarantine; restart recovery remains a separate gate.
++const recoveryRequiredRoots = new Set();
+ const MAX_FILES = 128;
+ const MAX_BYTES = 8 * 1024 * 1024;
+ const digest = value => sha256Multihash(canonicalBytes(value));
+@@ -87,7 +91,7 @@
+         if (baseBytes > MAX_BYTES) denyCommit('COMMIT_LIMIT_EXCEEDED');
+       }
+       files.push({
+-        path, content, hash: sha256Multihash(content), size: content.length,
++        path, content, previous, hash: sha256Multihash(content), size: content.length,
+         base: { path, exists: target !== null, hash: previous === null ? null : sha256Multihash(previous), mode: target === null ? null : target.mode & 0o7777 },
+       });
+     }
+@@ -112,6 +116,52 @@
+   }
+ }
+ 
++/** Track only directories actually created by this operation; never recursive removal. */
++function ensureParents(base, target, created) {
++  const missing = [];
++  let parent = dirname(target);
++  while (parent !== base) {
++    try { directory(parent); break; }
++    catch (error) { if (error.code !== 'ENOENT') throw error; }
++    missing.push(parent);
++    parent = dirname(parent);
++  }
++  for (const path of missing.reverse()) {
++    mkdirSync(path); // Record only successful creates, not a competing mkdir.
++    created.push(path);
++  }
++}
++
++/** Restore attempted files, including a write that partially changed bytes then threw. */
++function restore(base, attempted, created) {
++  const failures = [];
++  for (const file of [...attempted].reverse()) {
++    const target = join(base, file.path);
++    try {
++      let current = null;
++      try { regularFile(target); current = readFileSync(target); }
++      catch (error) { if (error.code !== 'ENOENT') throw error; }
++      if (file.base.exists) {
++        if (current === null || !current.equals(file.previous)) {
++          writeFileSync(target, file.previous, { flag: 'w', mode: file.base.mode });
++        }
++        // Existing-file writes ignore the mode option and may clear special bits.
++        // Restore the captured mode only after the final content write.
++        if ((regularFile(target).mode & 0o7777) !== file.base.mode) chmodSync(target, file.base.mode);
++        if ((regularFile(target).mode & 0o7777) !== file.base.mode) throw new Error('RESTORE_MODE_MISMATCH');
++        if (!readFileSync(target).equals(file.previous)) throw new Error('RESTORE_BYTES_MISMATCH');
++      } else if (current !== null) {
++        unlinkSync(target); // Exclusive-root contract; external writers remain H3.
++      }
++    } catch (error) { failures.push({ path: file.path, code: error.code ?? error.message }); }
++  }
++  for (const path of [...created].reverse()) {
++    try { rmdirSync(path); } // A nonempty or replaced directory fails, never rm -rf.
++    catch (error) { failures.push({ path, code: error.code ?? error.message }); }
++  }
++  return failures;
++}
++
+ /** Local, read-only preparation for an operator; never mints or approves grants. */
+ export function inspectWorkspaceCommit(input) {
+   return captureOrDeny(input).descriptor;
+@@ -124,6 +174,7 @@
+   return function commit(input) {
+     // No filesystem read/write before identity, capability and policy succeed.
+     const authorization = authorize(input);
++    if (recoveryRequiredRoots.has(base)) throw new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');
+     if (input.targetRoot !== workspaceCommitRoot(base)) denyCommit('COMMIT_ROOT_MISMATCH');
+     const workspace = workspacePort._workspaces.get(input.workspaceId);
+     if (!workspace || workspace.realPath !== base
+@@ -138,10 +189,31 @@
+     authorization.consume();
+     // No awaits/re-reading staging between verification and application. This
+     // excludes interleaving HTTP requests, NOT concurrent external OS writers.
+-    for (const file of changed) {
+-      const target = join(base, file.path);
+-      mkdirSync(dirname(target), { recursive: true });
+-      writeFileSync(target, file.content, { flag: file.base.exists ? 'w' : 'wx', mode: 0o600 });
++    const attempted = [];
++    const created = [];
++    try {
++      for (const file of changed) {
++        const target = join(base, file.path);
++        ensureParents(base, target, created);
++        attempted.push(file); // A throwing write may already have truncated/written.
++        try {
++          writeFileSync(target, file.content, { flag: file.base.exists ? 'w' : 'wx', mode: 0o600 });
++        } catch (error) {
++          // Exclusive creation failed: do not delete a pre-existing competitor's file.
++          if (!file.base.exists && error.code === 'EEXIST') attempted.pop();
++          throw error;
++        }
++      }
++    } catch (error) {
++      const failures = restore(base, attempted, created);
++      if (failures.length) {
++        recoveryRequiredRoots.add(base);
++        const unavailable = new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');
++        unavailable.cause = { applyCode: error.code ?? error.message, rollbackFailures: failures };
++        throw unavailable;
++      }
++      // Preserve the original I/O error, and never refund consumed authorization.
++      throw error;
+     }
+     return {
+       ok: true, workspaceId: input.workspaceId, changedFiles: changed.length,

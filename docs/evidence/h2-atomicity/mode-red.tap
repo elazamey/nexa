@@ -1,0 +1,33 @@
+TAP version 13
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-vPOZMU/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: restores original permission bits when the operating system clears them on write
+not ok 1 - H2 recovery: restores original permission bits when the operating system clears them on write
+  ---
+  duration_ms: 25.226013
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h2.test.js:133:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    416 !== 2464
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2464
+  actual: 416
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h2.test.js:142:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.293743

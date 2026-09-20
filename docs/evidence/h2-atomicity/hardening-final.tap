@@ -1,0 +1,86 @@
+TAP version 13
+# Subtest: COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+ok 1 - COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+  ---
+  duration_ms: 198.317606
+  type: 'test'
+  ...
+# {"boundary":"H1","firstPid":9738,"restartedPid":9747,"sameProcess":"DENY","afterRestart":"DENY","contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+ok 2 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 143.012455
+  type: 'test'
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"},{"kind":"write-applied","file":"a.txt"}],"contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+not ok 3 - COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+  ---
+  duration_ms: 147.95671
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-hardening.test.js:63:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a stale COMMIT must preserve the external edit and must not apply other target files
+    + actual - expected
+    
+      {
+        contents: {
+    +     'a.txt': 'approved A\n',
+    +     'b.txt': 'approved B\n'
+    -     'a.txt': 'external writer value\n',
+    -     'b.txt': 'base B\n'
+        },
+    +   outcome: 'ALLOW',
+    -   outcome: 'DENY',
+        staging: Map(4) {
+          'a.txt' => 'e1ea9424f4bb09ee3e5a1df8078cc3c35712c6dac58ff0896d630974392d98c5',
+          'a.txt::metadata' => '["33188","1001","1001","11","530128","1","1789937561703710352","1789937561703710352"]',
+          'b.txt' => '8505a21a3110e817e0c8a40c87b3ec1ea5af920912cd959c5216176c618def60',
+          'b.txt::metadata' => '["33188","1001","1001","11","530130","1","1789937561707710372","1789937561707710372"]'
+        },
+    +   status: null
+    -   status: 403
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    outcome: 'DENY'
+    status: 403
+    contents:
+      a.txt: |-
+        external writer value
+        
+      b.txt: |-
+        base B
+        
+    staging:
+  actual:
+    outcome: 'ALLOW'
+    status: ~
+    contents:
+      a.txt: |-
+        approved A
+        
+      b.txt: |-
+        approved B
+        
+    staging:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-hardening.test.js:77:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"boundary":"H3","commitPid":9765,"outcome":"ALLOW","trace":[{"kind":"external-writer","file":"a.txt","pid":9774,"before":"base A\\n","after":"external writer value\\n"},{"kind":"write-applied","file":"a.txt"},{"kind":"write-applied","file":"b.txt"}],"contents":{"a.txt":"approved A\\n","b.txt":"approved B\\n"}}
+1..3
+# tests 3
+# suites 0
+# pass 2
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 554.675643

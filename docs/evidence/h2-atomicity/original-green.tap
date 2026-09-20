@@ -1,0 +1,17 @@
+TAP version 13
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+ok 1 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 136.18164
+  type: 'test'
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"},{"kind":"write-applied","file":"a.txt"}],"contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 209.55684

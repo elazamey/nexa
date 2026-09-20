@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+not ok 1 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 147.788226
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-hardening.test.js:43:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a failed multi-file commit must not leave A applied while B remains old
+    + actual - expected
+    ... Skipped lines
+    
+      {
+        contents: {
+    +     'a.txt': 'approved A\n',
+    -     'a.txt': 'base A\n',
+          'b.txt': 'base B\n'
+        },
+        staging: Map(4) {
+          'a.txt' => 'e1ea9424f4bb09ee3e5a1df8078cc3c35712c6dac58ff0896d630974392d98c5',
+          'a.txt::metadata' => '["33188","1001","1001","11","530107","1","1789937014904948502","1789937014904948502"]',
+    ...
+          '.nexa/staging/ws_hardening_fixture/b.txt' => '8505a21a3110e817e0c8a40c87b3ec1ea5af920912cd959c5216176c618def60',
+    +     'a.txt' => 'e1ea9424f4bb09ee3e5a1df8078cc3c35712c6dac58ff0896d630974392d98c5',
+    -     'a.txt' => 'e8cb413ac3938666a1d0f6ae961a1bc2aa9830fbe2d4a2531eba07211b882192',
+          'adapters' => 'directory',
+          'adapters/mcp' => 'directory',
+          'adapters/mcp/index.js' => '24a3ee9caabadf62091ec74fb2ec063c38b70af4bbca4c4332dad2bae0c4480a',
+          'adapters/mcp/package.json' => 'd0f1f72138cec5bbb65ef6e3bb5a21ef645526e46b2eddd1fcad06604db9661c',
+          'adapters/mcp/src' => 'directory',
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    contents:
+      a.txt: |-
+        base A
+        
+      b.txt: |-
+        base B
+        
+    tree:
+    staging:
+  actual:
+    contents:
+      a.txt: |-
+        approved A
+        
+      b.txt: |-
+        base B
+        
+    tree:
+    staging:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-hardening.test.js:58:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"}],"contents":{"a.txt":"approved A\\n","b.txt":"base B\\n"}}
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 212.017824

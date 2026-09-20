@@ -1,0 +1,322 @@
+TAP version 13
+# Subtest: learning: collecting starts empty; training refuses to invent missing evidence
+ok 1 - learning: collecting starts empty; training refuses to invent missing evidence
+  ---
+  duration_ms: 1.199619
+  type: 'test'
+  ...
+# Subtest: learning: strict bounded pre-outcome schema rejects arbitrary fields, NaN and oversized features
+ok 2 - learning: strict bounded pre-outcome schema rejects arbitrary fields, NaN and oversized features
+  ---
+  duration_ms: 1.503502
+  type: 'test'
+  ...
+# Subtest: learning: malformed, incomplete and duplicated TAP summaries are not evidence of success
+ok 3 - learning: malformed, incomplete and duplicated TAP summaries are not evidence of success
+  ---
+  duration_ms: 0.645426
+  type: 'test'
+  ...
+# Subtest: learning: reward cannot hide failures, skipped tests, missing tests, exit failure or human rejection
+ok 4 - learning: reward cannot hide failures, skipped tests, missing tests, exit failure or human rejection
+  ---
+  duration_ms: 0.657375
+  type: 'test'
+  ...
+# Subtest: learning: duplicated attempts and forged labels do not increase data readiness
+ok 5 - learning: duplicated attempts and forged labels do not increase data readiness
+  ---
+  duration_ms: 0.451853
+  type: 'test'
+  ...
+# Subtest: learning: task groups never cross train/validation/test, and class coverage is required
+ok 6 - learning: task groups never cross train/validation/test, and class coverage is required
+  ---
+  duration_ms: 27.768061
+  type: 'test'
+  ...
+# Subtest: learning ml: all weight and bias derivatives agree with finite differences
+ok 7 - learning ml: all weight and bias derivatives agree with finite differences
+  ---
+  duration_ms: 1.154999
+  type: 'test'
+  ...
+# Subtest: learning ml: real gradient updates improve held-out loss on explicitly synthetic fixtures
+ok 8 - learning ml: real gradient updates improve held-out loss on explicitly synthetic fixtures
+  ---
+  duration_ms: 86.76535
+  type: 'test'
+  ...
+# Subtest: learning dl: all weight and bias derivatives agree with finite differences
+ok 9 - learning dl: all weight and bias derivatives agree with finite differences
+  ---
+  duration_ms: 11.393105
+  type: 'test'
+  ...
+# Subtest: learning dl: real gradient updates improve held-out loss on explicitly synthetic fixtures
+ok 10 - learning dl: real gradient updates improve held-out loss on explicitly synthetic fixtures
+  ---
+  duration_ms: 495.297026
+  type: 'test'
+  ...
+# Subtest: learning: candidate integrity, architecture and finite weights are checked before inference
+ok 11 - learning: candidate integrity, architecture and finite weights are checked before inference
+  ---
+  duration_ms: 0.616005
+  type: 'test'
+  ...
+# Subtest: learning collector: actual Node test run persists across CLI processes and waits for human review
+ok 12 - learning collector: actual Node test run persists across CLI processes and waits for human review
+  ---
+  duration_ms: 256.301802
+  type: 'test'
+  ...
+# Subtest: learning collector: no automatic initialization, no root-local store, no symlinked subdirectory
+ok 13 - learning collector: no automatic initialization, no root-local store, no symlinked subdirectory
+  ---
+  duration_ms: 1.675364
+  type: 'test'
+  ...
+# Subtest: learning collector: registration order and immutable plan binding are enforced
+ok 14 - learning collector: registration order and immutable plan binding are enforced
+  ---
+  duration_ms: 2.619499
+  type: 'test'
+  ...
+# Subtest: learning CLI: invalid arguments never invoke an action
+ok 15 - learning CLI: invalid arguments never invoke an action
+  ---
+  duration_ms: 33.861199
+  type: 'test'
+  ...
+# Subtest: learning research: fixed source, encoded query, timeout, no redirect, metadata only
+ok 16 - learning research: fixed source, encoded query, timeout, no redirect, metadata only
+  ---
+  duration_ms: 17.998687
+  type: 'test'
+  ...
+# Subtest: learning research: query injection, external entities, unsafe paper URLs and huge responses fail closed
+ok 17 - learning research: query injection, external entities, unsafe paper URLs and huge responses fail closed
+  ---
+  duration_ms: 2.007164
+  type: 'test'
+  ...
+# Subtest: learning: new reviewed feedback changes a candidate without mutating the previous weights
+ok 18 - learning: new reviewed feedback changes a candidate without mutating the previous weights
+  ---
+  duration_ms: 149.752081
+  type: 'test'
+  ...
+# Subtest: library: ten source-versioned references and ten guidance-only cards with valid relationships
+ok 19 - library: ten source-versioned references and ten guidance-only cards with valid relationships
+  ---
+  duration_ms: 1.414424
+  type: 'test'
+  ...
+# Subtest: library: returned data cannot mutate the internal catalog or its hash
+ok 20 - library: returned data cannot mutate the internal catalog or its hash
+  ---
+  duration_ms: 1.320791
+  type: 'test'
+  ...
+# Subtest: library: missing evidence gives guidance and abstention advice, not fictitious execution
+ok 21 - library: missing evidence gives guidance and abstention advice, not fictitious execution
+  ---
+  duration_ms: 0.93812
+  type: 'test'
+  ...
+# Subtest: library: failed, skipped, wrong-count or nonzero-exit reports select independent critique
+ok 22 - library: failed, skipped, wrong-count or nonzero-exit reports select independent critique
+  ---
+  duration_ms: 2.988952
+  type: 'test'
+  ...
+# Subtest: library: declared security/dependency/test changes select only bounded advisory cards
+ok 23 - library: declared security/dependency/test changes select only bounded advisory cards
+  ---
+  duration_ms: 0.598379
+  type: 'test'
+  ...
+# Subtest: library: model/data context changes guidance but cannot confer approval or calibrated scores
+ok 24 - library: model/data context changes guidance but cannot confer approval or calibrated scores
+  ---
+  duration_ms: 0.413558
+  type: 'test'
+  ...
+# Subtest: library: unknown papers or unreviewed versions remain unresolved, never silently fetched/substituted
+ok 25 - library: unknown papers or unreviewed versions remain unresolved, never silently fetched/substituted
+  ---
+  duration_ms: 1.316017
+  type: 'test'
+  ...
+# Subtest: library: strict requests/context/identifiers reject commands, URLs and invalid report bindings
+ok 26 - library: strict requests/context/identifiers reject commands, URLs and invalid report bindings
+  ---
+  duration_ms: 0.799815
+  type: 'test'
+  ...
+# Subtest: library: deterministic selection ignores goal instructions and does not mutate inputs
+ok 27 - library: deterministic selection ignores goal instructions and does not mutate inputs
+  ---
+  duration_ms: 0.812233
+  type: 'test'
+  ...
+# Subtest: library: actual advisory report includes guidance under the existing seal without adding kernel calls
+ok 28 - library: actual advisory report includes guidance under the existing seal without adding kernel calls
+  ---
+  duration_ms: 68.060838
+  type: 'test'
+  ...
+# Subtest: library: skill cards do not promote any of the 200 runtime capabilities or remove known blockers
+ok 29 - library: skill cards do not promote any of the 200 runtime capabilities or remove known blockers
+  ---
+  duration_ms: 0.563542
+  type: 'test'
+  ...
+# Subtest: library CLI: offline commands work with no filesystem-write or child-process permission; invalid actions refuse
+ok 30 - library CLI: offline commands work with no filesystem-write or child-process permission; invalid actions refuse
+  ---
+  duration_ms: 458.68131
+  type: 'test'
+  ...
+# Subtest: library: maximum candidate batch stays bounded and shares reference/cards rather than executing them
+ok 31 - library: maximum candidate batch stays bounded and shares reference/cards rather than executing them
+  ---
+  duration_ms: 38.491696
+  type: 'test'
+  ...
+# Subtest: system: catalog is the exact ordered 200-entry audit inventory, not 200 working features
+ok 32 - system: catalog is the exact ordered 200-entry audit inventory, not 200 working features
+  ---
+  duration_ms: 2.655574
+  type: 'test'
+  ...
+# Subtest: system: empty and disconnected learning are different; no invented plan, test pass or model
+ok 33 - system: empty and disconnected learning are different; no invented plan, test pass or model
+  ---
+  duration_ms: 58.645203
+  type: 'test'
+  ...
+# Subtest: system: actual fixed Ω workflow supplies five policy/capability-gated local calls and reflection
+ok 34 - system: actual fixed Ω workflow supplies five policy/capability-gated local calls and reflection
+  ---
+  duration_ms: 26.089998
+  type: 'test'
+  ...
+# Subtest: system: reports are independently graded; failures/missing reports cannot become successful execution
+ok 35 - system: reports are independently graded; failures/missing reports cannot become successful execution
+  ---
+  duration_ms: 14.674517
+  type: 'test'
+  ...
+# Subtest: system: skip/todo/cancel/count mismatch/nonzero exit each prevent a met-checks verdict
+ok 36 - system: skip/todo/cancel/count mismatch/nonzero exit each prevent a met-checks verdict
+  ---
+  duration_ms: 81.107614
+  type: 'test'
+  ...
+# Subtest: system: passing imported checks never suppress declared security, test or dependency review risks
+ok 37 - system: passing imported checks never suppress declared security, test or dependency review risks
+  ---
+  duration_ms: 16.14638
+  type: 'test'
+  ...
+# Subtest: system: strict schemas and bounds reject unknown authority/commands/invalid shapes
+ok 38 - system: strict schemas and bounds reject unknown authority/commands/invalid shapes
+  ---
+  duration_ms: 11.317678
+  type: 'test'
+  ...
+# Subtest: system: task/base/suite/count and exact-plan report bindings cannot cross candidates
+ok 39 - system: task/base/suite/count and exact-plan report bindings cannot cross candidates
+  ---
+  duration_ms: 0.899435
+  type: 'test'
+  ...
+# Subtest: system: malformed, ambiguous or incomplete TAP is refused rather than replaced with mock success
+ok 40 - system: malformed, ambiguous or incomplete TAP is refused rather than replaced with mock success
+  ---
+  duration_ms: 0.91072
+  type: 'test'
+  ...
+# Subtest: system: reordering plan object keys preserves canonical binding; mutations change it
+ok 41 - system: reordering plan object keys preserves canonical binding; mutations change it
+  ---
+  duration_ms: 0.68152
+  type: 'test'
+  ...
+# Subtest: system: valid report verification requires an independently expected signer
+ok 42 - system: valid report verification requires an independently expected signer
+  ---
+  duration_ms: 40.549212
+  type: 'test'
+  ...
+# Subtest: system: payload, input hash, chains, seal, truncation and appended evidence are integrity checked
+ok 43 - system: payload, input hash, chains, seal, truncation and appended evidence are integrity checked
+  ---
+  duration_ms: 35.154456
+  type: 'test'
+  ...
+# Subtest: system: keys and working memory are per-run; request remains unchanged and no private keys/raw text are exported
+ok 44 - system: keys and working memory are per-run; request remains unchanged and no private keys/raw text are exported
+  ---
+  duration_ms: 28.184431
+  type: 'test'
+  ...
+# Subtest: system: embedded instructions remain data and neither invoke providers nor change the workflow
+ok 45 - system: embedded instructions remain data and neither invoke providers nor change the workflow
+  ---
+  duration_ms: 14.325432
+  type: 'test'
+  ...
+# Subtest: system: explicit real training computations on SYNTHETIC fixtures integrate scores, never approvals
+ok 46 - system: explicit real training computations on SYNTHETIC fixtures integrate scores, never approvals
+  ---
+  duration_ms: 652.90441
+  type: 'test'
+  ...
+# Subtest: system: invalid observations cannot be laundered into readiness
+ok 47 - system: invalid observations cannot be laundered into readiness
+  ---
+  duration_ms: 0.545552
+  type: 'test'
+  ...
+# Subtest: system CLI: end-to-end imports actually executed passing AND failing tests, with OS writes/child processes denied
+ok 48 - system CLI: end-to-end imports actually executed passing AND failing tests, with OS writes/child processes denied
+  ---
+  duration_ms: 423.510354
+  type: 'test'
+  ...
+# Subtest: system CLI: empty collection stays unchanged; no training, activation, init or implicit creation
+ok 49 - system CLI: empty collection stays unchanged; no training, activation, init or implicit creation
+  ---
+  duration_ms: 817.042412
+  type: 'test'
+  ...
+# Subtest: system CLI: existing real collector data is read, unreviewed rows are excluded and no automatic reviews occur
+ok 50 - system CLI: existing real collector data is read, unreviewed rows are excluded and no automatic reviews occur
+  ---
+  duration_ms: 288.850608
+  type: 'test'
+  ...
+# Subtest: system CLI: malformed JSON, symbolic links, oversized inputs and unknown flags fail closed
+ok 51 - system CLI: malformed JSON, symbolic links, oversized inputs and unknown flags fail closed
+  ---
+  duration_ms: 586.622326
+  type: 'test'
+  ...
+# Subtest: system CLI: fingerprint, catalog and status are accessible from the single entry point
+ok 52 - system CLI: fingerprint, catalog and status are accessible from the single entry point
+  ---
+  duration_ms: 187.923294
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5206.520042

@@ -33,6 +33,9 @@
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
     "dashboard": "node tools/celia-dashboard-server.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",
+    "phase": "node tools/phase.mjs",
+    "verify:quick": "node tools/verify-quick.mjs",
+    "cover": "node tools/cover.mjs",
     "demo:celia": "node tools/celia-demo.mjs",
     "celia:vectors": "node tools/permission-probe.mjs --security"
   },

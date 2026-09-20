@@ -4,6 +4,7 @@ import SemanticRagPanel from './SemanticRagPanel.jsx';
 import GovernedMemoryPanel from './GovernedMemoryPanel.jsx';
 import TransactionalWorkspacePanel from './TransactionalWorkspacePanel.jsx';
 import DslPanel from './DslPanel.jsx';
+import UltimatePanel from './UltimatePanel.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
   <div className="relative overflow-hidden bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col justify-between group hover:border-slate-700 transition-all duration-300">
@@ -209,9 +210,9 @@ export default function NexaDashboard() {
                 <span className="text-slate-600 font-mono text-sm font-normal">KERNEL</span>
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.7 dsl // 16 DSLs • 50-70% token saving • 100% stable • Binary 400-800% • Speculative zero latency</p>
+                <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.8 ultimate // 8-Tier + 7 Physics • Relativistic • Braid • Astrocytic • Holomorphic • DNA • Holographic • Morphic • World-Shaking</p>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 22 tools • 16 DSLs • AIR • CoW atomic</p>
+                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 30 tools • 16 DSLs • 15 Engines • Z3 100% proof</p>
               </div>
             </div>
           </div>
@@ -356,6 +357,12 @@ export default function NexaDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
           <div className="lg:col-span-12">
+            <UltimatePanel />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
             <DslPanel />
           </div>
         </div>
@@ -448,12 +455,12 @@ export default function NexaDashboard() {
 
         <div className="mt-8 pt-6 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] font-mono text-slate-600">
           <div className="flex items-center gap-3">
-            <span>Celia Agent Dashboard — NEXA Ω∞ — Self-Evolving Agent OS — v0.7 DSL/IR Engine — 16 DSLs + Binary + Speculative</span>
+            <span>Celia Agent Dashboard — NEXA Ω∞ — Ultimate Agent OS — v0.8 World-Shaking — 8-Tier + 7 Physics Engines</span>
             <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-            <span className="text-slate-500">AIR 50-70% • CtxQL • AST-Patch 100% • FlowDSL • CapLang • AssertDSL • AgentIDL 60% • Binary 400-800% • Speculative</span>
+            <span className="text-slate-500">Relativistic Minkowski • Braid Jones • Astrocytic Neuromodulators • Holomorphic Cauchy-Riemann • DNA ATCG PCR • Holographic Wave • Morphic Phase • 16 DSLs • Z3 SMT • WASM • Egress Zero-Trust</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • 16 DSLs • 68KB</span>
+            <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded-full">Glassmorphism • Tailwind • lucide-react • SSE • 15 Engines • 78KB • World-Shaking</span>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import DslPanel from './DslPanel.jsx';
 import UltimatePanel from './UltimatePanel.jsx';
 import InfinitePanel from './InfinitePanel.jsx';
 import SingularityPanel from './SingularityPanel.jsx';
+import OmegaPanel from './OmegaPanel.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
   <div className="relative overflow-hidden bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col justify-between group hover:border-slate-700 transition-all duration-300">
@@ -354,6 +355,12 @@ export default function NexaDashboard() {
               <span>SSE lightweight • topological sort • governed memory aware</span>
               <span className="flex items-center gap-1.5"><span className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>Live • heartbeat 15s</span>
             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
+            <OmegaPanel />
           </div>
         </div>
 

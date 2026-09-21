@@ -32,7 +32,8 @@
  */
 
 import { createServer } from 'node:http';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve, extname } from 'node:path';
+import { existsSync, statSync, createReadStream, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -51,10 +52,30 @@ import { CeliaKernelEngine } from '../packages/cells/celia/ultimate/src/celia-ke
 import { CeliaInfiniteKernel } from '../packages/cells/celia/infinite/src/celia-infinite-kernel.js';
 import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/celia-singularity-kernel.js';
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
+import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
+import { ApprovalLedger, isApprovalEligible, evaluateToolRequest, assertTargetStable, downgradeProvenance } from '../packages/policy/index.js';
+import { createIdentity } from '../packages/identity/index.js';
+import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
+import { MissionLog, UsageMeter } from '../packages/protocol/index.js';
+import { randomId } from '../packages/crypto/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const PORT = process.env.PORT || 3001;
+
+// v1.2 — Static SPA serving (dashboard/dist) for single-service deploys (Render/Koyeb)
+const DIST = join(root, 'dashboard', 'dist');
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.map': 'application/json'
+};
 
 // Trusted operator configuration, never derived from request headers/body.
 // Missing configuration denies every workspace write; invalid config stops startup.
@@ -100,6 +121,401 @@ const singularityKernel = new CeliaSingularityKernel({ ownerKid: 'nexa:singulari
 
 // v1.1 Omega — 56 Engines Unified — Beyond Singularity True Final
 const omegaKernel = new CeliaOmegaKernel({ ownerKid: 'nexa:omega:kernel:api:v1.1' });
+
+// v1.2 Creative Generation (AdForge) — tool:creative.generate via the creative port.
+// The dashboard acts as the trusted operator for demo capabilities: one capability
+// per campaign, budget max_uses=4, ttl 15m, standard channel enum (decision §3/§4).
+// No publish surface exists anywhere in this server — AUTO_DEPLOY stays CLOSED.
+const creativePort = createCreativePort();
+const creativeRuns = new Map(); // creativeId → result (ring, max 20)
+
+// v13-1 Approval Protocol — the human seat in the loop (doc §10).
+// The dashboard operator is the only trusted approver in this deployment; the
+// approval log is a hash-chained, tamper-evident ledger (packages/policy).
+const dashboardOperator = createIdentity({ label: 'celia-dashboard-operator', seed: 'e5'.repeat(32) });
+const approvalLedger = new ApprovalLedger({ trustedApprovers: [dashboardOperator.kid] });
+
+// v13-2 Terminal — first REAL execution. The jail lives under the gitignored
+// .nexa/ directory; sandbox mode is auto-detected (os = unshare+chroot when
+// available, policy otherwise). Every run needs a consumed approval whose
+// target matches the exact command (the ledger + port both enforce this).
+const terminalJailRoot = fileURLToPath(new URL('../.nexa/terminal', import.meta.url));
+mkdirSync(join(terminalJailRoot, 'work'), { recursive: true });
+const terminalPort = createTerminalPort({ jailRoot: terminalJailRoot });
+
+// v13-3 Mission Engine — directed missions over approval + terminal + creative.
+// Each mission owns a MissionLog (event-sourced, hash-chained, replayable —
+// packages/protocol). The engine is the log's only writer: it runs unprotected
+// steps automatically, stops at protected steps (WAITING_APPROVAL +
+// AUTHORIZATION_REQUIRED on SSE), and resumes when the human approves
+// (deny → MISSION_DENIED, terminal). Completion seals the chain and the
+// verification hash IS the chain head.
+const missions = new Map(); // missionId → { log, descriptors, pending, waiting, running, createdAt }
+const MISSION_STORE_MAX = 50;
+const MISSION_STEP_TIMEOUT_DEFAULT = 30000;
+const usageMeter = new UsageMeter();
+// v13-4 unified event timeline: append-only ring, every DAG event lands here
+const timelineRing = [];
+let timelineSeq = 0;
+const TIMELINE_MAX = 200;
+const TIMELINE_BUFFER_CAP = 4000;
+export function pushTimeline(type, payload) {
+  const entry = { seq: ++timelineSeq, timestamp: Date.now(), type, payload: capTimelinePayload(payload) };
+  timelineRing.push(entry);
+  while (timelineRing.length > TIMELINE_MAX) timelineRing.shift();
+  return entry;
+}
+function capTimelinePayload(payload) {
+  if (payload == null || typeof payload !== 'object') return payload;
+  const out = Array.isArray(payload) ? [...payload] : { ...payload };
+  for (const k of Object.keys(out)) {
+    const v = out[k];
+    if (typeof v === 'string' && (k === 'stdout' || k === 'stderr') && v.length > TIMELINE_BUFFER_CAP) {
+      out[k] = v.slice(0, TIMELINE_BUFFER_CAP);
+      out[k + 'Truncated'] = true;
+    }
+  }
+  return out;
+}
+
+function storeMission(missionId, record) {
+  missions.set(missionId, record);
+  while (missions.size > MISSION_STORE_MAX) missions.delete(missions.keys().next().value);
+}
+
+// One demo capability per campaign (budget 4, ttl 15m, standard channels).
+// Shared by POST /api/v1/creative/generate and the mission engine.
+function runCreativeGeneration(args, campaignId) {
+  const now = Date.now();
+  const capability = {
+    id: `nexa:creative:api:${campaignId}`,
+    resource: CREATIVE_RESOURCE,
+    actions: ['call'],
+    caveats: { max_uses: 4, exp: new Date(now + 15 * 60 * 1000).toISOString() },
+    constraints: { channels: [...CREATIVE_CHANNELS] },
+  };
+  const result = creativePort.generate(args, {
+    capability,
+    evidenceRef: `evidence:creative:${campaignId}:${now.toString(36)}`,
+  });
+  creativeRuns.set(result.creativeId, result);
+  if (creativeRuns.size > 20) creativeRuns.delete(creativeRuns.keys().next().value);
+  return result;
+}
+
+function missionStatus(missionId) {
+  const mission = missions.get(missionId);
+  if (!mission) return null;
+  const state = mission.log.state();
+  const verified = state.steps.filter((s) => s.layer === 'VERIFIED').length;
+  return {
+    missionId: state.missionId,
+    name: state.name,
+    layer: state.layer,
+    status: state.layer === 'VERIFIED' ? 'COMPLETED'
+      : state.layer === 'FAILED' ? 'FAILED'
+      : state.layer === 'DENIED' ? 'DENIED'
+      : state.layer === 'CANCELLED' ? 'CANCELLED'
+      : mission.waiting ? 'WAITING_APPROVAL' : mission.running ? 'RUNNING' : state.layer,
+    steps: state.steps.map((s) => ({
+      index: s.index, kind: s.kind, label: s.label, target: s.target,
+      protected: s.protected, layer: s.layer,
+      provenance: mission.descriptors[s.index]?.provenance ?? 'mission-plan',
+    })),
+    progress: { verified, total: state.steps.length },
+    usage: usageMeter.summary(missionId),
+    pending: mission.waiting ? { ...mission.waiting } : null,
+    verificationHash: state.verificationHash,
+    head: state.head,
+    length: state.length,
+  };
+}
+
+function failMissionStep(missionId, stepIndex, code, reason) {
+  const mission = missions.get(missionId);
+  mission.log.failStep({ stepIndex, code, reason: String(reason || 'step failed').slice(0, 300) });
+  mission.waiting = null;
+  emitDagEvent('MISSION_FAILED', { missionId, stepIndex, code });
+  return missionStatus(missionId);
+}
+
+async function executeMissionStep(descriptor, logTarget) {
+  if (descriptor.kind === 'terminal') {
+    const result = await terminalPort.exec(
+      { program: descriptor.program, args: descriptor.args },
+      { timeoutMs: descriptor.timeoutMs, expectedTarget: logTarget },
+    );
+    emitDagEvent(result.timedOut ? 'TERMINAL_TIMED_OUT' : 'TERMINAL_EXECUTED', result);
+    const outBytes = Buffer.byteLength(result.stdout || '', 'utf8') + Buffer.byteLength(result.stderr || '', 'utf8');
+    const inBytes = Buffer.byteLength([descriptor.program, ...(descriptor.args || [])].join(' '), 'utf8');
+    const wallMs = Math.max(0, Math.round(result.durationMs || 0));
+    if (result.timedOut) {
+      throw Object.assign(new Error(`terminal step timed out after ${result.durationMs}ms`), {
+        code: 'NEXA_E_HANDLER',
+        usage: { kind: 'terminal', ok: false, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
+      });
+    }
+    if (result.exitCode !== 0) {
+      const tail = (result.stderr || result.stdout || '').slice(0, 200);
+      throw Object.assign(new Error(`terminal step exited ${result.exitCode}: ${tail}`), {
+        code: 'NEXA_E_HANDLER',
+        usage: { kind: 'terminal', ok: false, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
+      });
+    }
+    return {
+      digest: result.stdoutHash,
+      verification: result.diff.digest,
+      detail: { exitCode: result.exitCode, durationMs: result.durationMs },
+      usage: { kind: 'terminal', ok: true, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
+    };
+  }
+  if (descriptor.kind === 'creative') {
+    const result = runCreativeGeneration(descriptor.creativeArgs, descriptor.campaignId);
+    emitDagEvent('CREATIVE_GENERATED', result);
+    const creativeOut = Buffer.byteLength(JSON.stringify(result), 'utf8');
+    const creativeIn = Buffer.byteLength(JSON.stringify(descriptor.creativeArgs ?? {}), 'utf8');
+    return {
+      digest: result.artifactDigests[0] ?? result.creativeId,
+      verification: result.evidenceRef ?? result.creativeId,
+      detail: { creativeId: result.creativeId, channel: result.channel },
+      usage: { kind: 'creative', ok: true, inputBytes: creativeIn, outputBytes: creativeOut, durationMs: 0 },
+    };
+  }
+  throw Object.assign(new Error(`unknown mission step kind "${descriptor.kind}"`), { code: 'NEXA_E_SCHEMA' });
+}
+
+async function runMission(missionId) {
+  const mission = missions.get(missionId);
+  if (!mission) {
+    throw Object.assign(new Error(`unknown mission ${missionId}`), { code: 'NEXA_E_MISSION_MISSING' });
+  }
+  if (mission.running) return missionStatus(missionId);
+  mission.running = true;
+  try {
+    for (;;) {
+      const state = mission.log.state();
+      if (['VERIFIED', 'FAILED', 'DENIED', 'CANCELLED'].includes(state.layer)) {
+        mission.waiting = null;
+        return missionStatus(missionId);
+      }
+      const step = state.steps.find((s) => s.layer !== 'VERIFIED');
+      const descriptor = mission.descriptors[step.index];
+      if (step.layer === 'PLANNED') {
+        // v13-5 runtime boundary: every step is evaluated before authorization.
+        const provenance = descriptor.provenance ?? 'mission-plan';
+        const toolResource = step.kind === 'terminal' ? 'terminal:exec' : 'creative:generate';
+        const toolAction = step.kind === 'terminal' ? 'exec' : 'generate';
+        emitDagEvent('TOOL_REQUESTED', {
+          missionId, stepIndex: step.index, kind: step.kind,
+          provenance, resource: toolResource, action: toolAction, target: step.target,
+        });
+        const boundaryVerdict = evaluateToolRequest({
+          provenance, resource: toolResource, action: toolAction, target: step.target,
+        });
+        emitDagEvent('POLICY_EVALUATED', {
+          missionId, stepIndex: step.index, provenance,
+          verdict: boundaryVerdict.verdict, code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+        });
+        if (boundaryVerdict.verdict === 'DENY') {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'DENY',
+            code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+          });
+          return failMissionStep(missionId, step.index, boundaryVerdict.code || 'NEXA_E_UNTRUSTED', boundaryVerdict.reason);
+        }
+        const needsApproval = step.protected || boundaryVerdict.verdict === 'REQUIRE_APPROVAL';
+        if (!needsApproval) {
+          mission.log.authorizeStep({ stepIndex: step.index });
+          emitDagEvent('MISSION_STEP_AUTHORIZED', { missionId, stepIndex: step.index, kind: step.kind, protected: false });
+          continue;
+        }
+        // Protected: reuse a live approval request, else open one, then wait.
+        let pending = mission.pending[step.index];
+        if (!pending || Date.parse(pending.exp) <= Date.now()) {
+          const req = approvalLedger.request({
+            resource: 'terminal:exec', action: 'exec', target: step.target,
+            missionId, requestedBy: dashboardOperator.kid,
+          });
+          pending = { approvalId: req.approvalId, exp: req.exp };
+          mission.pending[step.index] = pending;
+          emitDagEvent('AUTHORIZATION_REQUESTED', { ...req, missionId, stepIndex: step.index, target: step.target });
+        }
+        mission.waiting = { stepIndex: step.index, approvalId: pending.approvalId };
+        emitDagEvent('AUTHORIZATION_REQUIRED', {
+          missionId, stepIndex: step.index, kind: step.kind,
+          target: step.target, approvalId: pending.approvalId,
+        });
+        return missionStatus(missionId);
+      }
+      if (step.layer === 'AUTHORIZED') {
+        if (step.protected) {
+          // v13-5 TOCTOU: committed plan target vs live descriptor, before the spend.
+          // The explicit check names both sides for TARGET_CHANGED evidence; the
+          // ledger consume below re-verifies authoritatively (defense in depth).
+          let observedTarget = null;
+          try {
+            observedTarget = canonicalTarget(descriptor.program, descriptor.args ?? []);
+            assertTargetStable({ authorized: step.target, observed: observedTarget });
+          } catch (e) {
+            emitDagEvent('TARGET_CHANGED', {
+              missionId, stepIndex: step.index,
+              authorized: step.target, observed: observedTarget,
+            });
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              missionId, stepIndex: step.index, decision: 'DENY',
+              code: 'NEXA_E_APPROVAL_TARGET', reason: e.message,
+            });
+            return failMissionStep(missionId, step.index, 'NEXA_E_APPROVAL_TARGET', e.message);
+          }
+          emitDagEvent('TARGET', {
+            missionId, stepIndex: step.index, authorized: step.target, stable: true,
+          });
+          try {
+            approvalLedger.consume({
+              approvalId: step.approvalId, resource: 'terminal:exec',
+              action: 'exec', target: step.target, missionId,
+            });
+          } catch (e) {
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              missionId, stepIndex: step.index, decision: 'DENY',
+              code: e.code || 'NEXA_E_HANDLER', reason: e.message,
+            });
+            return failMissionStep(missionId, step.index, e.code || 'NEXA_E_HANDLER', e.message);
+          }
+          emitDagEvent('AUTHORIZATION_CONSUMED', {
+            approvalId: step.approvalId, missionId, stepIndex: step.index,
+            resource: 'terminal:exec', action: 'exec', target: step.target,
+          });
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'ALLOW',
+            approvalId: step.approvalId, mode: 'human-approval',
+          });
+        } else {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'ALLOW', mode: 'auto-unprotected',
+          });
+        }
+        emitDagEvent('EXECUTION_STARTED', { missionId, stepIndex: step.index, kind: step.kind });
+        try {
+          const { digest, verification, detail, usage } = await executeMissionStep(descriptor, step.target);
+          emitDagEvent('EXECUTION_FINISHED', {
+            missionId, stepIndex: step.index, kind: step.kind, ok: true,
+            inputBytes: usage.inputBytes, outputBytes: usage.outputBytes, durationMs: usage.durationMs,
+          });
+          usageMeter.record({ ...usage, missionId, stepIndex: step.index });
+          mission.log.executeStep({ stepIndex: step.index, approvalId: step.approvalId ?? null, digest });
+          emitDagEvent('MISSION_STEP_EXECUTED', { missionId, stepIndex: step.index, kind: step.kind, digest, ...detail });
+          const v = mission.log.verifyStep({ stepIndex: step.index, verification });
+          emitDagEvent('MISSION_STEP_VERIFIED', {
+            missionId, stepIndex: step.index, kind: step.kind,
+            verification, missionLayer: v.missionLayer,
+          });
+          if (v.missionLayer === 'VERIFIED') {
+            mission.waiting = null;
+            emitDagEvent('MISSION_COMPLETED', { missionId, verificationHash: v.verificationHash, steps: state.steps.length });
+            return missionStatus(missionId);
+          }
+        } catch (e) {
+          emitDagEvent('EXECUTION_FINISHED', {
+            missionId, stepIndex: step.index, kind: step.kind, ok: false, code: e.code || 'NEXA_E_HANDLER',
+          });
+          if (e && e.usage) usageMeter.record({ ...e.usage, missionId, stepIndex: step.index });
+          return failMissionStep(missionId, step.index, e.code || 'NEXA_E_HANDLER', e.message);
+        }
+        continue;
+      }
+      // EXECUTED is transient inside this loop (execute+verify are paired) —
+      // persisting here means an external writer, and there is none. Fail loud.
+      throw new Error(`mission engine invariant: step ${step.index} stuck at ${step.layer}`);
+    }
+  } finally {
+    mission.running = false;
+  }
+}
+
+// Human decisions resume waiting missions: approve → authorize + continue,
+// deny → the mission is DENIED (terminal). Fire-and-forget like /dag-run.
+function maybeResumeMissions(approvalId, verb) {
+  for (const [missionId, mission] of missions) {
+    if (!mission.waiting || mission.waiting.approvalId !== approvalId) continue;
+    const { stepIndex } = mission.waiting;
+    mission.waiting = null;
+    delete mission.pending[stepIndex];
+    if (verb === 'deny') {
+      try {
+        mission.log.denyMission({ reason: `approval ${approvalId} denied by operator` });
+      } catch { /* already terminal — nothing to deny */ }
+      emitDagEvent('MISSION_DENIED', { missionId, stepIndex, approvalId });
+      continue;
+    }
+    try {
+      mission.log.authorizeStep({ stepIndex, approvalId });
+      emitDagEvent('MISSION_STEP_AUTHORIZED', { missionId, stepIndex, protected: true, approvalId });
+    } catch (e) {
+      try {
+        failMissionStep(missionId, stepIndex, e.code || 'NEXA_E_HANDLER', e.message);
+      } catch { /* terminal */ }
+      continue;
+    }
+    runMission(missionId).catch((e) => console.error(`[mission] resume ${missionId} failed:`, e.message));
+  }
+}
+
+function normalizeMissionPlan(plan, missionId) {
+  const schema = (message) => Object.assign(new Error(message), { code: 'NEXA_E_SCHEMA' });
+  if (!Array.isArray(plan) || plan.length === 0 || plan.length > 64) {
+    throw schema('plan must be an array of 1..64 steps');
+  }
+  return plan.map((raw, index) => {
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+      throw schema(`plan[${index}] must be an object`);
+    }
+    const label = typeof raw.label === 'string' ? raw.label.slice(0, 128) : `step-${index}`;
+    if (raw.kind === 'terminal') {
+      if (raw.protected === false) {
+        throw schema(`plan[${index}]: terminal steps are always protected (gated REAL_EXECUTION)`);
+      }
+      const program = raw.program;
+      const args = raw.args ?? [];
+      if (typeof program !== 'string' || program.length === 0) throw schema(`plan[${index}].program required`);
+      if (!Array.isArray(args) || args.some((a) => typeof a !== 'string')) {
+        throw schema(`plan[${index}].args must be an array of strings`);
+      }
+      const timeoutMs = raw.timeoutMs ?? MISSION_STEP_TIMEOUT_DEFAULT;
+      if (!Number.isSafeInteger(timeoutMs)) throw schema(`plan[${index}].timeoutMs must be an integer`);
+      // v13-5: callers may declare LESS trust (model-output/untrusted-content) for a
+      // step, never more. The log shape is untouched (protocol-stable); provenance
+      // rides the server-side descriptor and the timeline evidence.
+      const provenance = raw.source === undefined ? 'mission-plan' : downgradeProvenance('mission-plan', raw.source);
+      const target = canonicalTarget(program, args);
+      return {
+        logStep: { kind: 'terminal', target, protected: true, label },
+        descriptor: { kind: 'terminal', label, program, args, timeoutMs, provenance },
+      };
+    }
+    if (raw.kind === 'creative') {
+      if (raw.protected === true) {
+        throw schema(`plan[${index}]: creative steps are ungated — protected must be false`);
+      }
+      const creativeArgs = raw.creativeArgs;
+      if (!creativeArgs || typeof creativeArgs !== 'object' || Array.isArray(creativeArgs)) {
+        throw schema(`plan[${index}].creativeArgs required`);
+      }
+      if (!CREATIVE_CHANNELS.includes(creativeArgs.channel)) {
+        throw schema(`plan[${index}].creativeArgs.channel must be one of ${CREATIVE_CHANNELS.join(', ')}`);
+      }
+      const campaignId = String(raw.campaignId ?? missionId).slice(0, 64) || missionId;
+      if (raw.source !== undefined && raw.source !== 'mission-plan') {
+        throw schema(`plan[${index}].source: creative steps accept only "mission-plan" provenance — model-sourced generation has no approval channel yet`);
+      }
+      return {
+        logStep: { kind: 'creative', target: `creative:${creativeArgs.channel}:${campaignId}`, protected: false, label },
+        descriptor: { kind: 'creative', label, creativeArgs, campaignId, provenance: 'mission-plan' },
+      };
+    }
+    throw schema(`plan[${index}].kind must be "terminal" or "creative" (got ${JSON.stringify(raw.kind)})`);
+  });
+}
 
 // Seed adaptive DAG
 adaptiveDagEngine.initialize(
@@ -205,6 +621,7 @@ export function updateNodeState(nodeId, state, evidenceRef = null) {
 
 export function emitDagEvent(type, payload) {
   dagEventEmitter.emit('dag_update', { type, payload: { ...payload, timestamp: Date.now() } });
+  pushTimeline(type, payload); // v13-4: every DAG event is timeline evidence
 }
 
 // Mock data — in production, read from Supabase port
@@ -829,6 +1246,432 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // === v1.2 Creative Generation (AdForge) — tool:creative.generate ===
+  if (url.pathname === '/api/v1/creative/stats' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...creativePort.stats() }));
+    return;
+  }
+
+  if ((url.pathname === '/api/v1/creative/generate' || url.pathname === '/api/v1/creative/variants') && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const campaignId = String(args.campaignId || 'default').slice(0, 64);
+        const { campaignId: _omit, ...creativeArgs } = args;
+        const result = runCreativeGeneration(creativeArgs, campaignId);
+        emitDagEvent('CREATIVE_GENERATED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        if (e.code === 'NEXA_E_BUDGET_EXCEEDED') {
+          emitDagEvent('CREATIVE_BUDGET_EXCEEDED', { code: e.code, message: e.message });
+        }
+        const bad = ['NEXA_E_BUDGET_EXCEEDED', 'NEXA_E_CAP_SCOPE', 'NEXA_E_SECRET_EGRESS', 'NEXA_E_CAP_MISSING', 'NEXA_E_SCHEMA'].includes(e.code);
+        res.writeHead(bad ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/creative/approve' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { creativeId } = JSON.parse(body || '{}');
+        const run = creativeRuns.get(creativeId);
+        if (!run) throw Object.assign(new Error('unknown creativeId (server restarted?)'), { code: 'NEXA_E_SCHEMA' });
+        run.approved = true;
+        run.approvedAt = new Date().toISOString();
+        emitDagEvent('CREATIVE_APPROVED', { creativeId, note: 'human review recorded — publish remains behind the AUTO_DEPLOY gate' });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, creativeId, approved: true, note: 'approval recorded; publishing is intentionally not implemented (AUTO_DEPLOY gate CLOSED)' }));
+      } catch (e) {
+        res.writeHead(e.code === 'NEXA_E_SCHEMA' ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/v1/creative/') && req.method === 'GET') {
+    const creativeId = url.pathname.split('/').pop();
+    const run = creativeRuns.get(creativeId);
+    if (!run) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: `unknown creativeId ${creativeId}` }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...run }));
+    return;
+  }
+
+  // === v13-1 Approval Center — the human seat in the loop (doc §10) ===
+  const APPROVAL_BAD_CODES = [
+    'NEXA_E_SCHEMA', 'NEXA_E_POLICY_IMMUTABLE', 'NEXA_E_UNTRUSTED',
+    'NEXA_E_APPROVAL_MISSING', 'NEXA_E_APPROVAL_STATE', 'NEXA_E_APPROVAL_USED',
+    'NEXA_E_APPROVAL_TARGET', 'NEXA_E_APPROVAL_SCOPE', 'NEXA_E_APPROVAL_EXPIRED',
+  ];
+
+  if (url.pathname === '/api/v1/authorizations/stats' && req.method === 'GET') {
+    const chain = approvalLedger.verifyChain();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      approver: dashboardOperator.kid,
+      chain: { ok: chain.ok, length: chain.length, head: chain.head },
+      ...approvalLedger.stats(),
+    }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/authorizations/eligibility' && req.method === 'GET') {
+    try {
+      const result = isApprovalEligible({ resource: url.searchParams.get('resource'), action: url.searchParams.get('action') });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...result }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_SCHEMA', error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/v1/authorizations/request' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const result = approvalLedger.request({ ...args, requestedBy: dashboardOperator.kid });
+        emitDagEvent('AUTHORIZATION_REQUESTED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+
+  // === v13-4 Governance — Approval Center, Unified Timeline, System Status ===
+  if (url.pathname === '/api/v1/authorizations' && req.method === 'GET') {
+    const chain = approvalLedger.verifyChain();
+    const rows = approvalLedger.requests();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      approver: dashboardOperator.kid,
+      chain: { ok: chain.ok, length: chain.length, head: chain.head },
+      count: rows.length,
+      requests: rows,
+    }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/timeline' && req.method === 'GET') {
+    const since = Math.max(0, parseInt(url.searchParams.get('since') || '0', 10) || 0);
+    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10) || 50));
+    const prefixes = (url.searchParams.get('type') || '').split(',').map((s) => s.trim()).filter(Boolean);
+    let events = timelineRing.filter((e) => e.seq > since);
+    if (prefixes.length > 0) {
+      events = events.filter((e) => prefixes.some((p) => e.type === p || e.type.startsWith(p)));
+    }
+    events = events.slice(-limit);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, head: timelineSeq, count: events.length, events }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/system/status' && req.method === 'GET') {
+    let approvalChain;
+    try {
+      approvalChain = approvalLedger.verifyChain();
+    } catch (e) {
+      approvalChain = { ok: false, code: e.code || 'NEXA_E_APPROVAL_TAMPERED', error: e.message };
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      honesty: [
+        { component: 'terminal', mode: 'LIVE', detail: `real execution, ${terminalPort.sandbox} jail` },
+        { component: 'missions', mode: 'LIVE', detail: 'event-sourced state machine, replay-verified' },
+        { component: 'approvals', mode: 'LIVE', detail: 'hash-chained ledger, human decisions' },
+        { component: 'evidence', mode: 'LIVE', detail: 'hash-chained logs, verifiable offline' },
+        { component: 'creative', mode: 'DEMO', detail: `mock provider (${creativePort.stats().provider}), deterministic` },
+        { component: 'desktop', mode: 'DEMO', detail: 'canvas simulation — no VNC in this sandbox' },
+      ],
+      usage: usageMeter.summaryAll(),
+      chains: { approvals: approvalChain, timelineEvents: timelineRing.length, timelineHead: timelineSeq },
+      missions: [...missions.keys()].map((id) => missionStatus(id)),
+    }));
+    return;
+  }
+
+  // v13-2 Terminal — real, sandboxed, approval-gated command execution.
+  if (url.pathname === '/api/v1/terminal/execute' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const program = args.program;
+        const commandArgs = args.args ?? [];
+        const target = canonicalTarget(program, commandArgs);
+        emitDagEvent('PROMPT_RECEIVED', { entry: 'terminal:execute', program, target });
+        // v13-5: downgrade-only provenance — direct invocation defaults to operator.
+        const provenance = args.provenance === undefined ? 'operator' : downgradeProvenance('operator', args.provenance);
+        emitDagEvent('TOOL_REQUESTED', {
+          entry: 'terminal:execute', provenance,
+          resource: 'terminal:exec', action: 'exec', target, missionId: args.missionId ?? null,
+        });
+        const boundaryVerdict = evaluateToolRequest({
+          provenance, resource: 'terminal:exec', action: 'exec', target,
+        });
+        emitDagEvent('POLICY_EVALUATED', {
+          entry: 'terminal:execute', provenance,
+          verdict: boundaryVerdict.verdict, code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+        });
+        if (boundaryVerdict.verdict === 'DENY') {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            entry: 'terminal:execute', decision: 'DENY',
+            code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+          });
+          throw Object.assign(new Error(boundaryVerdict.reason), { code: boundaryVerdict.code || 'NEXA_E_UNTRUSTED' });
+        }
+        // REQUIRE_APPROVAL is discharged by the mandatory approvalId below: this
+        // route never executes without a human approval spend. DEFER continues.
+        // v13-5 TOCTOU pre-check: stored approval target vs observed command.
+        // Names both sides for TARGET_CHANGED; consume re-verifies authoritatively.
+        const storedApproval = typeof args.approvalId === 'string'
+          ? approvalLedger.requests().find((r) => r.approvalId === args.approvalId) ?? null
+          : null;
+        if (storedApproval) {
+          try {
+            assertTargetStable({ authorized: storedApproval.target, observed: target });
+          } catch (e) {
+            emitDagEvent('TARGET_CHANGED', {
+              entry: 'terminal:execute', approvalId: args.approvalId,
+              authorized: storedApproval.target, observed: target,
+            });
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              entry: 'terminal:execute', decision: 'DENY',
+              code: 'NEXA_E_APPROVAL_TARGET', reason: e.message,
+            });
+            throw Object.assign(new Error(e.message), { code: 'NEXA_E_APPROVAL_TARGET' });
+          }
+          emitDagEvent('TARGET', {
+            entry: 'terminal:execute', approvalId: args.approvalId,
+            authorized: storedApproval.target, stable: true,
+          });
+        } else {
+          emitDagEvent('TARGET', { entry: 'terminal:execute', observed: target, authorized: null });
+        }
+        // The approval must exist AND match this exact command (gated: REAL_EXECUTION).
+        let spend;
+        try {
+          spend = approvalLedger.consume({
+            approvalId: args.approvalId,
+            resource: 'terminal:exec',
+            action: 'exec',
+            target,
+            missionId: args.missionId ?? null,
+          });
+        } catch (e) {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            entry: 'terminal:execute', decision: 'DENY',
+            code: e.code || 'NEXA_E_HANDLER', reason: e.message,
+          });
+          throw e;
+        }
+        emitDagEvent('AUTHORIZATION_RESULT', {
+          entry: 'terminal:execute', decision: 'ALLOW',
+          approvalId: spend.approvalId, mode: 'human-approval',
+        });
+        emitDagEvent('EXECUTION_STARTED', { entry: 'terminal:execute', target });
+        let result;
+        try {
+          result = await terminalPort.exec(
+            { program, args: commandArgs },
+            { timeoutMs: args.timeoutMs, expectedTarget: target },
+          );
+        } catch (e) {
+          emitDagEvent('EXECUTION_FINISHED', {
+            entry: 'terminal:execute', target, ok: false, code: e.code || 'NEXA_E_HANDLER',
+          });
+          throw e;
+        }
+        emitDagEvent('EXECUTION_FINISHED', {
+          entry: 'terminal:execute', target, ok: !result.timedOut && result.exitCode === 0,
+          exitCode: result.exitCode, durationMs: result.durationMs, timedOut: result.timedOut === true,
+        });
+        emitDagEvent(result.timedOut ? 'TERMINAL_TIMED_OUT' : 'TERMINAL_EXECUTED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        const bad = [...APPROVAL_BAD_CODES, 'NEXA_E_TERMINAL_JAIL', 'NEXA_E_TERMINAL_UNALLOWED'].includes(e.code);
+        res.writeHead(bad ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume)$/.test(url.pathname) && req.method === 'POST') {
+    const [, , , , approvalId, verb] = url.pathname.split('/');
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        // The human at this dashboard IS the trusted operator; a foreign approverKid is refused by the ledger.
+        const approverKid = args.approverKid ?? dashboardOperator.kid;
+        let result;
+        let eventType;
+        if (verb === 'approve') {
+          result = approvalLedger.approve({ approvalId, scope: args.scope ?? 'once', approverKid });
+          eventType = 'AUTHORIZATION_APPROVED';
+        } else if (verb === 'deny') {
+          result = approvalLedger.deny({ approvalId, approverKid, reason: args.reason ?? null });
+          eventType = 'AUTHORIZATION_DENIED';
+        } else {
+          result = approvalLedger.consume({
+            approvalId,
+            resource: args.resource,
+            action: args.action,
+            target: args.target,
+            missionId: args.missionId ?? null,
+          });
+          eventType = 'AUTHORIZATION_CONSUMED';
+        }
+        emitDagEvent(eventType, result);
+        if (verb === 'approve' || verb === 'deny') maybeResumeMissions(approvalId, verb);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+
+  // === v13-3 Mission Engine — directed missions (approval + terminal + creative) ===
+  const MISSION_BAD_CODES = ['NEXA_E_SCHEMA', 'NEXA_E_MISSION_STATE', 'NEXA_E_MISSION_MISSING'];
+
+  if (url.pathname === '/api/v1/missions/create' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        if (typeof args.name !== 'string' || !args.name.trim() || args.name.length > 128) {
+          throw Object.assign(new Error('name (1..128 chars) required'), { code: 'NEXA_E_SCHEMA' });
+        }
+        const missionId = randomId('mission:');
+        const normalized = normalizeMissionPlan(args.plan, missionId);
+        emitDagEvent('PROMPT_RECEIVED', {
+          entry: 'missions:create', missionId, name: args.name.trim(), steps: normalized.length,
+          provenance: normalized.map((n) => n.descriptor.provenance ?? 'mission-plan'),
+        });
+        const log = new MissionLog();
+        const created = log.create({
+          missionId, name: args.name.trim(), plan: normalized.map((n) => n.logStep),
+        });
+        storeMission(missionId, {
+          log,
+          descriptors: normalized.map((n) => n.descriptor),
+          pending: {}, waiting: null, running: false,
+          createdAt: new Date().toISOString(),
+        });
+        const status = missionStatus(missionId);
+        emitDagEvent('MISSION_CREATED', {
+          missionId, name: status.name, steps: status.progress.total, layer: status.layer,
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...status, head: created.head }));
+      } catch (e) {
+        res.writeHead(MISSION_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/missions' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true, count: missions.size,
+      missions: [...missions.keys()].map((id) => missionStatus(id)),
+    }));
+    return;
+  }
+
+  const missionRunMatch = req.method === 'POST' && /^\/api\/v1\/missions\/([^/]+)\/run$/.exec(url.pathname);
+  if (missionRunMatch) {
+    const missionId = decodeURIComponent(missionRunMatch[1]);
+    emitDagEvent('PROMPT_RECEIVED', { entry: 'missions:run', missionId });
+    try {
+      const status = await runMission(missionId);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...status }));
+    } catch (e) {
+      const code = e.code || 'NEXA_E_INTERNAL';
+      res.writeHead(code === 'NEXA_E_MISSION_MISSING' ? 404 : 500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, code, error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/v1/missions/') && req.method === 'GET') {
+    const rest = url.pathname.slice('/api/v1/missions/'.length);
+    if (rest.endsWith('/replay')) {
+      const missionId = decodeURIComponent(rest.slice(0, -'/replay'.length));
+      const mission = missions.get(missionId);
+      if (!mission || !missionId || missionId.includes('/')) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: 'NEXA_E_MISSION_MISSING', error: `unknown mission ${missionId}` }));
+        return;
+      }
+      try {
+        const replayed = mission.log.replay();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: true, missionId, integrity: 'VALID',
+          head: replayed.head, length: replayed.length,
+          state: replayed.state, events: mission.log.events(),
+        }));
+      } catch (e) {
+        // A verification report, not an HTTP error: the client checks integrity.
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          ok: false, missionId, integrity: 'TAMPERED',
+          code: e.code || 'NEXA_E_MISSION_TAMPERED', error: e.message,
+        }));
+      }
+      return;
+    }
+    const missionId = decodeURIComponent(rest);
+    if (missionId && !missionId.includes('/')) {
+      const status = missionStatus(missionId);
+      if (!status) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: 'NEXA_E_MISSION_MISSING', error: `unknown mission ${missionId}` }));
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...status }));
+      return;
+    }
+  }
   // === v0.6 Contract Engine Endpoints ===
   if (url.pathname === '/api/v1/contract/check' && req.method === 'POST') {
     let body = '';
@@ -1696,6 +2539,11 @@ const server = createServer(async (req, res) => {
 
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
+    if (req.method === 'GET' && existsSync(DIST)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+      createReadStream(join(DIST, 'index.html')).pipe(res);
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
@@ -1719,6 +2567,18 @@ const server = createServer(async (req, res) => {
   <li>POST /api/v1/workspace/write — write file { workspaceId, path, content, evidenceRef }</li>
   <li>POST /api/v1/workspace/commit — atomic commit { workspaceId, evidenceRef }</li>
   <li>POST /api/v1/workspace/rollback — atomic rollback { workspaceId, evidenceRef }</li>
+  <li><a href="/api/v1/creative/stats">/api/v1/creative/stats</a> — creative engine (AdForge mock provider, tool:creative.generate)</li>
+  <li>POST /api/v1/creative/generate — { brand, product, audience, offer, channel, tone, variants, campaignId } → budget 4 per campaign, ttl 15m, channels [meta, instagram, tiktok, google]</li>
+  <li>POST /api/v1/creative/approve — { creativeId } — human review (publish intentionally not implemented — AUTO_DEPLOY CLOSED)</li>
+  <li>POST /api/v1/authorizations/request — { resource, action, target, missionId? } — human approval flow (v13-1)</li>
+  <li>POST /api/v1/terminal/execute — { program, args, approvalId, provenance? } — sandboxed real execution, boundary-gated (v13-5)</li>
+  <li>POST /api/v1/missions/create — { name, plan: [{ kind: terminal|creative, source?, ... }] } — directed mission, boundary-gated (v13-5, event-sourced)</li>
+  <li>POST /api/v1/missions/:id/run — run/resume (stops WAITING_APPROVAL at protected steps)</li>
+  <li>GET /api/v1/missions/:id — status + progress + pending approval</li>
+  <li>GET /api/v1/missions/:id/replay — verify chain + replay state (integrity VALID/TAMPERED)</li>
+  <li>GET /api/v1/authorizations — Approval Center: all requests + chain (v13-4, Live)</li>
+  <li>GET /api/v1/timeline — unified event timeline (v13-4, Live)</li>
+  <li>GET /api/v1/system/status — LIVE/DEMO honesty + real usage (v13-4, Live)</li>
   <li>POST /api/v1/contract/check — contract verification { contract, beforeContext, afterContext }</li>
   <li><a href="/api/v1/adaptive-dag">/api/v1/adaptive-dag</a> — adaptive DAG with injection history</li>
   <li>POST /api/v1/adaptive-dag/inject — inject recovery nodes { failedNodeId, newNodes, evidenceRef }</li>
@@ -1783,6 +2643,34 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // v1.2 — Serve the built SPA (dashboard/dist) with SPA fallback.
+  // Single-service deploy: one Node process serves both the API/SSE and the frontend.
+  if (req.method === 'GET' && !url.pathname.startsWith('/api/')) {
+    if (existsSync(DIST)) {
+      let pathname = url.pathname;
+      try {
+        pathname = decodeURIComponent(pathname);
+      } catch {
+        pathname = '/';
+      }
+      const filePath = pathname.replace(/^\/+/, '') || 'index.html';
+      const resolved = resolve(DIST, filePath);
+      if (resolved.startsWith(DIST)) {
+        const isFile = existsSync(resolved) && statSync(resolved).isFile();
+        const target = isFile ? resolved : join(DIST, 'index.html'); // SPA fallback for client routes
+        if (existsSync(target)) {
+          const ext = extname(target);
+          res.writeHead(200, {
+            'Content-Type': MIME[ext] || 'application/octet-stream',
+            'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
+          });
+          createReadStream(target).pipe(res);
+          return;
+        }
+      }
+    }
+  }
+
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not found', path: url.pathname }));
 });
@@ -1829,6 +2717,10 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Omega Gödel: POST http://localhost:${PORT}/api/v1/omega/godel/prove { stmtId }`);
   console.log(`   Omega Akashic: POST http://localhost:${PORT}/api/v1/omega/akashic/resonate { query }`);
   console.log(`   Omega Metamorphic: POST http://localhost:${PORT}/api/v1/omega/metamorphic/transcend { codeId }`);
+  console.log(`   Missions: POST http://localhost:${PORT}/api/v1/missions/create { name, plan }`);
+  console.log(`   Authorizations: POST http://localhost:${PORT}/api/v1/authorizations/request { resource, action, target }`);
+  console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
+  console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
   console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
 });

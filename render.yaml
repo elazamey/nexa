@@ -1,0 +1,27 @@
+# Render Blueprint — single-service deploy (free tier)
+#
+# One Node web service runs the whole system:
+#   • API + live SSE  (tools/celia-dashboard-server.mjs, port $PORT)
+#   • Built React SPA (dashboard/dist — served by the same server)
+#
+# Usage:
+#   1. Render dashboard → New → Blueprint → pick this repo
+#   2. The service below is created automatically (or: render.yaml is detected
+#      on new pushes when "Deploy from Git" is used).
+#
+# Note: Vercel static-only hosting does NOT work for this app — the frontend
+# requires the persistent Node backend (in-memory DAG/governed-memory state +
+# long-lived SSE connections), which only a web service (Render/Koyeb/Fly) can run.
+
+services:
+  - type: web
+    name: nexa-dashboard
+    runtime: node
+    plan: free
+    buildCommand: cd dashboard && npm install --no-audit --no-fund && npm run build
+    startCommand: node tools/celia-dashboard-server.mjs
+    healthCheckPath: /api/celia/state
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.x

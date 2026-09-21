@@ -149,6 +149,12 @@ export default function NexaDashboard() {
         } else if (data.type === 'WORKSPACE_ROLLBACK') {
           setWorkspace(prev => prev && prev.id === data.payload.workspaceId ? { ...prev, status: 'ROLLED_BACK', rolledBackAt: data.payload.rolledBackAt, lastEventAt: Date.now() } : prev);
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔄 Workspace rollback ${data.payload.workspaceId} zero side effects`, ...prev].slice(0,30));
+        } else if (data.type === 'CREATIVE_GENERATED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🎨 Creative ${data.payload.creativeId} — ${data.payload.variants?.length || 0} variants for ${data.payload.channel} (${data.payload.provider}/${data.payload.model})`, ...prev].slice(0,30));
+        } else if (data.type === 'CREATIVE_APPROVED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ Creative approved ${data.payload.creativeId} — publish remains gated (AUTO_DEPLOY CLOSED)`, ...prev].slice(0,30));
+        } else if (data.type === 'CREATIVE_BUDGET_EXCEEDED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Creative budget exceeded: ${data.payload.message}`, ...prev].slice(0,30));
         } else if (data.type === 'REPLAY') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⏪ Replay from ${data.payload.fromIndex} checkpoint ${data.payload.checkpointIndex} no LLM calls`, ...prev].slice(0,30));
         } else if (data.type === 'DSL_COMPILED') {

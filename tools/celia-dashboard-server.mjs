@@ -47,6 +47,7 @@ import { CeliaKernelEngine } from '../packages/cells/celia/ultimate/src/celia-ke
 import { CeliaInfiniteKernel } from '../packages/cells/celia/infinite/src/celia-infinite-kernel.js';
 import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/celia-singularity-kernel.js';
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
+import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -100,6 +101,13 @@ const singularityKernel = new CeliaSingularityKernel({ ownerKid: 'nexa:singulari
 
 // v1.1 Omega — 56 Engines Unified — Beyond Singularity True Final
 const omegaKernel = new CeliaOmegaKernel({ ownerKid: 'nexa:omega:kernel:api:v1.1' });
+
+// v1.2 Creative Generation (AdForge) — tool:creative.generate via the creative port.
+// The dashboard acts as the trusted operator for demo capabilities: one capability
+// per campaign, budget max_uses=4, ttl 15m, standard channel enum (decision §3/§4).
+// No publish surface exists anywhere in this server — AUTO_DEPLOY stays CLOSED.
+const creativePort = createCreativePort();
+const creativeRuns = new Map(); // creativeId → result (ring, max 20)
 
 // Seed adaptive DAG
 adaptiveDagEngine.initialize(
@@ -775,6 +783,85 @@ const server = createServer(async (req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  // === v1.2 Creative Generation (AdForge) — tool:creative.generate ===
+  if (url.pathname === '/api/v1/creative/stats' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...creativePort.stats() }));
+    return;
+  }
+
+  if ((url.pathname === '/api/v1/creative/generate' || url.pathname === '/api/v1/creative/variants') && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const campaignId = String(args.campaignId || 'default').slice(0, 64);
+        const now = Date.now();
+        // One demo capability per campaign: budget 4, ttl 15m, standard channels.
+        const capability = {
+          id: `nexa:creative:api:${campaignId}`,
+          resource: CREATIVE_RESOURCE,
+          actions: ['call'],
+          caveats: { max_uses: 4, exp: new Date(now + 15 * 60 * 1000).toISOString() },
+          constraints: { channels: [...CREATIVE_CHANNELS] },
+        };
+        const { campaignId: _omit, ...creativeArgs } = args;
+        const result = creativePort.generate(creativeArgs, {
+          capability,
+          evidenceRef: `evidence:creative:${campaignId}:${now.toString(36)}`,
+        });
+        creativeRuns.set(result.creativeId, result);
+        if (creativeRuns.size > 20) creativeRuns.delete(creativeRuns.keys().next().value);
+        emitDagEvent('CREATIVE_GENERATED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        if (e.code === 'NEXA_E_BUDGET_EXCEEDED') {
+          emitDagEvent('CREATIVE_BUDGET_EXCEEDED', { code: e.code, message: e.message });
+        }
+        const bad = ['NEXA_E_BUDGET_EXCEEDED', 'NEXA_E_CAP_SCOPE', 'NEXA_E_SECRET_EGRESS', 'NEXA_E_CAP_MISSING', 'NEXA_E_SCHEMA'].includes(e.code);
+        res.writeHead(bad ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/v1/creative/approve' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { creativeId } = JSON.parse(body || '{}');
+        const run = creativeRuns.get(creativeId);
+        if (!run) throw Object.assign(new Error('unknown creativeId (server restarted?)'), { code: 'NEXA_E_SCHEMA' });
+        run.approved = true;
+        run.approvedAt = new Date().toISOString();
+        emitDagEvent('CREATIVE_APPROVED', { creativeId, note: 'human review recorded — publish remains behind the AUTO_DEPLOY gate' });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, creativeId, approved: true, note: 'approval recorded; publishing is intentionally not implemented (AUTO_DEPLOY gate CLOSED)' }));
+      } catch (e) {
+        res.writeHead(e.code === 'NEXA_E_SCHEMA' ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/v1/creative/') && req.method === 'GET') {
+    const creativeId = url.pathname.split('/').pop();
+    const run = creativeRuns.get(creativeId);
+    if (!run) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: `unknown creativeId ${creativeId}` }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, ...run }));
     return;
   }
 
@@ -1673,6 +1760,9 @@ const server = createServer(async (req, res) => {
   <li>POST /api/v1/workspace/write — write file { workspaceId, path, content, evidenceRef }</li>
   <li>POST /api/v1/workspace/commit — atomic commit { workspaceId, evidenceRef }</li>
   <li>POST /api/v1/workspace/rollback — atomic rollback { workspaceId, evidenceRef }</li>
+  <li><a href="/api/v1/creative/stats">/api/v1/creative/stats</a> — creative engine (AdForge mock provider, tool:creative.generate)</li>
+  <li>POST /api/v1/creative/generate — { brand, product, audience, offer, channel, tone, variants, campaignId } → budget 4 per campaign, ttl 15m, channels [meta, instagram, tiktok, google]</li>
+  <li>POST /api/v1/creative/approve — { creativeId } — human review (publish intentionally not implemented — AUTO_DEPLOY CLOSED)</li>
   <li>POST /api/v1/contract/check — contract verification { contract, beforeContext, afterContext }</li>
   <li><a href="/api/v1/adaptive-dag">/api/v1/adaptive-dag</a> — adaptive DAG with injection history</li>
   <li>POST /api/v1/adaptive-dag/inject — inject recovery nodes { failedNodeId, newNodes, evidenceRef }</li>

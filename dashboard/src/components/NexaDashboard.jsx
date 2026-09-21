@@ -155,6 +155,14 @@ export default function NexaDashboard() {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ Creative approved ${data.payload.creativeId} — publish remains gated (AUTO_DEPLOY CLOSED)`, ...prev].slice(0,30));
         } else if (data.type === 'CREATIVE_BUDGET_EXCEEDED') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Creative budget exceeded: ${data.payload.message}`, ...prev].slice(0,30));
+        } else if (data.type === 'AUTHORIZATION_REQUESTED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔐 Approval required: ${data.payload.gate} — ${data.payload.resource}/${data.payload.action} on "${data.payload.target}"`, ...prev].slice(0,30));
+        } else if (data.type === 'AUTHORIZATION_APPROVED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ Approved (${data.payload.scope}) — ${data.payload.approvalId.slice(0, 24)}…`, ...prev].slice(0,30));
+        } else if (data.type === 'AUTHORIZATION_DENIED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Approval denied — ${data.payload.approvalId.slice(0, 24)}…${data.payload.reason ? ` (${data.payload.reason})` : ''}`, ...prev].slice(0,30));
+        } else if (data.type === 'AUTHORIZATION_CONSUMED') {
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ▶ Execution authorized: ${data.payload.resource}/${data.payload.action} on "${data.payload.target}"`, ...prev].slice(0,30));
         } else if (data.type === 'REPLAY') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⏪ Replay from ${data.payload.fromIndex} checkpoint ${data.payload.checkpointIndex} no LLM calls`, ...prev].slice(0,30));
         } else if (data.type === 'DSL_COMPILED') {

@@ -3,6 +3,7 @@
 > **Status:** architecture reference (owner-supplied, 2026-09-21) — **Free-First / Local-First / No-Card-First.**
 > **Companion:** `v13-implementation-map.md` maps every section below to the real repo state
 > (branch `arena/01a0bf1b-nexa`) and orders the work per repo culture: vectors first, deterministic mock first, no kernel bloat.
+> **Progress:** v13-1 (Approval Protocol, §10/§11/§33) COMPLETE 2026-09-21 — 9/9 vectors, 333/333 tests, live endpoints. Next: v13-2 (terminal port, real bash).
 > **Supersedes:** — (v12-creative stays in force: creative phases 3–6 interleave into the mission demo)
 
 ## STATUS

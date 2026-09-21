@@ -129,9 +129,9 @@ the canvas already carries its DEMO label.
 
 ## 4. Phases (repo culture: vectors first in every phase)
 
-| Phase | Work | Acceptance |
-|---|---|---|
-| v13-1 | Approval protocol (pure `packages/policy`) + 8 vectors | vectors green; suite grows from 324; `packages/` still zero fs/net (posture clean) |
+| Phase | Work | Acceptance | Status |
+|---|---|---|---|
+| v13-1 | Approval protocol (pure `packages/policy`) + 8 vectors | vectors green; suite grows from 324; `packages/` still zero fs/net (posture clean) | ✅ 9/9 green (V0+V1..V8); 333/333; endpoints live + curl round-trip verified |
 | v13-2 | Terminal port + sandbox (real bash) + vectors (path escape, injection, timeout, jail) | `terminal.execute` runs live behind approval; refused without; jail can't escape cwd |
 | v13-3 | Mission API + 4-layer state machine + §45 events + replay endpoint | one mission end-to-end; replay reconstructs the same final state; evidence verifies |
 | v13-4 | Dashboard: Approval Center + mission timeline + evidence drawer + LIVE/DEMO badge + cost meter | a human approves on screen; every step visible in the timeline with evidence |
@@ -157,3 +157,32 @@ Mission: "فحص المشروع وتشخيصه"
 Acceptance: every step = an event; the file write without approval is refused (vector);
 replay is deterministic; all security vectors green; UI shows only
 **Intent / Plan / Next Action / Result / Evidence** — never chain-of-thought.
+
+## 6. Implementation record (v13-1, 2026-09-21)
+
+**Files:** `packages/policy/src/approval.js` (pure `ApprovalLedger` + `isApprovalEligible`),
+`packages/ast/src/errors.js` (8 new codes: `NEXA_E_POLICY_IMMUTABLE`,
+`NEXA_E_APPROVAL_{MISSING,STATE,USED,TARGET,SCOPE,EXPIRED,TAMPERED}`),
+`tests/approval-security.test.js` (V0 + V1..V8, written red before the module existed),
+`tools/celia-dashboard-server.mjs` (`/api/v1/authorizations/{stats,eligibility,request,
+:id/approve|deny|consume}` + `AUTHORIZATION_{REQUESTED,APPROVED,DENIED,CONSUMED}` on the
+DAG stream), `dashboard/src/components/NexaDashboard.jsx` (authorization log lines).
+
+**Verified behavior (curl, live server):** fs-write request → approve(once) → consume →
+second consume `400 NEXA_E_APPROVAL_USED`; `rm -rf /` against an `ls -R` grant →
+`NEXA_E_APPROVAL_TARGET`; `tool:creative.publish/publish` request →
+`NEXA_E_POLICY_IMMUTABLE` (AUTO_DEPLOY is root-governed, matching the v12 ruling);
+stats expose the verified chain head.
+
+**Lessons encoded:**
+- Error codes are a **closed registry** (`packages/ast/src/errors.js`) — `NexaError`
+  throws on any unregistered code; new protocols must register there first.
+- The time API is **ISO-string based** (`parseInstant` → ms, `addSeconds` → string);
+  injected clocks return `Date` and are converted at the boundary via `formatInstant`.
+- This Node build rejects implicitly-declared private fields — declare class fields
+  explicitly (matches the existing `#handlers`/`#seenIds` convention).
+- A consumed approval is a **terminal state** and beats expiry (`USED` before `EXPIRED`).
+- Truncation incident (this turn): the working-tree dashboard server lost ~435 tail lines
+  (partial-write artifact across the turn boundary). Restored from `HEAD` (which held the
+  complete file) and re-applied the v13-1 hunks; the running process still had the full
+  code in memory, which is how the regression was caught before a restart.

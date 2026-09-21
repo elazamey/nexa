@@ -48,6 +48,8 @@ import { CeliaInfiniteKernel } from '../packages/cells/celia/infinite/src/celia-
 import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/celia-singularity-kernel.js';
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
 import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
+import { ApprovalLedger, isApprovalEligible } from '../packages/policy/index.js';
+import { createIdentity } from '../packages/identity/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -108,6 +110,12 @@ const omegaKernel = new CeliaOmegaKernel({ ownerKid: 'nexa:omega:kernel:api:v1.1
 // No publish surface exists anywhere in this server — AUTO_DEPLOY stays CLOSED.
 const creativePort = createCreativePort();
 const creativeRuns = new Map(); // creativeId → result (ring, max 20)
+
+// v13-1 Approval Protocol — the human seat in the loop (doc §10).
+// The dashboard operator is the only trusted approver in this deployment; the
+// approval log is a hash-chained, tamper-evident ledger (packages/policy).
+const dashboardOperator = createIdentity({ label: 'celia-dashboard-operator', seed: 'e5'.repeat(32) });
+const approvalLedger = new ApprovalLedger({ trustedApprovers: [dashboardOperator.kid] });
 
 // Seed adaptive DAG
 adaptiveDagEngine.initialize(
@@ -862,6 +870,93 @@ const server = createServer(async (req, res) => {
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, ...run }));
+    return;
+  }
+
+  // === v13-1 Approval Center — the human seat in the loop (doc §10) ===
+  const APPROVAL_BAD_CODES = [
+    'NEXA_E_SCHEMA', 'NEXA_E_POLICY_IMMUTABLE', 'NEXA_E_UNTRUSTED',
+    'NEXA_E_APPROVAL_MISSING', 'NEXA_E_APPROVAL_STATE', 'NEXA_E_APPROVAL_USED',
+    'NEXA_E_APPROVAL_TARGET', 'NEXA_E_APPROVAL_SCOPE', 'NEXA_E_APPROVAL_EXPIRED',
+  ];
+
+  if (url.pathname === '/api/v1/authorizations/stats' && req.method === 'GET') {
+    const chain = approvalLedger.verifyChain();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      approver: dashboardOperator.kid,
+      chain: { ok: chain.ok, length: chain.length, head: chain.head },
+      ...approvalLedger.stats(),
+    }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/authorizations/eligibility' && req.method === 'GET') {
+    try {
+      const result = isApprovalEligible({ resource: url.searchParams.get('resource'), action: url.searchParams.get('action') });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, ...result }));
+    } catch (e) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_SCHEMA', error: e.message }));
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/v1/authorizations/request' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const result = approvalLedger.request({ ...args, requestedBy: dashboardOperator.kid });
+        emitDagEvent('AUTHORIZATION_REQUESTED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume)$/.test(url.pathname) && req.method === 'POST') {
+    const [, , , , approvalId, verb] = url.pathname.split('/');
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        // The human at this dashboard IS the trusted operator; a foreign approverKid is refused by the ledger.
+        const approverKid = args.approverKid ?? dashboardOperator.kid;
+        let result;
+        let eventType;
+        if (verb === 'approve') {
+          result = approvalLedger.approve({ approvalId, scope: args.scope ?? 'once', approverKid });
+          eventType = 'AUTHORIZATION_APPROVED';
+        } else if (verb === 'deny') {
+          result = approvalLedger.deny({ approvalId, approverKid, reason: args.reason ?? null });
+          eventType = 'AUTHORIZATION_DENIED';
+        } else {
+          result = approvalLedger.consume({
+            approvalId,
+            resource: args.resource,
+            action: args.action,
+            target: args.target,
+            missionId: args.missionId ?? null,
+          });
+          eventType = 'AUTHORIZATION_CONSUMED';
+        }
+        emitDagEvent(eventType, result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
     return;
   }
 

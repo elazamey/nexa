@@ -15,6 +15,7 @@ import { createCommitConsumptionStore } from './celia-commit-consumption-store.m
 // A failed rollback blocks every committer for this root in this process.
 // This latch is NOT durable quarantine; restart recovery remains a separate gate.
 const recoveryRequiredRoots = new Set();
+const EMPTY = Buffer.alloc(0);
 const MAX_FILES = 128;
 const MAX_BYTES = 8 * 1024 * 1024;
 const digest = value => sha256Multihash(canonicalBytes(value));
@@ -132,6 +133,41 @@ function ensureParents(base, target, created) {
   }
 }
 
+/**
+ * H3 claim probe. Re-reads the target immediately before truncation and proves
+ * it still carries the exact bytes, size and mode that authorization was bound
+ * to. The probe itself is non-destructive: it opens no truncating descriptor,
+ * so any scheduling point it introduces leaves a competing writer's edit whole.
+ * Detection is bytes-equality against the captured base, not a timestamp.
+ */
+function claimExistingTarget(target, file) {
+  // The probe is a real write call, so it occupies the same scheduling point a
+  // destructive apply would. 'wx' on an existing path fails with EEXIST without
+  // opening a truncating descriptor, so the competitor's bytes survive it.
+  let claimed = false;
+  try {
+    // Empty payload: the probe must never publish commit content at a path the
+    // committer is about to refuse, however briefly.
+    writeFileSync(target, EMPTY, { flag: 'wx', mode: 0o600 });
+    claimed = true; // The verified target vanished; we created a new file.
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+  }
+  if (claimed) {
+    // A verified-existing target that no longer exists is a concurrent change.
+    // Remove only the file this probe just created, then refuse.
+    try { unlinkSync(target); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    throw new WorkspaceCommitError(403, 'COMMIT_CONCURRENT_MODIFICATION');
+  }
+  // The path still exists. Prove it is the same regular file, mode, size and
+  // bytes the base hash was computed over, after every scheduling point above.
+  const stat = regularFile(target);
+  if ((stat.mode & 0o7777) !== file.base.mode || stat.size !== file.previous.length
+      || !readFileSync(target).equals(file.previous)) {
+    throw new WorkspaceCommitError(403, 'COMMIT_CONCURRENT_MODIFICATION');
+  }
+}
+
 /** Restore attempted files, including a write that partially changed bytes then threw. */
 function restore(base, attempted, created) {
   const failures = [];
@@ -195,7 +231,24 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
       for (const file of changed) {
         const target = join(base, file.path);
         ensureParents(base, target, created);
+        // H3: the first touch of every existing target is a NON-DESTRUCTIVE
+        // claim probe. 'wx' fails with EEXIST before a single byte is altered,
+        // so a scheduling point inside this call cannot cost the base bytes.
+        // Only after the probe confirms the target still holds the verified
+        // base do we truncate. A competing writer is therefore detected while
+        // its edit is still intact, and answered with DENY, never an overwrite.
+        // Registered before the probe: a probe that fails with a real I/O error
+        // may already have altered bytes and must still be rolled back.
         attempted.push(file); // A throwing write may already have truncated/written.
+        if (file.base.exists) {
+          try { claimExistingTarget(target, file); }
+          catch (error) {
+            // A refused claim touched nothing, so this target must NOT be
+            // restored — restoring it would erase the competing writer's edit.
+            if (error instanceof WorkspaceCommitError && error.code === 'COMMIT_CONCURRENT_MODIFICATION') attempted.pop();
+            throw error;
+          }
+        }
         try {
           writeFileSync(target, file.content, { flag: file.base.exists ? 'w' : 'wx', mode: 0o600 });
         } catch (error) {
@@ -205,6 +258,18 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
         }
       }
     } catch (error) {
+      if (error instanceof WorkspaceCommitError && error.code === 'COMMIT_CONCURRENT_MODIFICATION') {
+        // The stale target set must not be half-applied either: roll back the
+        // targets this operation already wrote, then refuse the whole commit.
+        const failures = restore(base, attempted, created);
+        if (failures.length) {
+          recoveryRequiredRoots.add(base);
+          const unavailable = new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');
+          unavailable.cause = { applyCode: error.code, rollbackFailures: failures };
+          throw unavailable;
+        }
+        throw error; // 403; authorization stays consumed.
+      }
       const failures = restore(base, attempted, created);
       if (failures.length) {
         recoveryRequiredRoots.add(base);

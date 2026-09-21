@@ -30,7 +30,9 @@ export function systemStatus() {
   return {
     name: 'Celia Advisory System', version: 1, mode: 'ADVISORY_ONLY', executionAllowed: false,
     gates: gatePosture(), catalog: { total: catalog.length, audit: count('auditStatus'), integration: count('integration') },
-    blockers: ['H2_ATOMICITY_UNRESOLVED', 'H3_EXTERNAL_WRITER_CONCURRENCY_UNRESOLVED'],
+    // H2 and H3 are green for their tested scope only. Crash consistency and
+    // cross-process locking (P03) are unresolved and still block deployment.
+    blockers: ['P03_CRASH_RECOVERY_UNRESOLVED'],
     limitsSource: 'DECLARED_LIMITATIONS_NOT_A_FRESH_HARDENING_TEST',
     providers: { liveModel: 'NOT_CONNECTED', mockFallback: false, research: 'EXPLICIT_READ_ONLY_COMMAND_ONLY' },
     persistence: { workingMemory: 'PER_RUN_ONLY', evidence: 'RETURNED_NOT_AUTOMATICALLY_PERSISTED' },

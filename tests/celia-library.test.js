@@ -117,7 +117,12 @@ test('library: actual advisory report includes guidance under the existing seal 
 });
 test('library: skill cards do not promote any of the 200 runtime capabilities or remove known blockers', () => {
   assert.deepEqual(systemStatus().catalog.integration, { CONNECTED_LIMITED: 25, NOT_CONNECTED: 164, BLOCKED: 8, CONDITIONAL_LOCAL_DATA: 3 });
-  assert.deepEqual(systemStatus().blockers, ['H2_ATOMICITY_UNRESOLVED', 'H3_EXTERNAL_WRITER_CONCURRENCY_UNRESOLVED']);
+  // The intent of this assertion is that skill cards never empty the blocker
+  // list. H2/H3 closed through their own RED→GREEN packages, not through this
+  // library; P03 crash recovery remains and must stay listed.
+  assert.deepEqual(systemStatus().blockers, ['P03_CRASH_RECOVERY_UNRESOLVED']);
+  assert.ok(systemStatus().blockers.length > 0, 'advisory content must never clear the blocker list');
+  assert.equal(systemStatus().completeSystem, false);
   assert.ok(systemStatus().gates.every(g => g.state === 'CLOSED'));
   assert.equal(systemStatus().knowledgeLibrary.skills, 10);
 });

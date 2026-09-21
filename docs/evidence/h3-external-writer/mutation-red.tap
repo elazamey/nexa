@@ -1,0 +1,208 @@
+TAP version 13
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-xntiZJ/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-7U0UrZ/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-myVFx5/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-uXUjhc/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-XCOZ0E/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-w4QUH5/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-ItVSNQ/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-PJwrOd/root/.nexa/staging/ws_h3_fixture evidence=none
+# Subtest: H3: a competing edit to the first target is preserved and no other target is applied
+not ok 1 - H3: a competing edit to the first target is preserved and no other target is applied
+  ---
+  duration_ms: 34.49663
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:87:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:96:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:92:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: H3: a competing edit to a LATER target rolls back the already-applied earlier target
+not ok 2 - H3: a competing edit to a LATER target rolls back the already-applied earlier target
+  ---
+  duration_ms: 18.524128
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:103:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:112:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:108:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: H3: deletion of a verified target during the window refuses and leaves no resurrected file
+not ok 3 - H3: deletion of a verified target during the window refuses and leaves no resurrected file
+  ---
+  duration_ms: 17.299763
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:126:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:134:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:130:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: H3: a same-size competing edit is caught by bytes, not by length or mtime
+not ok 4 - H3: a same-size competing edit is caught by bytes, not by length or mtime
+  ---
+  duration_ms: 15.59875
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:140:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:148:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:144:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: H3: a competing mode change on verified bytes is refused
+not ok 5 - H3: a competing mode change on verified bytes is refused
+  ---
+  duration_ms: 17.763985
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:153:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:161:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:157:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: H3: positive control — an uncontended commit still applies every target
+ok 6 - H3: positive control — an uncontended commit still applies every target
+  ---
+  duration_ms: 18.029787
+  type: 'test'
+  ...
+# Subtest: H3: the probe preserves the original mode on an uncontended existing target
+ok 7 - H3: the probe preserves the original mode on an uncontended existing target
+  ---
+  duration_ms: 14.829594
+  type: 'test'
+  ...
+# Subtest: H3: a refused commit does not refund the consumed authorization
+not ok 8 - H3: a refused commit does not refund the consumed authorization
+  ---
+  duration_ms: 16.594935
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-h3.test.js:183:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (concurrent).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:191:19
+    interpose (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:82:16)
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-h3.test.js:187:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+ok 9 - COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+  ---
+  duration_ms: 501.71549
+  type: 'test'
+  ...
+# {"boundary":"H1","firstPid":17075,"restartedPid":17084,"sameProcess":"DENY","afterRestart":"DENY","contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+ok 10 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 222.327671
+  type: 'test'
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"},{"kind":"write-applied","file":"a.txt"}],"contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+not ok 11 - COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+  ---
+  duration_ms: 208.087064
+  type: 'test'
+  location: '/home/user/nexa/tests/celia-workspace-commit-hardening.test.js:63:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a stale COMMIT must preserve the external edit and must not apply other target files
+    + actual - expected
+    
+      {
+        contents: {
+    +     'a.txt': 'approved A\n',
+    +     'b.txt': 'approved B\n'
+    -     'a.txt': 'external writer value\n',
+    -     'b.txt': 'base B\n'
+        },
+    +   outcome: 'ALLOW',
+    -   outcome: 'DENY',
+        staging: Map(4) {
+          'a.txt' => 'e1ea9424f4bb09ee3e5a1df8078cc3c35712c6dac58ff0896d630974392d98c5',
+          'a.txt::metadata' => '["33188","1001","1001","11","530077","1","1790034063927636613","1790034063927636613"]',
+          'b.txt' => '8505a21a3110e817e0c8a40c87b3ec1ea5af920912cd959c5216176c618def60',
+          'b.txt::metadata' => '["33188","1001","1001","11","530079","1","1790034063931636681","1790034063931636681"]'
+        },
+    +   status: null
+    -   status: 403
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    outcome: 'DENY'
+    status: 403
+    contents:
+      a.txt: |-
+        external writer value
+        
+      b.txt: |-
+        base B
+        
+    staging:
+  actual:
+    outcome: 'ALLOW'
+    status: ~
+    contents:
+      a.txt: |-
+        approved A
+        
+      b.txt: |-
+        approved B
+        
+    staging:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/celia-workspace-commit-hardening.test.js:77:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# {"boundary":"H3","commitPid":17102,"outcome":"ALLOW","trace":[{"kind":"external-writer","file":"a.txt","pid":17111,"before":"base A\\n","after":"external writer value\\n"},{"kind":"write-applied","file":"a.txt"},{"kind":"write-applied","file":"b.txt"}],"contents":{"a.txt":"approved A\\n","b.txt":"approved B\\n"}}
+1..11
+# tests 11
+# suites 0
+# pass 4
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1279.661324

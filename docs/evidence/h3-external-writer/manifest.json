@@ -1,0 +1,32 @@
+{
+  "package": "P02_H3_EXTERNAL_WRITER",
+  "date": "2026-09-21",
+  "branch": "arena/01a0c63f-nexa",
+  "baseCommit": "9d0194754090c7c527b8dee6ea65d1a79e9ad6d8",
+  "node": "v22.22.3",
+  "changedFiles": {
+    "tools/celia-workspace-commit-port.mjs": "44b5358272e9d0cd386e84b299aba8a727f431aac7499be585e4a6b51ce9b08d",
+    "tests/celia-workspace-commit-h3.test.js": "2abf973985083445010de3a4a7d4056cfc02a1c5b9d72ac26985593658ec6032",
+    "packages/cells/celia/system/src/catalog.js": "e9469b32c6409e909f2d72e0dd4e07f34a6c94bde257a6796c7ebeb03f7b8817",
+    "tests/celia-library.test.js": "35961cdc90a4f5535e4f31f830f481bf64b647d8ffb5c356bd29ab9decc12cc2"
+  },
+  "results": {
+    "fullVerify": "509 PASS / 0 FAIL",
+    "h3Targeted": "8/8",
+    "originalHardening": "3/3",
+    "h2Regression": "10/10",
+    "gates": "6 CLOSED",
+    "attacks": "31/31 blocked"
+  },
+  "mutationCheck": {
+    "description": "probe disabled -> 7 fail / 4 pass; positive controls stay green",
+    "evidence": "mutation-red.tap"
+  },
+  "scope": "in-process detection of a concurrent external writer between verification and apply",
+  "notClaimed": [
+    "crash consistency",
+    "cross-process locking",
+    "protection for writers landing after the probe",
+    "deployment readiness"
+  ]
+}

@@ -1,0 +1,67 @@
+TAP version 13
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-jTrw4q/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-M8ZLqq/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-HOYmft/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-2vdTFm/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-x9l1CP/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-FReJk0/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-P67kb8/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-chFY32/root/.nexa/staging/ws_h3_fixture evidence=none
+# Subtest: H3: a competing edit to the first target is preserved and no other target is applied
+ok 1 - H3: a competing edit to the first target is preserved and no other target is applied
+  ---
+  duration_ms: 32.539884
+  type: 'test'
+  ...
+# Subtest: H3: a competing edit to a LATER target rolls back the already-applied earlier target
+ok 2 - H3: a competing edit to a LATER target rolls back the already-applied earlier target
+  ---
+  duration_ms: 17.466139
+  type: 'test'
+  ...
+# Subtest: H3: deletion of a verified target during the window refuses and leaves no resurrected file
+ok 3 - H3: deletion of a verified target during the window refuses and leaves no resurrected file
+  ---
+  duration_ms: 15.267855
+  type: 'test'
+  ...
+# Subtest: H3: a same-size competing edit is caught by bytes, not by length or mtime
+ok 4 - H3: a same-size competing edit is caught by bytes, not by length or mtime
+  ---
+  duration_ms: 14.273175
+  type: 'test'
+  ...
+# Subtest: H3: a competing mode change on verified bytes is refused
+ok 5 - H3: a competing mode change on verified bytes is refused
+  ---
+  duration_ms: 15.568242
+  type: 'test'
+  ...
+# Subtest: H3: positive control — an uncontended commit still applies every target
+ok 6 - H3: positive control — an uncontended commit still applies every target
+  ---
+  duration_ms: 14.683624
+  type: 'test'
+  ...
+# Subtest: H3: the probe preserves the original mode on an uncontended existing target
+ok 7 - H3: the probe preserves the original mode on an uncontended existing target
+  ---
+  duration_ms: 14.055876
+  type: 'test'
+  ...
+# Subtest: H3: a refused commit does not refund the consumed authorization
+ok 8 - H3: a refused commit does not refund the consumed authorization
+  ---
+  duration_ms: 16.249999
+  type: 'test'
+  ...
+# Consumed-on-refusal is intentional: the window was entered under real authority.
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 229.043895

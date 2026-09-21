@@ -65,6 +65,38 @@ export default function NexaDashboard() {
   const [missionBusy, setMissionBusy] = useState(false);
   const [missionReplay, setMissionReplay] = useState(null);
   const missionIdRef = useRef(null);
+  // v13-4 governance suite: Approval Center, unified timeline, honesty, Evidence Drawer
+  const [authorizations, setAuthorizations] = useState({ requests: [], chain: null, approver: null });
+  const [timeline, setTimeline] = useState({ events: [], head: 0 });
+  const [timelineFilter, setTimelineFilter] = useState('');
+  const [sysStatus, setSysStatus] = useState(null);
+  const [evidenceEvent, setEvidenceEvent] = useState(null);
+  const [governBusy, setGovernBusy] = useState(false);
+  const timelineHeadRef = useRef(0);
+
+  const fetchAuthorizations = async () => {
+    try {
+      const res = await fetch('/api/v1/authorizations').then(r => r.json());
+      if (res.ok) setAuthorizations({ requests: res.requests || [], chain: res.chain || null, approver: res.approver || null });
+    } catch {}
+  };
+  const fetchTimeline = async () => {
+    try {
+      const res = await fetch(`/api/v1/timeline?since=${timelineHeadRef.current}&limit=200`).then(r => r.json());
+      if (res.ok && Array.isArray(res.events)) {
+        timelineHeadRef.current = res.head;
+        if (res.events.length > 0) setTimeline(prev => ({ events: [...prev.events, ...res.events].slice(-200), head: res.head }));
+        else setTimeline(prev => ({ ...prev, head: res.head }));
+      }
+    } catch {}
+  };
+  const fetchSysStatus = async () => {
+    try {
+      const res = await fetch('/api/v1/system/status').then(r => r.json());
+      if (res.ok) setSysStatus(res);
+    } catch {}
+  };
+  const fetchGovernance = () => { fetchAuthorizations(); fetchTimeline(); fetchSysStatus(); };
 
   useEffect(() => {
     const fetchState = async () => {
@@ -105,6 +137,7 @@ export default function NexaDashboard() {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (/^(AUTHORIZATION|MISSION|TERMINAL|CREATIVE)_/.test(data.type || '')) fetchGovernance();
         if (data.type === 'CONNECTED') {
           setConnectionStatus('Live');
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✓ ${data.message}`, ...prev].slice(0,30));
@@ -215,6 +248,12 @@ export default function NexaDashboard() {
     };
 
     return () => eventSource.close();
+  }, []);
+
+  useEffect(() => {
+    fetchGovernance();
+    const t = setInterval(fetchGovernance, 5000);
+    return () => clearInterval(t);
   }, []);
 
   const runDag = async () => {
@@ -352,6 +391,23 @@ export default function NexaDashboard() {
     }
   };
 
+  const decideAuthorization = async (approvalId, verb, scope) => {
+    try {
+      setGovernBusy(true);
+      const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/${verb}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(verb === 'approve' ? { scope: scope || 'once' } : { reason: 'denied from Approval Center' }),
+      }).then(r => r.json());
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${res.ok ? (verb === 'approve' ? `✅ Approved (${res.scope})` : '⛔ Denied') + ` — ${String(approvalId).slice(-8)}` : '✗ ' + (res.error || res.code)}`, ...prev].slice(0,30));
+      fetchGovernance();
+      if (missionIdRef.current) refreshMission(missionIdRef.current);
+    } catch (e) {
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Decision failed: ${e.message}`, ...prev].slice(0,30));
+    } finally {
+      setGovernBusy(false);
+    }
+  };
+
   const fetchMissionReplay = async () => {
     if (!mission?.missionId) return;
     try {
@@ -402,6 +458,12 @@ export default function NexaDashboard() {
             <div className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
               <Shield className="w-3 h-3" /> {metrics.testsPass} • {metrics.securityGates} CLOSED
             </div>
+            {sysStatus?.honesty?.map((h) => (
+              <div key={h.component} title={h.detail} className={`px-2.5 py-1.5 rounded-full text-[10px] font-mono flex items-center gap-1 border ${h.mode === 'LIVE' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${h.mode === 'LIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                {h.component} {h.mode}
+              </div>
+            ))}
             <button onClick={runDag} className="px-3.5 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-black rounded-full text-[11px] font-bold tracking-wide flex items-center gap-1.5 transition-colors">
               <Play className="w-3 h-3 fill-black" /> RUN DAG
             </button>
@@ -591,6 +653,15 @@ export default function NexaDashboard() {
                   <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-slate-800">
                     <div className={`h-full transition-all duration-700 ${mission.status === 'COMPLETED' ? 'bg-emerald-400' : mission.status === 'FAILED' || mission.status === 'DENIED' ? 'bg-red-400' : 'bg-cyan-400'}`} style={{ width: `${mission.progress.total ? (mission.progress.verified / mission.progress.total) * 100 : 0}%` }}></div>
                   </div>
+                  {mission.usage && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono text-slate-500">
+                      <span>runs {mission.usage.totals.runs}{mission.usage.failed ? <span className="text-red-400"> ({mission.usage.failed} failed)</span> : null}</span>
+                      <span>in {mission.usage.totals.inputBytes}B · out {mission.usage.totals.outputBytes}B</span>
+                      <span>{mission.usage.totals.durationMs}ms</span>
+                      <span>~{mission.usage.tokensEstimated} tok (bytes/4 heuristic)</span>
+                      <span className="text-emerald-400/80">$0.00 local-first</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     {mission.steps.map((s) => (
                       <div key={s.index} className="p-2 rounded-xl bg-black/30 border border-slate-800/60 font-mono">
@@ -616,6 +687,83 @@ export default function NexaDashboard() {
                     {mission.verificationHash && <span className="text-emerald-400/80">✓ verified {mission.verificationHash.slice(0, 22)}…</span>}
                     {missionReplay && <span className={missionReplay.integrity === 'VALID' ? 'text-emerald-400' : 'text-red-400'}>replay: {missionReplay.integrity} · {missionReplay.length} events</span>}
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-5 bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[460px] hover:border-slate-700/80 transition-colors">
+            <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+              <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-amber-400" /> Approval Center
+                <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500 font-mono">{authorizations.requests.length}</span>
+                {authorizations.chain && <span className={`text-[9px] font-mono ${authorizations.chain.ok ? 'text-emerald-400' : 'text-red-400'}`}>chain {authorizations.chain.ok ? '✓' : '✗'} len {authorizations.chain.length}</span>}
+              </h3>
+              <button onClick={fetchGovernance} className="text-slate-500 hover:text-slate-300 transition-colors"><RotateCcw className="w-3 h-3" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+              {authorizations.requests.length === 0 ? (
+                <div className="text-[11px] text-slate-600 py-8 text-center font-mono">No approval requests — run a mission with a protected step.</div>
+              ) : authorizations.requests.map((r) => (
+                <div key={r.approvalId} className="p-2.5 rounded-xl bg-black/30 border border-slate-800/60 font-mono">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[11px] text-slate-300 truncate">{r.gate} · {r.resource}/{r.action}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border shrink-0 ${r.decision === 'REQUESTED' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 animate-pulse' : String(r.decision).startsWith('APPROVED') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : r.decision === 'DENIED' ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>{r.decision}{r.scope ? ` · ${r.scope}` : ''}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate mt-1">target: {r.target} · id …{String(r.approvalId).slice(-8)}{r.expired ? ' · EXPIRED' : ''}</div>
+                  {r.missionId && <div className="text-[10px] text-slate-600 truncate">mission {r.missionId}</div>}
+                  {r.decision === 'REQUESTED' && !r.expired && (
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => decideAuthorization(r.approvalId, 'approve', 'once')} disabled={governBusy} className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-[10px] font-mono transition-colors disabled:opacity-50">Approve once</button>
+                      <button onClick={() => decideAuthorization(r.approvalId, 'approve', 'mission')} disabled={governBusy} className="px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-lg text-[10px] font-mono transition-colors disabled:opacity-50">Approve mission</button>
+                      <button onClick={() => decideAuthorization(r.approvalId, 'deny')} disabled={governBusy} className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 rounded-lg text-[10px] font-mono transition-colors disabled:opacity-50">Deny</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[460px] hover:border-slate-700/80 transition-colors">
+            <div className="px-4 py-3 border-b border-slate-800/80 bg-slate-900/60">
+              <div className="flex justify-between items-center">
+                <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-cyan-400" /> Event Timeline
+                  <span className="px-1.5 py-0.5 bg-slate-800 rounded text-[9px] text-slate-500 font-mono">head {timeline.head}</span>
+                </h3>
+              </div>
+              <input value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value)} placeholder="filter: MISSION_ TERMINAL_ AUTHORIZATION_" className="mt-2 w-full px-2.5 py-1.5 bg-black/40 border border-slate-800 rounded-lg text-[10px] font-mono text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/40" />
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar font-mono text-[10px]">
+              {timeline.events.filter((e) => !timelineFilter || timelineFilter.split(',').map((s) => s.trim()).filter(Boolean).some((p) => e.type === p || e.type.startsWith(p))).slice(-60).reverse().map((e) => (
+                <button key={e.seq} onClick={() => setEvidenceEvent(e)} className={`w-full text-left px-2 py-1.5 rounded-lg border transition-colors ${evidenceEvent?.seq === e.seq ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-black/20 border-transparent hover:border-slate-700/60'}`}>
+                  <span className="text-slate-600">#{e.seq}</span> <span className="text-slate-300">{e.type}</span>
+                  <span className="text-slate-600"> · {new Date(e.timestamp).toLocaleTimeString()}</span>
+                </button>
+              ))}
+              {timeline.events.length === 0 && <div className="text-slate-600 py-8 text-center">No events yet — activity lands here live.</div>}
+            </div>
+          </div>
+
+          <div className="lg:col-span-3 bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[460px] hover:border-slate-700/80 transition-colors">
+            <div className="px-4 py-3 border-b border-slate-800/80 bg-slate-900/60">
+              <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                <FileJson className="w-3.5 h-3.5 text-purple-400" /> Evidence Drawer
+              </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+              {!evidenceEvent ? (
+                <div className="text-[11px] text-slate-600 py-8 text-center font-mono">Click any timeline event to inspect its evidence.</div>
+              ) : (
+                <div className="font-mono">
+                  <div className="text-[11px] text-slate-200 font-semibold">#{evidenceEvent.seq} {evidenceEvent.type}</div>
+                  <div className="text-[10px] text-slate-500 mb-2">{new Date(evidenceEvent.timestamp).toLocaleString()}</div>
+                  {evidenceEvent.payload?.missionId && (
+                    <button onClick={() => { refreshMission(evidenceEvent.payload.missionId); }} className="mb-2 px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-lg text-[10px] transition-colors">Open mission {String(evidenceEvent.payload.missionId).slice(-8)}</button>
+                  )}
+                  <pre className="text-[10px] text-slate-300 whitespace-pre-wrap break-all bg-black/40 border border-slate-800/60 rounded-lg p-2 max-h-[300px] overflow-y-auto">{JSON.stringify(evidenceEvent.payload, null, 1)?.slice(0, 4000)}</pre>
                 </div>
               )}
             </div>

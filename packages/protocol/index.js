@@ -13,3 +13,4 @@ export { ReplayGuard } from './src/replay.js';
 export { UsageLedger } from './src/ledger.js';
 export { Endpoint, chainLinks } from './src/endpoint.js';
 export { MissionLog, reduceMissionEvents, MISSION_LAYERS, MISSION_EVENTS } from './src/mission.js';
+export { UsageMeter, USAGE_KINDS } from './src/usage.js';

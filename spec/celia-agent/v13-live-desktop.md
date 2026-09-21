@@ -4,10 +4,11 @@
 > **Companion:** `v13-implementation-map.md` maps every section below to the real repo state
 > (branch `arena/01a0bf1b-nexa`) and orders the work per repo culture: vectors first, deterministic mock first, no kernel bloat.
 > **Progress:** v13-1 (Approval Protocol) + v13-2 (Terminal Port, §8) + v13-3 (Mission API +
-> Event-Sourced Replay, §35/§41) COMPLETE 2026-09-21 — 26/26 vectors; live round-trip:
-> create → run → WAITING_APPROVAL → approve → auto-resume → COMPLETED → replay VALID,
-> with mission progress + approval + replay in the dashboard. Next: v13-4 (Approval Center +
-> mission timeline + evidence drawer + LIVE/DEMO badge + cost meter).
+> Event-Sourced Replay, §35/§41) + v13-4 (Unified Governance & Observability, §1/§8)
+> COMPLETE 2026-09-21 — 34/34 vectors; live round-trip: create → run → WAITING_APPROVAL →
+> approve → auto-resume → COMPLETED → replay VALID, with Approval Center + unified timeline +
+> Evidence Drawer + LIVE/DEMO honesty badges + real per-mission usage in the dashboard.
+> Next: v13-5 (Desktop/Browser plane per §1 — Cloudflare Free control plane + local execution).
 > **Supersedes:** — (v12-creative stays in force: creative phases 3–6 interleave into the mission demo)
 
 ## STATUS

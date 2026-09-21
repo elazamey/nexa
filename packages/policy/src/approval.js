@@ -342,6 +342,19 @@ export class ApprovalLedger {
     return this.#events.map((record) => ({ ...record }));
   }
 
+  /**
+   * The Approval Center view (v13-4): every request with its scope, decision
+   * and liveness. Defensive copies — mutating the view never touches the ledger.
+   * @returns {object[]}
+   */
+  requests() {
+    const nowIso = formatInstant(this.#now());
+    return [...this.#requests.values()].map((state) => ({
+      ...state,
+      expired: state.decision === 'REQUESTED' && compareInstant(nowIso, state.exp) >= 0,
+    }));
+  }
+
   /** @returns {object} counters for the dashboard */
   stats() {
     const decisions = { REQUESTED: 0, APPROVED_ONCE: 0, APPROVED_MISSION: 0, DENIED: 0, CONSUMED: 0 };

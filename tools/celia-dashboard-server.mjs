@@ -56,7 +56,7 @@ import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celi
 import { ApprovalLedger, isApprovalEligible } from '../packages/policy/index.js';
 import { createIdentity } from '../packages/identity/index.js';
 import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
-import { MissionLog } from '../packages/protocol/index.js';
+import { MissionLog, UsageMeter } from '../packages/protocol/index.js';
 import { randomId } from '../packages/crypto/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -153,6 +153,30 @@ const terminalPort = createTerminalPort({ jailRoot: terminalJailRoot });
 const missions = new Map(); // missionId → { log, descriptors, pending, waiting, running, createdAt }
 const MISSION_STORE_MAX = 50;
 const MISSION_STEP_TIMEOUT_DEFAULT = 30000;
+const usageMeter = new UsageMeter();
+// v13-4 unified event timeline: append-only ring, every DAG event lands here
+const timelineRing = [];
+let timelineSeq = 0;
+const TIMELINE_MAX = 200;
+const TIMELINE_BUFFER_CAP = 4000;
+export function pushTimeline(type, payload) {
+  const entry = { seq: ++timelineSeq, timestamp: Date.now(), type, payload: capTimelinePayload(payload) };
+  timelineRing.push(entry);
+  while (timelineRing.length > TIMELINE_MAX) timelineRing.shift();
+  return entry;
+}
+function capTimelinePayload(payload) {
+  if (payload == null || typeof payload !== 'object') return payload;
+  const out = Array.isArray(payload) ? [...payload] : { ...payload };
+  for (const k of Object.keys(out)) {
+    const v = out[k];
+    if (typeof v === 'string' && (k === 'stdout' || k === 'stderr') && v.length > TIMELINE_BUFFER_CAP) {
+      out[k] = v.slice(0, TIMELINE_BUFFER_CAP);
+      out[k + 'Truncated'] = true;
+    }
+  }
+  return out;
+}
 
 function storeMission(missionId, record) {
   missions.set(missionId, record);
@@ -198,6 +222,7 @@ function missionStatus(missionId) {
       protected: s.protected, layer: s.layer,
     })),
     progress: { verified, total: state.steps.length },
+    usage: usageMeter.summary(missionId),
     pending: mission.waiting ? { ...mission.waiting } : null,
     verificationHash: state.verificationHash,
     head: state.head,
@@ -220,26 +245,39 @@ async function executeMissionStep(descriptor, logTarget) {
       { timeoutMs: descriptor.timeoutMs, expectedTarget: logTarget },
     );
     emitDagEvent(result.timedOut ? 'TERMINAL_TIMED_OUT' : 'TERMINAL_EXECUTED', result);
+    const outBytes = Buffer.byteLength(result.stdout || '', 'utf8') + Buffer.byteLength(result.stderr || '', 'utf8');
+    const inBytes = Buffer.byteLength([descriptor.program, ...(descriptor.args || [])].join(' '), 'utf8');
+    const wallMs = Math.max(0, Math.round(result.durationMs || 0));
     if (result.timedOut) {
-      throw Object.assign(new Error(`terminal step timed out after ${result.durationMs}ms`), { code: 'NEXA_E_HANDLER' });
+      throw Object.assign(new Error(`terminal step timed out after ${result.durationMs}ms`), {
+        code: 'NEXA_E_HANDLER',
+        usage: { kind: 'terminal', ok: false, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
+      });
     }
     if (result.exitCode !== 0) {
       const tail = (result.stderr || result.stdout || '').slice(0, 200);
-      throw Object.assign(new Error(`terminal step exited ${result.exitCode}: ${tail}`), { code: 'NEXA_E_HANDLER' });
+      throw Object.assign(new Error(`terminal step exited ${result.exitCode}: ${tail}`), {
+        code: 'NEXA_E_HANDLER',
+        usage: { kind: 'terminal', ok: false, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
+      });
     }
     return {
       digest: result.stdoutHash,
       verification: result.diff.digest,
       detail: { exitCode: result.exitCode, durationMs: result.durationMs },
+      usage: { kind: 'terminal', ok: true, inputBytes: inBytes, outputBytes: outBytes, durationMs: wallMs },
     };
   }
   if (descriptor.kind === 'creative') {
     const result = runCreativeGeneration(descriptor.creativeArgs, descriptor.campaignId);
     emitDagEvent('CREATIVE_GENERATED', result);
+    const creativeOut = Buffer.byteLength(JSON.stringify(result), 'utf8');
+    const creativeIn = Buffer.byteLength(JSON.stringify(descriptor.creativeArgs ?? {}), 'utf8');
     return {
       digest: result.artifactDigests[0] ?? result.creativeId,
       verification: result.evidenceRef ?? result.creativeId,
       detail: { creativeId: result.creativeId, channel: result.channel },
+      usage: { kind: 'creative', ok: true, inputBytes: creativeIn, outputBytes: creativeOut, durationMs: 0 },
     };
   }
   throw Object.assign(new Error(`unknown mission step kind "${descriptor.kind}"`), { code: 'NEXA_E_SCHEMA' });
@@ -301,7 +339,8 @@ async function runMission(missionId) {
           });
         }
         try {
-          const { digest, verification, detail } = await executeMissionStep(descriptor, step.target);
+          const { digest, verification, detail, usage } = await executeMissionStep(descriptor, step.target);
+          usageMeter.record({ ...usage, missionId, stepIndex: step.index });
           mission.log.executeStep({ stepIndex: step.index, approvalId: step.approvalId ?? null, digest });
           emitDagEvent('MISSION_STEP_EXECUTED', { missionId, stepIndex: step.index, kind: step.kind, digest, ...detail });
           const v = mission.log.verifyStep({ stepIndex: step.index, verification });
@@ -315,6 +354,7 @@ async function runMission(missionId) {
             return missionStatus(missionId);
           }
         } catch (e) {
+          if (e && e.usage) usageMeter.record({ ...e.usage, missionId, stepIndex: step.index });
           return failMissionStep(missionId, step.index, e.code || 'NEXA_E_HANDLER', e.message);
         }
         continue;
@@ -509,6 +549,7 @@ export function updateNodeState(nodeId, state, evidenceRef = null) {
 
 export function emitDagEvent(type, payload) {
   dagEventEmitter.emit('dag_update', { type, payload: { ...payload, timestamp: Date.now() } });
+  pushTimeline(type, payload); // v13-4: every DAG event is timeline evidence
 }
 
 // Mock data — in production, read from Supabase port
@@ -1244,6 +1285,61 @@ const server = createServer(async (req, res) => {
         res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
       }
     });
+    return;
+  }
+
+
+  // === v13-4 Governance — Approval Center, Unified Timeline, System Status ===
+  if (url.pathname === '/api/v1/authorizations' && req.method === 'GET') {
+    const chain = approvalLedger.verifyChain();
+    const rows = approvalLedger.requests();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      approver: dashboardOperator.kid,
+      chain: { ok: chain.ok, length: chain.length, head: chain.head },
+      count: rows.length,
+      requests: rows,
+    }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/timeline' && req.method === 'GET') {
+    const since = Math.max(0, parseInt(url.searchParams.get('since') || '0', 10) || 0);
+    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10) || 50));
+    const prefixes = (url.searchParams.get('type') || '').split(',').map((s) => s.trim()).filter(Boolean);
+    let events = timelineRing.filter((e) => e.seq > since);
+    if (prefixes.length > 0) {
+      events = events.filter((e) => prefixes.some((p) => e.type === p || e.type.startsWith(p)));
+    }
+    events = events.slice(-limit);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, head: timelineSeq, count: events.length, events }));
+    return;
+  }
+
+  if (url.pathname === '/api/v1/system/status' && req.method === 'GET') {
+    let approvalChain;
+    try {
+      approvalChain = approvalLedger.verifyChain();
+    } catch (e) {
+      approvalChain = { ok: false, code: e.code || 'NEXA_E_APPROVAL_TAMPERED', error: e.message };
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ok: true,
+      honesty: [
+        { component: 'terminal', mode: 'LIVE', detail: `real execution, ${terminalPort.sandbox} jail` },
+        { component: 'missions', mode: 'LIVE', detail: 'event-sourced state machine, replay-verified' },
+        { component: 'approvals', mode: 'LIVE', detail: 'hash-chained ledger, human decisions' },
+        { component: 'evidence', mode: 'LIVE', detail: 'hash-chained logs, verifiable offline' },
+        { component: 'creative', mode: 'DEMO', detail: `mock provider (${creativePort.stats().provider}), deterministic` },
+        { component: 'desktop', mode: 'DEMO', detail: 'canvas simulation — no VNC in this sandbox' },
+      ],
+      usage: usageMeter.summaryAll(),
+      chains: { approvals: approvalChain, timelineEvents: timelineRing.length, timelineHead: timelineSeq },
+      missions: [...missions.keys()].map((id) => missionStatus(id)),
+    }));
     return;
   }
 
@@ -2328,6 +2424,9 @@ const server = createServer(async (req, res) => {
   <li>POST /api/v1/missions/:id/run — run/resume (stops WAITING_APPROVAL at protected steps)</li>
   <li>GET /api/v1/missions/:id — status + progress + pending approval</li>
   <li>GET /api/v1/missions/:id/replay — verify chain + replay state (integrity VALID/TAMPERED)</li>
+  <li>GET /api/v1/authorizations — Approval Center: all requests + chain (v13-4, Live)</li>
+  <li>GET /api/v1/timeline — unified event timeline (v13-4, Live)</li>
+  <li>GET /api/v1/system/status — LIVE/DEMO honesty + real usage (v13-4, Live)</li>
   <li>POST /api/v1/contract/check — contract verification { contract, beforeContext, afterContext }</li>
   <li><a href="/api/v1/adaptive-dag">/api/v1/adaptive-dag</a> — adaptive DAG with injection history</li>
   <li>POST /api/v1/adaptive-dag/inject — inject recovery nodes { failedNodeId, newNodes, evidenceRef }</li>
@@ -2469,6 +2568,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Missions: POST http://localhost:${PORT}/api/v1/missions/create { name, plan }`);
   console.log(`   Authorizations: POST http://localhost:${PORT}/api/v1/authorizations/request { resource, action, target }`);
   console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
+  console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
   console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
 });

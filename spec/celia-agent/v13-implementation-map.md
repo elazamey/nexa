@@ -306,3 +306,76 @@ verificationHash; deny → `DENIED` (idempotent re-run); unknown id → 404
   file per step; multi-anchor file surgery goes through a single atomic
   script with count assertions (this record exists because a port splice
   silently dropped two blocks and the smoke test caught it).
+
+## 9. Implementation record (v13-4, 2026-09-21)
+
+Unified Governance & Observability Suite: every governed action in the
+system now lands in one Approval Center, one sequential event timeline, and
+one per-mission usage meter — surfaced in the dashboard with LIVE/DEMO
+honesty badges bound to real runtime state (doc §1 "window onto the
+executing mind").
+
+**Vectors first (repo culture) — `tests/governance-security.test.js` (8/8):**
+U0 aggregation (runs/bytes/ms/tokens≈bytes/4/cost 0 across missions and
+kinds); U1 failed runs counted (`failed`, `ok:false` entries); U2 unknown
+mission summarizes to zeros (observational reads never throw); U3 eight
+malformed records → `NEXA_E_SCHEMA` (empty missionId, negative stepIndex,
+bad kind, fractional/negative/huge counters, non-boolean ok); U4
+determinism (frozen clock → identical entries/summaries); A0 `requests()`
+view (scope/decision/gate/expired per row, defensive copies); A1
+consume+expiry lifecycle through the view; A2 `stats()` regression
+(requested/approved/denied/consumed/pending intact).
+
+**The modules (pure, zero fs/net):**
+- `packages/protocol/src/usage.js` — `UsageMeter`: strict-boundary writes
+  (`record({missionId, stepIndex, kind, inputBytes, outputBytes, durationMs,
+  ok})`, all counters safe-int validated), forgiving reads (`summary()`,
+  `summaryAll()`, `entries()`); tokens are `ceil(bytes/4)` labeled as a
+  heuristic, cost is `0` micros with the local-first note;
+- `packages/policy/src/approval.js` gains `requests()` — the Approval
+  Center view over live ledger state (scope is `null` until the human
+  decides `once`|`mission`; `expired` computed against the injected clock).
+
+**The server splice — `tools/celia-dashboard-server.mjs`:**
+- `usageMeter` records every mission step: terminal input = real command-line
+  bytes, output = real stdout+stderr bytes, duration = real wall ms; creative
+  input/output = real JSON payload bytes; failures record with `ok:false`
+  (fail is data, not absence);
+- `missionStatus` carries `usage`; new routes `GET /api/v1/authorizations`
+  (rows + chain verification), `GET /api/v1/timeline?since&limit&type`
+  (prefix filter, incremental cursor), `GET /api/v1/system/status` (honesty
+  table + global usage + chain heads + all mission statuses);
+- timeline ring (200 max, 4000-char buffer caps with `*Truncated` flags)
+  hooked into `emitDagEvent`, so the timeline IS the SSE stream's memory —
+  no second source of truth.
+
+**Dashboard — `dashboard/src/components/NexaDashboard.jsx`:** Approval
+Center (all requests with scope chips + per-row approve-once / approve-mission
+/ deny), unified Event Timeline (live incremental feed with prefix filter,
+click any event), Evidence Drawer (full payload, hashes, buffers, mission
+replay link), LIVE/DEMO badges in the header (terminal/missions/approvals/
+evidence LIVE, creative/desktop DEMO), and a real usage line on every
+mission (runs, in/out bytes, ms, tokens heuristic, $0.00). `vite build`
+clean (372.33 KB / 102.16 KB gzip).
+
+**Verified behavior (curl, live server):** fresh status shows 6 honesty rows
++ zero usage; create → run → `WAITING_APPROVAL` → Approval Center shows 1
+REQUESTED row (chain len 1) → approve scope=mission → auto-resume →
+`VERIFIED` 2/2 → usage `terminal {in 21, out 17, 8ms}` (= `echo
+hello-governance` command/stdout bytes exactly) + `creative {in 71, out
+714}` → timeline 14 ordered events create→complete with the real stdout in
+`TERMINAL_EXECUTED` → chain len 3, decision `APPROVED_MISSION`.
+
+**Lessons encoded:**
+- session summaries paraphrase APIs — the file is truth: the splice first
+  called `forMission`/`stats`/`{bytes}`, all of which never existed; the
+  real API is `summary(missionId)` / `record({inputBytes, outputBytes,
+  stepIndex, ...})`. Read the module before splicing its callers;
+- `scope: null` on REQUESTED rows is correct, not a bug — scope is a
+  property of the human's decision (`once`|`mission`), set at approve time;
+- approval route shape is v13-1 (`POST /api/v1/authorizations/:id/approve`,
+  auto-resume via `maybeResumeMissions`) — there is no
+  `/api/v1/missions/:id/approve`; grep the router, don't trust the record;
+- missing-method errors surface as runtime `NEXA_E_INTERNAL` on first hit,
+  invisible to `node --check` and the unit suite — the live smoke loop is
+  the gate that catches them.

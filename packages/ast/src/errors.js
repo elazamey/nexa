@@ -39,6 +39,22 @@ export const ERROR_CODES = Object.freeze({
   NEXA_E_GATE: 'request blocked by a closed v0.1 hard gate',
   NEXA_E_NO_HANDLER: 'no handler registered for the requested resource',
   NEXA_E_HANDLER: 'handler failed',
+  // approval protocol (v13-1)
+  NEXA_E_POLICY_IMMUTABLE: 'policy root is immutable — no approval channel exists for it',
+  NEXA_E_APPROVAL_MISSING: 'no approval found for this id',
+  NEXA_E_APPROVAL_STATE: 'approval is not in a decidable or spendable state',
+  NEXA_E_APPROVAL_USED: 'approval already consumed',
+  NEXA_E_APPROVAL_TARGET: 'execution target does not match the approved target',
+  NEXA_E_APPROVAL_SCOPE: 'execution is outside the approval scope',
+  NEXA_E_APPROVAL_EXPIRED: 'approval expired',
+  NEXA_E_APPROVAL_TAMPERED: 'approval log failed tamper-evidence verification',
+  // terminal execution (v13-2)
+  NEXA_E_TERMINAL_JAIL: 'command would escape the allowed working directory',
+  NEXA_E_TERMINAL_UNALLOWED: 'program is not in the terminal allowlist',
+  // mission engine (v13-3)
+  NEXA_E_MISSION_MISSING: 'unknown mission or step id',
+  NEXA_E_MISSION_STATE: 'mission transition is not allowed from the current state',
+  NEXA_E_MISSION_TAMPERED: 'mission log failed tamper-evidence verification',
 });
 
 export class NexaError extends Error {

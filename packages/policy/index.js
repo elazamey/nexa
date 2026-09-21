@@ -12,6 +12,14 @@ export {
   gatePosture,
 } from './src/gates.js';
 export { Policy, RULE_EFFECTS, DEFAULT_POLICY_ID, validateRule } from './src/rules.js';
+export {
+  ApprovalLedger,
+  isApprovalEligible,
+  APPROVAL_ELIGIBLE_GATES,
+  ROOT_NAMESPACES,
+  APPROVAL_DEFAULT_TTL_SECONDS,
+  APPROVAL_MAX_TTL_SECONDS,
+} from './src/approval.js';
 
 import { Policy, RULE_EFFECTS } from './src/rules.js';
 

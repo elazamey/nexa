@@ -13,6 +13,13 @@ export {
 } from './src/gates.js';
 export { Policy, RULE_EFFECTS, DEFAULT_POLICY_ID, validateRule } from './src/rules.js';
 export {
+  TOOL_PROVENANCE,
+  READ_CLASS_ACTIONS,
+  BOUNDARY_VERDICTS,
+  evaluateToolRequest,
+  assertTargetStable,
+} from './src/boundary.js';
+export {
   ApprovalLedger,
   isApprovalEligible,
   APPROVAL_ELIGIBLE_GATES,

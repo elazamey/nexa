@@ -309,6 +309,12 @@ verificationHash; deny → `DENIED` (idempotent re-run); unknown id → 404
 
 ## 9. Implementation record (v13-4, 2026-09-21)
 
+> **Status:** IMPLEMENTATION COMPLETE / VERIFICATION PARTIAL / ACCEPTANCE HOLD —
+> full suite 481/482, sole failure is pre-existing H3 (workspace-commit
+> hardening, unrelated to v13-4). No production release PASS until H3 is
+> classified. Usage accounting ($0.00 internal meter) is not provider
+> billing ($0.00 from a provider would require provider evidence).
+
 Unified Governance & Observability Suite: every governed action in the
 system now lands in one Approval Center, one sequential event timeline, and
 one per-mission usage meter — surfaced in the dashboard with LIVE/DEMO

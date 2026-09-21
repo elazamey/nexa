@@ -19,6 +19,15 @@ NEXA is small on purpose. The rules below exist so it stays checkable.
 7. **Attacks become tests.** Every security-relevant fix lands with an entry in
    `tests/security.test.js` that fails without it.
 
+## Change protocol (READ → LOCATE → CHANGE)
+
+8. **Source-of-truth inspection before splice.** Never write an edit against a
+   paraphrased API from a summary or memory. Open the module, read the real
+   export list and signatures, then splice. Summaries describe; files decide.
+9. **No assumed contracts.** Never plan a change on an API route, function, or
+   event shape you have not located in the tree. `grep` the router / module
+   first; if the anchor is missing, stop and re-locate instead of inventing.
+
 ## Workflow
 
 ```bash

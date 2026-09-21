@@ -8,6 +8,7 @@ import UltimatePanel from './UltimatePanel.jsx';
 import InfinitePanel from './InfinitePanel.jsx';
 import SingularityPanel from './SingularityPanel.jsx';
 import OmegaPanel from './OmegaPanel.jsx';
+import AgentCanvasEmulator from './AgentCanvasEmulator.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
   <div className="relative overflow-hidden bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col justify-between group hover:border-slate-700 transition-all duration-300">

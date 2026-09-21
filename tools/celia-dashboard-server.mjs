@@ -30,7 +30,8 @@
  */
 
 import { createServer } from 'node:http';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve, extname } from 'node:path';
+import { existsSync, statSync, createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -50,6 +51,20 @@ import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const PORT = process.env.PORT || 3001;
+
+// v1.2 — Static SPA serving (dashboard/dist) for single-service deploys (Render/Koyeb)
+const DIST = join(root, 'dashboard', 'dist');
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.map': 'application/json'
+};
 
 // Global event emitter for DAG updates — shared with executor
 export const dagEventEmitter = new EventEmitter();
@@ -1630,6 +1645,11 @@ const server = createServer(async (req, res) => {
 
   // Serve static dashboard if built, otherwise return info
   if (url.pathname === '/' || url.pathname === '/index.html') {
+    if (req.method === 'GET' && existsSync(DIST)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+      createReadStream(join(DIST, 'index.html')).pipe(res);
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(`
 <!DOCTYPE html>
@@ -1715,6 +1735,34 @@ const server = createServer(async (req, res) => {
 </html>
     `);
     return;
+  }
+
+  // v1.2 — Serve the built SPA (dashboard/dist) with SPA fallback.
+  // Single-service deploy: one Node process serves both the API/SSE and the frontend.
+  if (req.method === 'GET' && !url.pathname.startsWith('/api/')) {
+    if (existsSync(DIST)) {
+      let pathname = url.pathname;
+      try {
+        pathname = decodeURIComponent(pathname);
+      } catch {
+        pathname = '/';
+      }
+      const filePath = pathname.replace(/^\/+/, '') || 'index.html';
+      const resolved = resolve(DIST, filePath);
+      if (resolved.startsWith(DIST)) {
+        const isFile = existsSync(resolved) && statSync(resolved).isFile();
+        const target = isFile ? resolved : join(DIST, 'index.html'); // SPA fallback for client routes
+        if (existsSync(target)) {
+          const ext = extname(target);
+          res.writeHead(200, {
+            'Content-Type': MIME[ext] || 'application/octet-stream',
+            'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
+          });
+          createReadStream(target).pipe(res);
+          return;
+        }
+      }
+    }
   }
 
   res.writeHead(404, { 'Content-Type': 'application/json' });

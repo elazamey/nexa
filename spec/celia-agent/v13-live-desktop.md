@@ -8,7 +8,10 @@
 > COMPLETE 2026-09-21 — 34/34 vectors, suite 481/482, ACCEPTANCE HOLD on pre-existing H3;
 > approve → auto-resume → COMPLETED → replay VALID, with Approval Center + unified timeline +
 > Evidence Drawer + LIVE/DEMO honesty badges + real per-mission usage in the dashboard.
-> Next: v13-5 (Desktop/Browser plane per §1 — Cloudflare Free control plane + local execution).
+> v13-5 P0 (Security Governance + Runtime Boundary) IMPLEMENTATION COMPLETE 2026-09-21 —
+> 19/19 vectors, suite 500/501, runtime live-verified both paths, ACCEPTANCE HOLD on
+> pre-existing H3; gaps explicit: Authorization Epoch + Usage Chain NOT IMPLEMENTED.
+> Next: v13-6 (Desktop/Browser plane per §1 — Cloudflare Free control plane + local execution).
 > **Supersedes:** — (v12-creative stays in force: creative phases 3–6 interleave into the mission demo)
 
 ## STATUS

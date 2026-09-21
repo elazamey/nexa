@@ -53,7 +53,7 @@ import { CeliaInfiniteKernel } from '../packages/cells/celia/infinite/src/celia-
 import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/celia-singularity-kernel.js';
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
 import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
-import { ApprovalLedger, isApprovalEligible } from '../packages/policy/index.js';
+import { ApprovalLedger, isApprovalEligible, evaluateToolRequest, assertTargetStable, downgradeProvenance } from '../packages/policy/index.js';
 import { createIdentity } from '../packages/identity/index.js';
 import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
 import { MissionLog, UsageMeter } from '../packages/protocol/index.js';
@@ -220,6 +220,7 @@ function missionStatus(missionId) {
     steps: state.steps.map((s) => ({
       index: s.index, kind: s.kind, label: s.label, target: s.target,
       protected: s.protected, layer: s.layer,
+      provenance: mission.descriptors[s.index]?.provenance ?? 'mission-plan',
     })),
     progress: { verified, total: state.steps.length },
     usage: usageMeter.summary(missionId),
@@ -300,7 +301,30 @@ async function runMission(missionId) {
       const step = state.steps.find((s) => s.layer !== 'VERIFIED');
       const descriptor = mission.descriptors[step.index];
       if (step.layer === 'PLANNED') {
-        if (!step.protected) {
+        // v13-5 runtime boundary: every step is evaluated before authorization.
+        const provenance = descriptor.provenance ?? 'mission-plan';
+        const toolResource = step.kind === 'terminal' ? 'terminal:exec' : 'creative:generate';
+        const toolAction = step.kind === 'terminal' ? 'exec' : 'generate';
+        emitDagEvent('TOOL_REQUESTED', {
+          missionId, stepIndex: step.index, kind: step.kind,
+          provenance, resource: toolResource, action: toolAction, target: step.target,
+        });
+        const boundaryVerdict = evaluateToolRequest({
+          provenance, resource: toolResource, action: toolAction, target: step.target,
+        });
+        emitDagEvent('POLICY_EVALUATED', {
+          missionId, stepIndex: step.index, provenance,
+          verdict: boundaryVerdict.verdict, code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+        });
+        if (boundaryVerdict.verdict === 'DENY') {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'DENY',
+            code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+          });
+          return failMissionStep(missionId, step.index, boundaryVerdict.code || 'NEXA_E_UNTRUSTED', boundaryVerdict.reason);
+        }
+        const needsApproval = step.protected || boundaryVerdict.verdict === 'REQUIRE_APPROVAL';
+        if (!needsApproval) {
           mission.log.authorizeStep({ stepIndex: step.index });
           emitDagEvent('MISSION_STEP_AUTHORIZED', { missionId, stepIndex: step.index, kind: step.kind, protected: false });
           continue;
@@ -325,21 +349,59 @@ async function runMission(missionId) {
       }
       if (step.layer === 'AUTHORIZED') {
         if (step.protected) {
+          // v13-5 TOCTOU: committed plan target vs live descriptor, before the spend.
+          // The explicit check names both sides for TARGET_CHANGED evidence; the
+          // ledger consume below re-verifies authoritatively (defense in depth).
+          let observedTarget = null;
+          try {
+            observedTarget = canonicalTarget(descriptor.program, descriptor.args ?? []);
+            assertTargetStable({ authorized: step.target, observed: observedTarget });
+          } catch (e) {
+            emitDagEvent('TARGET_CHANGED', {
+              missionId, stepIndex: step.index,
+              authorized: step.target, observed: observedTarget,
+            });
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              missionId, stepIndex: step.index, decision: 'DENY',
+              code: 'NEXA_E_APPROVAL_TARGET', reason: e.message,
+            });
+            return failMissionStep(missionId, step.index, 'NEXA_E_APPROVAL_TARGET', e.message);
+          }
+          emitDagEvent('TARGET', {
+            missionId, stepIndex: step.index, authorized: step.target, stable: true,
+          });
           try {
             approvalLedger.consume({
               approvalId: step.approvalId, resource: 'terminal:exec',
               action: 'exec', target: step.target, missionId,
             });
           } catch (e) {
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              missionId, stepIndex: step.index, decision: 'DENY',
+              code: e.code || 'NEXA_E_HANDLER', reason: e.message,
+            });
             return failMissionStep(missionId, step.index, e.code || 'NEXA_E_HANDLER', e.message);
           }
           emitDagEvent('AUTHORIZATION_CONSUMED', {
             approvalId: step.approvalId, missionId, stepIndex: step.index,
             resource: 'terminal:exec', action: 'exec', target: step.target,
           });
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'ALLOW',
+            approvalId: step.approvalId, mode: 'human-approval',
+          });
+        } else {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            missionId, stepIndex: step.index, decision: 'ALLOW', mode: 'auto-unprotected',
+          });
         }
+        emitDagEvent('EXECUTION_STARTED', { missionId, stepIndex: step.index, kind: step.kind });
         try {
           const { digest, verification, detail, usage } = await executeMissionStep(descriptor, step.target);
+          emitDagEvent('EXECUTION_FINISHED', {
+            missionId, stepIndex: step.index, kind: step.kind, ok: true,
+            inputBytes: usage.inputBytes, outputBytes: usage.outputBytes, durationMs: usage.durationMs,
+          });
           usageMeter.record({ ...usage, missionId, stepIndex: step.index });
           mission.log.executeStep({ stepIndex: step.index, approvalId: step.approvalId ?? null, digest });
           emitDagEvent('MISSION_STEP_EXECUTED', { missionId, stepIndex: step.index, kind: step.kind, digest, ...detail });
@@ -354,6 +416,9 @@ async function runMission(missionId) {
             return missionStatus(missionId);
           }
         } catch (e) {
+          emitDagEvent('EXECUTION_FINISHED', {
+            missionId, stepIndex: step.index, kind: step.kind, ok: false, code: e.code || 'NEXA_E_HANDLER',
+          });
           if (e && e.usage) usageMeter.record({ ...e.usage, missionId, stepIndex: step.index });
           return failMissionStep(missionId, step.index, e.code || 'NEXA_E_HANDLER', e.message);
         }
@@ -418,10 +483,14 @@ function normalizeMissionPlan(plan, missionId) {
       }
       const timeoutMs = raw.timeoutMs ?? MISSION_STEP_TIMEOUT_DEFAULT;
       if (!Number.isSafeInteger(timeoutMs)) throw schema(`plan[${index}].timeoutMs must be an integer`);
+      // v13-5: callers may declare LESS trust (model-output/untrusted-content) for a
+      // step, never more. The log shape is untouched (protocol-stable); provenance
+      // rides the server-side descriptor and the timeline evidence.
+      const provenance = raw.source === undefined ? 'mission-plan' : downgradeProvenance('mission-plan', raw.source);
       const target = canonicalTarget(program, args);
       return {
         logStep: { kind: 'terminal', target, protected: true, label },
-        descriptor: { kind: 'terminal', label, program, args, timeoutMs },
+        descriptor: { kind: 'terminal', label, program, args, timeoutMs, provenance },
       };
     }
     if (raw.kind === 'creative') {
@@ -436,9 +505,12 @@ function normalizeMissionPlan(plan, missionId) {
         throw schema(`plan[${index}].creativeArgs.channel must be one of ${CREATIVE_CHANNELS.join(', ')}`);
       }
       const campaignId = String(raw.campaignId ?? missionId).slice(0, 64) || missionId;
+      if (raw.source !== undefined && raw.source !== 'mission-plan') {
+        throw schema(`plan[${index}].source: creative steps accept only "mission-plan" provenance — model-sourced generation has no approval channel yet`);
+      }
       return {
         logStep: { kind: 'creative', target: `creative:${creativeArgs.channel}:${campaignId}`, protected: false, label },
-        descriptor: { kind: 'creative', label, creativeArgs, campaignId },
+        descriptor: { kind: 'creative', label, creativeArgs, campaignId, provenance: 'mission-plan' },
       };
     }
     throw schema(`plan[${index}].kind must be "terminal" or "creative" (got ${JSON.stringify(raw.kind)})`);
@@ -1353,18 +1425,93 @@ const server = createServer(async (req, res) => {
         const program = args.program;
         const commandArgs = args.args ?? [];
         const target = canonicalTarget(program, commandArgs);
-        // The approval must exist AND match this exact command (gated: REAL_EXECUTION).
-        approvalLedger.consume({
-          approvalId: args.approvalId,
-          resource: 'terminal:exec',
-          action: 'exec',
-          target,
-          missionId: args.missionId ?? null,
+        emitDagEvent('PROMPT_RECEIVED', { entry: 'terminal:execute', program, target });
+        // v13-5: downgrade-only provenance — direct invocation defaults to operator.
+        const provenance = args.provenance === undefined ? 'operator' : downgradeProvenance('operator', args.provenance);
+        emitDagEvent('TOOL_REQUESTED', {
+          entry: 'terminal:execute', provenance,
+          resource: 'terminal:exec', action: 'exec', target, missionId: args.missionId ?? null,
         });
-        const result = await terminalPort.exec(
-          { program, args: commandArgs },
-          { timeoutMs: args.timeoutMs, expectedTarget: target },
-        );
+        const boundaryVerdict = evaluateToolRequest({
+          provenance, resource: 'terminal:exec', action: 'exec', target,
+        });
+        emitDagEvent('POLICY_EVALUATED', {
+          entry: 'terminal:execute', provenance,
+          verdict: boundaryVerdict.verdict, code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+        });
+        if (boundaryVerdict.verdict === 'DENY') {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            entry: 'terminal:execute', decision: 'DENY',
+            code: boundaryVerdict.code, reason: boundaryVerdict.reason,
+          });
+          throw Object.assign(new Error(boundaryVerdict.reason), { code: boundaryVerdict.code || 'NEXA_E_UNTRUSTED' });
+        }
+        // REQUIRE_APPROVAL is discharged by the mandatory approvalId below: this
+        // route never executes without a human approval spend. DEFER continues.
+        // v13-5 TOCTOU pre-check: stored approval target vs observed command.
+        // Names both sides for TARGET_CHANGED; consume re-verifies authoritatively.
+        const storedApproval = typeof args.approvalId === 'string'
+          ? approvalLedger.requests().find((r) => r.approvalId === args.approvalId) ?? null
+          : null;
+        if (storedApproval) {
+          try {
+            assertTargetStable({ authorized: storedApproval.target, observed: target });
+          } catch (e) {
+            emitDagEvent('TARGET_CHANGED', {
+              entry: 'terminal:execute', approvalId: args.approvalId,
+              authorized: storedApproval.target, observed: target,
+            });
+            emitDagEvent('AUTHORIZATION_RESULT', {
+              entry: 'terminal:execute', decision: 'DENY',
+              code: 'NEXA_E_APPROVAL_TARGET', reason: e.message,
+            });
+            throw Object.assign(new Error(e.message), { code: 'NEXA_E_APPROVAL_TARGET' });
+          }
+          emitDagEvent('TARGET', {
+            entry: 'terminal:execute', approvalId: args.approvalId,
+            authorized: storedApproval.target, stable: true,
+          });
+        } else {
+          emitDagEvent('TARGET', { entry: 'terminal:execute', observed: target, authorized: null });
+        }
+        // The approval must exist AND match this exact command (gated: REAL_EXECUTION).
+        let spend;
+        try {
+          spend = approvalLedger.consume({
+            approvalId: args.approvalId,
+            resource: 'terminal:exec',
+            action: 'exec',
+            target,
+            missionId: args.missionId ?? null,
+          });
+        } catch (e) {
+          emitDagEvent('AUTHORIZATION_RESULT', {
+            entry: 'terminal:execute', decision: 'DENY',
+            code: e.code || 'NEXA_E_HANDLER', reason: e.message,
+          });
+          throw e;
+        }
+        emitDagEvent('AUTHORIZATION_RESULT', {
+          entry: 'terminal:execute', decision: 'ALLOW',
+          approvalId: spend.approvalId, mode: 'human-approval',
+        });
+        emitDagEvent('EXECUTION_STARTED', { entry: 'terminal:execute', target });
+        let result;
+        try {
+          result = await terminalPort.exec(
+            { program, args: commandArgs },
+            { timeoutMs: args.timeoutMs, expectedTarget: target },
+          );
+        } catch (e) {
+          emitDagEvent('EXECUTION_FINISHED', {
+            entry: 'terminal:execute', target, ok: false, code: e.code || 'NEXA_E_HANDLER',
+          });
+          throw e;
+        }
+        emitDagEvent('EXECUTION_FINISHED', {
+          entry: 'terminal:execute', target, ok: !result.timedOut && result.exitCode === 0,
+          exitCode: result.exitCode, durationMs: result.durationMs, timedOut: result.timedOut === true,
+        });
         emitDagEvent(result.timedOut ? 'TERMINAL_TIMED_OUT' : 'TERMINAL_EXECUTED', result);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, ...result }));
@@ -1431,6 +1578,10 @@ const server = createServer(async (req, res) => {
         }
         const missionId = randomId('mission:');
         const normalized = normalizeMissionPlan(args.plan, missionId);
+        emitDagEvent('PROMPT_RECEIVED', {
+          entry: 'missions:create', missionId, name: args.name.trim(), steps: normalized.length,
+          provenance: normalized.map((n) => n.descriptor.provenance ?? 'mission-plan'),
+        });
         const log = new MissionLog();
         const created = log.create({
           missionId, name: args.name.trim(), plan: normalized.map((n) => n.logStep),
@@ -1467,6 +1618,7 @@ const server = createServer(async (req, res) => {
   const missionRunMatch = req.method === 'POST' && /^\/api\/v1\/missions\/([^/]+)\/run$/.exec(url.pathname);
   if (missionRunMatch) {
     const missionId = decodeURIComponent(missionRunMatch[1]);
+    emitDagEvent('PROMPT_RECEIVED', { entry: 'missions:run', missionId });
     try {
       const status = await runMission(missionId);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2419,8 +2571,8 @@ const server = createServer(async (req, res) => {
   <li>POST /api/v1/creative/generate — { brand, product, audience, offer, channel, tone, variants, campaignId } → budget 4 per campaign, ttl 15m, channels [meta, instagram, tiktok, google]</li>
   <li>POST /api/v1/creative/approve — { creativeId } — human review (publish intentionally not implemented — AUTO_DEPLOY CLOSED)</li>
   <li>POST /api/v1/authorizations/request — { resource, action, target, missionId? } — human approval flow (v13-1)</li>
-  <li>POST /api/v1/terminal/execute — { program, args, approvalId } — sandboxed real execution (v13-2)</li>
-  <li>POST /api/v1/missions/create — { name, plan: [{ kind: terminal|creative, ... }] } — directed mission (v13-3, event-sourced)</li>
+  <li>POST /api/v1/terminal/execute — { program, args, approvalId, provenance? } — sandboxed real execution, boundary-gated (v13-5)</li>
+  <li>POST /api/v1/missions/create — { name, plan: [{ kind: terminal|creative, source?, ... }] } — directed mission, boundary-gated (v13-5, event-sourced)</li>
   <li>POST /api/v1/missions/:id/run — run/resume (stops WAITING_APPROVAL at protected steps)</li>
   <li>GET /api/v1/missions/:id — status + progress + pending approval</li>
   <li>GET /api/v1/missions/:id/replay — verify chain + replay state (integrity VALID/TAMPERED)</li>

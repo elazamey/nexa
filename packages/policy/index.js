@@ -16,8 +16,10 @@ export {
   TOOL_PROVENANCE,
   READ_CLASS_ACTIONS,
   BOUNDARY_VERDICTS,
+  PROVENANCE_RANK,
   evaluateToolRequest,
   assertTargetStable,
+  downgradeProvenance,
 } from './src/boundary.js';
 export {
   ApprovalLedger,

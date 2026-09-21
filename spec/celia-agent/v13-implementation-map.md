@@ -385,3 +385,83 @@ hello-governance` command/stdout bytes exactly) + `creative {in 71, out
 - missing-method errors surface as runtime `NEXA_E_INTERNAL` on first hit,
   invisible to `node --check` and the unit suite — the live smoke loop is
   the gate that catches them.
+
+## 10. Implementation record (v13-5, 2026-09-21)
+
+Security Governance & Runtime Boundary: the Security Lab consumes the
+v13-4 governance primitives — every execution now passes through a
+provenance boundary, and every gate emits first-class runtime events.
+No dashboard expansion in this version (per direction).
+
+> **Status:** IMPLEMENTATION COMPLETE / VECTORS 19/19 GREEN / SUITE 500/501 /
+> VERIFICATION PARTIAL / ACCEPTANCE HOLD — sole failure is pre-existing H3
+> (workspace-commit hardening, unrelated). No production release PASS until
+> H3 is classified.
+> **Explicit gaps (NOT IMPLEMENTED, tripwire-pinned, never claimed):**
+> Authorization Epoch binding; UsageMeter tamper-evidence chain.
+
+**Vectors first — `tests/security-governance.test.js` (19/19):** R0 prompt
+injection → DENY `NEXA_E_UNTRUSTED` with the 5-event trail (model relay →
+REQUIRE_APPROVAL, operator → DEFER, boundary never ALLOWs); R1 MCP
+undeclared-tool refusal + trust-lattice pins; R2 skills guidance-only
+(`executionAllowed: false`); R3 READ→WRITE/DELETE/widening →
+`NEXA_E_CAP_AMPLIFY` with a narrowing control; R4 replay fail-closed
+(USED/MISSING/SCOPE/EXPIRED); R5 TOCTOU (ledger TARGET + terminal
+pre-spawn TARGET + pure `assertTargetStable`); R6 forgery rejected at the
+head binding + Approval Center view is not a trust root; R7 sandbox
+pre-spawn refusal (`runs: 0`); R8 downgrade-only provenance lattice
+(callers buy scrutiny, never trust; unknown fails closed); R-HOLD
+tripwires pin the two declared gaps.
+
+**The module — `packages/policy/src/boundary.js` (pure, zero fs/net):**
+`TOOL_PROVENANCE`, `PROVENANCE_RANK`, `evaluateToolRequest` (DENY /
+REQUIRE_APPROVAL / DEFER + deterministic timeline-vocabulary trail),
+`assertTargetStable` (TOCTOU, names both sides), `downgradeProvenance`
+(server default per entry point, caller downgrade-only).
+
+**Runtime wiring — `tools/celia-dashboard-server.mjs`:**
+- mission path: per-step `TOOL_REQUESTED → POLICY_EVALUATED → AUTHORIZATION_RESULT`;
+  DENY fails the step (`NEXA_E_UNTRUSTED`, zero usage); REQUIRE_APPROVAL
+  routes to the human wait/resume; DEFER continues; protected steps get a
+  TOCTOU pre-check (`TARGET` stable / `TARGET_CHANGED` + DENY) before the
+  ledger spend; `EXECUTION_STARTED/FINISHED` bracket every execution;
+  `PROMPT_RECEIVED` on create/run; declared provenance visible in status;
+- terminal path: same vocabulary before spawn; REQUIRE_APPROVAL is
+  discharged by the route's mandatory approvalId; stored-vs-observed
+  target pre-check names both sides on `TARGET_CHANGED`; STARTED/FINISHED
+  always pair (refusals emit `FINISHED ok:false`, never `TERMINAL_EXECUTED`);
+- plan entry: terminal steps accept downgrade-only `source` (descriptor +
+  timeline evidence; the hash-chained log shape is untouched);
+  non-`mission-plan` provenance on creative steps is 400 `NEXA_E_SCHEMA`
+  (no approval channel exists for model-sourced generation — refused at
+  the entry rather than mislabeled as terminal:exec evidence).
+
+**Verified behavior (curl, live server):** mission create → run → 27-event
+trail (all 7 new types) → approve → `COMPLETED`; untrusted step →
+`FAILED`/`NEXA_E_UNTRUSTED`, usage runs 0; model-output step →
+`REQUIRE_APPROVAL` → wait → approve → `COMPLETED`; terminal happy path
+executes with `TARGET` stable + `ALLOW`; TOCTOU executes nothing
+(`TARGET_CHANGED` names both targets, no `EXECUTION_STARTED` follows);
+untrusted provenance DENYs even with a valid approval; once-approval
+replay → `USED`; restart replay → `MISSING` (ledger empty); jail escape →
+`JAIL` with `FINISHED ok:false` and no spawn evidence.
+
+**Ordering note (deliberate):** `TARGET`/`TARGET_CHANGED` evidence is
+gathered *before* the ledger spend so the mismatch names both sides while
+runs stay 0; `AUTHORIZATION_RESULT` reflects the outcome and the consume
+re-verifies authoritatively. Gate order boundary → authorization → target
+→ spawn is preserved; the consume remains the single spend enforcement.
+
+**Not live-verified (no runtime entry point exists — unit-pinned only):**
+unknown-MCP-tool refusal (no MCP route in the server) and capability
+attenuation abuse (no capability-spend route). Claimed as R1/R3 vectors,
+not as runtime proofs.
+
+**Lessons encoded:**
+- downgrade-only caller input is the honest shape for server-assigned
+  provenance: a caller can always demand more scrutiny, never less;
+- a post-spend target re-check that cannot fire is theater — the live
+  wire is the pre-spend explicit check with the ledger as backstop;
+- evidence labeling is a security decision: refusing model-sourced
+  creative at plan time is correct; spending it under a terminal:exec
+  approval would be fabricated evidence.

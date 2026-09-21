@@ -28,8 +28,10 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { ApprovalLedger } from '../packages/policy/index.js';
 import {
   TOOL_PROVENANCE,
+  PROVENANCE_RANK,
   evaluateToolRequest,
   assertTargetStable,
+  downgradeProvenance,
 } from '../packages/policy/src/boundary.js';
 import { MissionLog } from '../packages/protocol/index.js';
 import { UsageMeter } from '../packages/protocol/index.js';
@@ -607,4 +609,45 @@ test('R-HOLD: no authorization epoch and no usage chain exist yet (declared gaps
     'undefined',
     'usage tamper-evidence is a declared follow-up, not a silent claim',
   );
+});
+
+// ---------------------------------------------------------------------------
+// R8. Downgrade-only provenance: callers may ask for more scrutiny, never less.
+// ---------------------------------------------------------------------------
+test('R8: asserted provenance can only move toward less trust', () => {
+  assert.equal(downgradeProvenance('operator', 'model-output'), 'model-output');
+  assert.equal(downgradeProvenance('operator', 'untrusted-content'), 'untrusted-content');
+  assert.equal(downgradeProvenance('mission-plan', 'model-output'), 'model-output');
+  assert.equal(downgradeProvenance('mission-plan', 'untrusted-content'), 'untrusted-content');
+  assert.equal(downgradeProvenance('model-output', 'untrusted-content'), 'untrusted-content');
+  // Upgrades are ignored — the server default stands.
+  assert.equal(downgradeProvenance('model-output', 'operator'), 'model-output');
+  assert.equal(downgradeProvenance('mission-plan', 'operator'), 'mission-plan');
+  assert.equal(downgradeProvenance('untrusted-content', 'operator'), 'untrusted-content');
+  assert.equal(downgradeProvenance('untrusted-content', 'mission-plan'), 'untrusted-content');
+  // Identity.
+  for (const p of TOOL_PROVENANCE) assert.equal(downgradeProvenance(p, p), p);
+});
+
+test('R8: unknown provenance fails closed at the downgrade boundary', () => {
+  for (const [serverDefault, asserted] of [
+    ['operator', 'operator-says-trust-me'],
+    ['mission-plan', ''],
+    ['not-a-provenance', 'operator'],
+    [null, 'operator'],
+    ['operator', null],
+    [undefined, undefined],
+  ]) {
+    throwsCode(assert, () => downgradeProvenance(serverDefault, asserted), 'NEXA_E_SCHEMA');
+  }
+});
+
+test('R8: the provenance rank is frozen and ordered toward less trust', () => {
+  assert.deepEqual({ ...PROVENANCE_RANK }, {
+    operator: 0,
+    'mission-plan': 1,
+    'model-output': 2,
+    'untrusted-content': 3,
+  });
+  assert.ok(Object.isFrozen(PROVENANCE_RANK));
 });

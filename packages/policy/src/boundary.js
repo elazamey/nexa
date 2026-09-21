@@ -158,3 +158,31 @@ export function assertTargetStable({ authorized, observed } = {}) {
   }
   return { stable: true, authorized, observed };
 }
+
+/**
+ * Trust rank: lower = more trusted. Operator and mission-plan are
+ * human-rooted; model output needs a human approval; untrusted content
+ * never acts.
+ */
+export const PROVENANCE_RANK = Object.freeze({
+  operator: 0,
+  'mission-plan': 1,
+  'model-output': 2,
+  'untrusted-content': 3,
+});
+
+/**
+ * Downgrade-only provenance resolution: the server assigns a default per
+ * entry point; a caller may assert LESS trust (more scrutiny) but never
+ * more. Unknown values fail closed (SCHEMA), never silent-default.
+ * @returns {string} effective provenance
+ */
+export function downgradeProvenance(serverDefault, asserted) {
+  if (!TOOL_PROVENANCE.includes(serverDefault) || !TOOL_PROVENANCE.includes(asserted)) {
+    throw new NexaError(
+      'NEXA_E_SCHEMA',
+      `provenance must be one of ${TOOL_PROVENANCE.join(', ')} (got default=${JSON.stringify(serverDefault)} asserted=${JSON.stringify(asserted)})`,
+    );
+  }
+  return PROVENANCE_RANK[asserted] >= PROVENANCE_RANK[serverDefault] ? asserted : serverDefault;
+}

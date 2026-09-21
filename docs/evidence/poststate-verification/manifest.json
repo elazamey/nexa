@@ -1,0 +1,30 @@
+{
+  "package": "P02x_POST_STATE_VERIFICATION",
+  "date": "2026-09-21",
+  "branch": "arena/01a0c63f-nexa",
+  "node": "v22.22.3",
+  "changedFiles": {
+    "tools/celia-workspace-commit-port.mjs": "ea9e38b91f7cacef1eab2dba2247dd627857b4039aaeaa4f4c12ef98679275cb",
+    "tests/celia-workspace-commit-poststate.test.js": "123e6b7eddb6f8e37f693bc46076d47026212da019131ae7d3613bc9cb8b9e27"
+  },
+  "results": {
+    "red": "0/7 before fix",
+    "green": "7/7",
+    "priorBoundaries": "21/21",
+    "fullVerify": "516 PASS / 0 FAIL",
+    "gates": "6 CLOSED",
+    "attacks": "31/31"
+  },
+  "mutationCheck": {
+    "description": "verifyPostState disabled -> 6 fail, positive control stays green",
+    "evidence": "mutation-red.tap"
+  },
+  "testSelfCheck": "RED1 initially passed under mutation; tightened to require a read strictly after the apply write",
+  "scope": "in-process read-back proof of written bytes, plus proof of the rollback",
+  "notClaimed": [
+    "independent verification",
+    "A->B->A detection",
+    "post-read external writers",
+    "crash consistency (P03)"
+  ]
+}

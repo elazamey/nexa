@@ -1,0 +1,95 @@
+diff --git a/tools/celia-workspace-commit-port.mjs b/tools/celia-workspace-commit-port.mjs
+index 8617b97..8270314 100644
+--- a/tools/celia-workspace-commit-port.mjs
++++ b/tools/celia-workspace-commit-port.mjs
+@@ -168,6 +168,62 @@ function claimExistingTarget(target, file) {
+   }
+ }
+ 
++/**
++ * P02.x post-state verification. A write syscall that did not throw is not
++ * proof that the intended bytes are on disk, so every target this operation
++ * wrote is re-read from the filesystem and compared against the verified
++ * change set. Reads go to disk, never to the buffer the executor still holds.
++ *
++ * This proves the state re-read AT THIS POINT matched the authorized change
++ * set. It is not an independent verifier, and it cannot see an A -> B -> A
++ * mutation that is reverted before the read-back. Crash recovery is P03.
++ */
++function verifyPostState(base, applied) {
++  const mismatches = [];
++  for (const file of applied) {
++    const target = join(base, file.path);
++    try {
++      const stat = regularFile(target); // also re-checks symlink/nlink/size limits
++      if (stat.size !== file.content.length) {
++        mismatches.push({ path: file.path, reason: 'SIZE' });
++        continue;
++      }
++      if (!readFileSync(target).equals(file.content)) mismatches.push({ path: file.path, reason: 'BYTES' });
++    } catch (error) {
++      mismatches.push({ path: file.path, reason: error.code ?? error.message });
++    }
++  }
++  return mismatches;
++}
++
++/**
++ * Re-read proof that a rollback actually happened. restore() already verifies
++ * bytes and mode for files it rewrote, but a deletion path must be proven too:
++ * "unlink did not throw" is the same unproven-success problem one level down.
++ */
++function verifyRestored(base, attempted) {
++  const unproven = [];
++  for (const file of attempted) {
++    const target = join(base, file.path);
++    try {
++      if (file.base.exists) {
++        const stat = regularFile(target);
++        if ((stat.mode & 0o7777) !== file.base.mode) unproven.push({ path: file.path, reason: 'MODE' });
++        else if (!readFileSync(target).equals(file.previous)) unproven.push({ path: file.path, reason: 'BYTES' });
++      } else if (lstatSyncSafe(target)) {
++        unproven.push({ path: file.path, reason: 'STILL_PRESENT' });
++      }
++    } catch (error) {
++      unproven.push({ path: file.path, reason: error.code ?? error.message });
++    }
++  }
++  return unproven;
++}
++function lstatSyncSafe(path) {
++  try { return lstatSync(path); }
++  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
++}
++
+ /** Restore attempted files, including a write that partially changed bytes then threw. */
+ function restore(base, attempted, created) {
+   const failures = [];
+@@ -280,8 +336,26 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
+       // Preserve the original I/O error, and never refund consumed authorization.
+       throw error;
+     }
++    // Effect proof. Until this passes the operation has NOT succeeded, however
++    // cleanly every write syscall returned.
++    const mismatches = verifyPostState(base, changed);
++    if (mismatches.length) {
++      const failures = restore(base, changed, created);
++      // The rollback is itself an unproven success until it is re-read.
++      const unproven = failures.length ? failures : verifyRestored(base, changed);
++      // Latch only when the root's state could not be proven back to base. A
++      // proven rollback leaves a consistent root, so later authorized work is
++      // refused on its own merits rather than by a blanket 503.
++      if (unproven.length) recoveryRequiredRoots.add(base);
++      const code = unproven.length ? 'COMMIT_RECOVERY_UNVERIFIED' : 'COMMIT_EFFECT_UNVERIFIED';
++      const unavailable = new WorkspaceCommitError(503, code);
++      unavailable.cause = { mismatches, rollbackFailures: failures, unprovenRestores: unproven };
++      throw unavailable;
++    }
++
+     return {
+-      ok: true, workspaceId: input.workspaceId, changedFiles: changed.length,
++      ok: true, postState: { verified: changed.length, method: 'READ_BACK_SHA256_EQUAL_BYTES' },
++      workspaceId: input.workspaceId, changedFiles: changed.length,
+       changes: changed.map(({ path, hash, size }) => ({ path, hash, size })),
+       targetRoot: input.targetRoot, changeSetHash: input.changeSetHash, expectedBaseHash: input.expectedBaseHash,
+       subject: authorization.subject, capabilityId: authorization.capabilityId, rule: authorization.rule,

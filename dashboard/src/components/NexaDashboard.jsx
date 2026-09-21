@@ -52,6 +52,7 @@ export default function NexaDashboard() {
   });
 
   const [logs, setLogs] = useState([]);
+  const [terminal, setTerminal] = useState(null); // last real terminal run (v13-2)
   const [nodes, setNodes] = useState({});
   const [connectionStatus, setConnectionStatus] = useState('Connecting...');
   const [dagStats, setDagStats] = useState({ passed: 0, failed: 0, total: 0 });
@@ -163,6 +164,10 @@ export default function NexaDashboard() {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Approval denied — ${data.payload.approvalId.slice(0, 24)}…${data.payload.reason ? ` (${data.payload.reason})` : ''}`, ...prev].slice(0,30));
         } else if (data.type === 'AUTHORIZATION_CONSUMED') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ▶ Execution authorized: ${data.payload.resource}/${data.payload.action} on "${data.payload.target}"`, ...prev].slice(0,30));
+        } else if (data.type === 'TERMINAL_EXECUTED' || data.type === 'TERMINAL_TIMED_OUT') {
+          const p = data.payload;
+          setTerminal(p);
+          setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${p.timedOut ? '⏱' : '▶'} TERMINAL ${p.program} ${p.args.join(' ')} — ${p.timedOut ? 'TIMED OUT' : `exit ${p.exitCode}`} · ${p.durationMs}ms · ${p.sandbox}-jail · ${p.evidenceRef.slice(0, 28)}…`, ...prev].slice(0,30));
         } else if (data.type === 'REPLAY') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⏪ Replay from ${data.payload.fromIndex} checkpoint ${data.payload.checkpointIndex} no LLM calls`, ...prev].slice(0,30));
         } else if (data.type === 'DSL_COMPILED') {
@@ -319,6 +324,29 @@ export default function NexaDashboard() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1 font-mono text-[11px] custom-scrollbar bg-black/20">
+              {terminal && (
+                <div className="mb-2 border border-slate-700/60 rounded-lg bg-black/60 p-2">
+                  <div className="flex justify-between items-center gap-2 text-[10px] mb-1">
+                    <span className="font-mono text-slate-300 truncate">$ {terminal.program} {terminal.args.join(' ')}</span>
+                    <span className={`shrink-0 font-mono ${terminal.timedOut ? 'text-amber-400' : terminal.exitCode === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {terminal.timedOut ? '⏱ TIMEOUT' : `exit ${terminal.exitCode}`} · {terminal.durationMs}ms · {terminal.sandbox}
+                    </span>
+                  </div>
+                  {terminal.stdout ? (
+                    <pre className="text-[10px] text-slate-300 whitespace-pre-wrap break-all max-h-24 overflow-y-auto">{terminal.stdout.slice(-2000)}</pre>
+                  ) : (
+                    <div className="text-[10px] text-slate-600">— no stdout —</div>
+                  )}
+                  {terminal.stderr && (
+                    <pre className="text-[10px] text-red-300/80 whitespace-pre-wrap break-all max-h-16 overflow-y-auto mt-1">{terminal.stderr.slice(-1000)}</pre>
+                  )}
+                  {terminal.diff && (terminal.diff.added.length + terminal.diff.changed.length + terminal.diff.removed.length > 0) && (
+                    <div className="text-[10px] text-cyan-300/80 mt-1">
+                      fs-diff: +{terminal.diff.added.length} ~{terminal.diff.changed.length} -{terminal.diff.removed.length} · {terminal.diff.digest.slice(0, 18)}…
+                    </div>
+                  )}
+                </div>
+              )}
               {logs.length === 0 ? (
                 <div className="text-slate-600 py-8 text-center">
                   <Terminal className="w-6 h-6 mx-auto mb-2 opacity-30" />

@@ -48,6 +48,9 @@ export const ERROR_CODES = Object.freeze({
   NEXA_E_APPROVAL_SCOPE: 'execution is outside the approval scope',
   NEXA_E_APPROVAL_EXPIRED: 'approval expired',
   NEXA_E_APPROVAL_TAMPERED: 'approval log failed tamper-evidence verification',
+  // terminal execution (v13-2)
+  NEXA_E_TERMINAL_JAIL: 'command would escape the allowed working directory',
+  NEXA_E_TERMINAL_UNALLOWED: 'program is not in the terminal allowlist',
 });
 
 export class NexaError extends Error {

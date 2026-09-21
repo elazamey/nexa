@@ -31,7 +31,7 @@
 
 import { createServer } from 'node:http';
 import { join, dirname, resolve, extname } from 'node:path';
-import { existsSync, statSync, createReadStream } from 'node:fs';
+import { existsSync, statSync, createReadStream, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -50,6 +50,7 @@ import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-
 import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
 import { ApprovalLedger, isApprovalEligible } from '../packages/policy/index.js';
 import { createIdentity } from '../packages/identity/index.js';
+import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -116,6 +117,14 @@ const creativeRuns = new Map(); // creativeId → result (ring, max 20)
 // approval log is a hash-chained, tamper-evident ledger (packages/policy).
 const dashboardOperator = createIdentity({ label: 'celia-dashboard-operator', seed: 'e5'.repeat(32) });
 const approvalLedger = new ApprovalLedger({ trustedApprovers: [dashboardOperator.kid] });
+
+// v13-2 Terminal — first REAL execution. The jail lives under the gitignored
+// .nexa/ directory; sandbox mode is auto-detected (os = unshare+chroot when
+// available, policy otherwise). Every run needs a consumed approval whose
+// target matches the exact command (the ledger + port both enforce this).
+const terminalJailRoot = fileURLToPath(new URL('../.nexa/terminal', import.meta.url));
+mkdirSync(join(terminalJailRoot, 'work'), { recursive: true });
+const terminalPort = createTerminalPort({ jailRoot: terminalJailRoot });
 
 // Seed adaptive DAG
 adaptiveDagEngine.initialize(
@@ -916,6 +925,40 @@ const server = createServer(async (req, res) => {
         res.end(JSON.stringify({ ok: true, ...result }));
       } catch (e) {
         res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // v13-2 Terminal — real, sandboxed, approval-gated command execution.
+  if (url.pathname === '/api/v1/terminal/execute' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const args = JSON.parse(body || '{}');
+        const program = args.program;
+        const commandArgs = args.args ?? [];
+        const target = canonicalTarget(program, commandArgs);
+        // The approval must exist AND match this exact command (gated: REAL_EXECUTION).
+        approvalLedger.consume({
+          approvalId: args.approvalId,
+          resource: 'terminal:exec',
+          action: 'exec',
+          target,
+          missionId: args.missionId ?? null,
+        });
+        const result = await terminalPort.exec(
+          { program, args: commandArgs },
+          { timeoutMs: args.timeoutMs, expectedTarget: target },
+        );
+        emitDagEvent(result.timedOut ? 'TERMINAL_TIMED_OUT' : 'TERMINAL_EXECUTED', result);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, ...result }));
+      } catch (e) {
+        const bad = [...APPROVAL_BAD_CODES, 'NEXA_E_TERMINAL_JAIL', 'NEXA_E_TERMINAL_UNALLOWED'].includes(e.code);
+        res.writeHead(bad ? 400 : 500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
       }
     });

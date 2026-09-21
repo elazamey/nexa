@@ -132,7 +132,7 @@ the canvas already carries its DEMO label.
 | Phase | Work | Acceptance | Status |
 |---|---|---|---|
 | v13-1 | Approval protocol (pure `packages/policy`) + 8 vectors | vectors green; suite grows from 324; `packages/` still zero fs/net (posture clean) | ✅ 9/9 green (V0+V1..V8); 333/333; endpoints live + curl round-trip verified |
-| v13-2 | Terminal port + sandbox (real bash) + vectors (path escape, injection, timeout, jail) | `terminal.execute` runs live behind approval; refused without; jail can't escape cwd |
+| v13-2 | Terminal port + sandbox (real execution) + vectors (path escape, injection, timeout, jail) | `terminal.execute` runs live behind approval; refused without; jail can't escape cwd | ✅ 9/9 green; live curl round-trip: os-mode kernel jail (unshare+busybox chroot), fs-diff, SSE `TERMINAL_EXECUTED/TIMED_OUT`, terminal box in dashboard |
 | v13-3 | Mission API + 4-layer state machine + §45 events + replay endpoint | one mission end-to-end; replay reconstructs the same final state; evidence verifies |
 | v13-4 | Dashboard: Approval Center + mission timeline + evidence drawer + LIVE/DEMO badge + cost meter | a human approves on screen; every step visible in the timeline with evidence |
 | v13-5 | Browser port (headless Playwright) + observation + verifier | browser steps stream live to canvas + timeline; screenshots attached as evidence |
@@ -186,3 +186,47 @@ stats expose the verified chain head.
   (partial-write artifact across the turn boundary). Restored from `HEAD` (which held the
   complete file) and re-applied the v13-1 hunks; the running process still had the full
   code in memory, which is how the regression was caught before a restart.
+
+## 7. Implementation record (v13-2, 2026-09-21)
+
+**Files:** `tools/celia-terminal-port.mjs` (the port), `tests/terminal-security.test.js`
+(T0..T8, test-first — first test file that performs real, hermetic process execution),
+`packages/ast/src/errors.js` (`NEXA_E_TERMINAL_JAIL`, `NEXA_E_TERMINAL_UNALLOWED`),
+`tools/celia-dashboard-server.mjs` (`POST /api/v1/terminal/execute` + `TERMINAL_EXECUTED` /
+`TERMINAL_TIMED_OUT` on the DAG stream, jail under gitignored `.nexa/terminal`),
+`dashboard/src/components/NexaDashboard.jsx` (live terminal box in the System Stdout card:
+command, exit/TIMEOUT, stdout/stderr tails, fs-diff summary).
+
+**The port (two sandbox modes, one contract):**
+- `os` (auto-detected: userns works + busybox present — true here):
+  `unshare -U -r -m` + `busybox chroot` with the jail root as the only filesystem. The
+  wrapper is a **constant** script; user input enters only as positional parameters, so
+  there is no injection surface into the wrapper itself. Escape attempts ENOENT at the
+  kernel, not merely "refused by policy".
+- `policy` (hosts without userns/busybox): no-shell direct spawn + allowlist + argument
+  validation + cwd pinning + minimal env.
+- Both modes: bare-name allowlist (default = busybox applets; +node/npm in policy mode),
+  relative paths only (`..` and `/…` → `NEXA_E_TERMINAL_JAIL`), no control characters,
+  minimal env (PATH/HOME/LANG — secrets never cross), process-group kill on timeout
+  (`detached` spawn, `kill(-PGID, SIGKILL)`), output caps, per-run `evidenceRef`,
+  stdout/stderr sha256, and a hash-committed filesystem diff of the jail.
+- `expectedTarget` (the approval token) must equal the canonical command — the executed
+  command is the approved command, byte for byte (ledger AND port enforce it).
+
+**Verified behavior (curl, live server, os mode):** request → approve → execute:
+`ls work` exit 0 in 7ms; write produces `diff.added ['work/live.txt']` with committed
+digest + evidenceRef; missing approval → 400 `NEXA_E_APPROVAL_MISSING`; approve `ls work`
+then execute `ls -R` → 400 `NEXA_E_APPROVAL_TARGET`; human approving a literal
+`cat /etc/passwd` escape is still refused by the port with `NEXA_E_TERMINAL_JAIL`
+(defense in depth); `bash` → `NEXA_E_TERMINAL_UNALLOWED`; `TERMINAL_EXECUTED` observed
+on the SSE stream with the exact target.
+
+**Lessons encoded:**
+- dash `sh -c`: `shift` does NOT touch `$0` — it drops `$1`. Capture the program before
+  the single shift (cost one full debug cycle; the wrapper comment now documents it).
+- busybox has no `exec` applet; `busybox chroot DIR /busybox APPLET ARGS` is the form.
+- A mount point must exist: `touch $JAIL/busybox` before the file bind mount.
+- Port option is `timeoutMs` (matches the doc's `timeout_ms`); a silent name mismatch
+  once let a 30s default mask a 400ms kill.
+- The terminal port is **async** (real processes); it runs in the server/mission layer,
+  never in a sync envelope handler.

@@ -38,7 +38,7 @@ function fakeLines(nodeId, node) {
   ];
 }
 
-export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' }) {
+export default function AgentCanvasEmulator({ nodes = {}, workspace = null, connectionStatus = '', onWorkspaceDemo, demoBusy = false }) {
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const nodesRef = useRef(nodes);
@@ -49,11 +49,37 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
   const prevStatesRef = useRef({});
   const actionRef = useRef(null);
   const connectionStatusRef = useRef(connectionStatus);
+  const workspaceRef = useRef(workspace);
+  const prevWsRef = useRef(null); // { id, status }
+  const wsRectRef = useRef(null); // workspace window rect (per-frame)
   const [action, setAction] = useState(null);
 
   useEffect(() => {
     connectionStatusRef.current = connectionStatus;
   }, [connectionStatus]);
+
+  /* Workspace transitions (real CoW events) → cursor + ring effects */
+  useEffect(() => {
+    workspaceRef.current = workspace;
+    const prev = prevWsRef.current;
+    if (workspace && (!prev || prev.id !== workspace.id || prev.status !== workspace.status)) {
+      if (workspace.status === 'COMMITTED') {
+        fxRef.current.push({ type: 'ws-commit', nodeId: '@workspace', t: performance.now() });
+        clickTRef.current = performance.now();
+        actionRef.current = `workspace commit (${workspace.changedFiles ?? 0} files)`;
+        setAction(actionRef.current);
+      } else if (workspace.status === 'ROLLED_BACK') {
+        fxRef.current.push({ type: 'ws-rollback', nodeId: '@workspace', t: performance.now() });
+        clickTRef.current = performance.now();
+        actionRef.current = 'workspace rollback (zero side effects)';
+        setAction(actionRef.current);
+      } else if (!prev || prev.id !== workspace.id) {
+        actionRef.current = `workspace staging (${String(workspace.taskId || '').slice(0, 18)})`;
+        setAction(actionRef.current);
+      }
+      prevWsRef.current = { id: workspace.id, status: workspace.status };
+    }
+  }, [workspace]);
 
   /* 1) Mirror props + detect real state transitions → visual effects */
   useEffect(() => {
@@ -142,13 +168,13 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
       ctx.fillText(s, x, y);
     };
 
-    const layout = (ids, w, h) => {
+    const layout = (ids, w, h, rightLimit) => {
       const rects = {};
       if (!ids.length) return rects;
       const top = 12;
       const side = 14;
       const gap = 12;
-      const areaW = w - side * 2;
+      const areaW = (rightLimit || w) - side * 2;
       const areaH = h - top - TASKBAR_H;
       const cols = ids.length <= 2 ? ids.length : 3;
       const rows = Math.ceil(ids.length / cols);
@@ -156,7 +182,7 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
       const wh = Math.min(190, (areaH - gap * (rows - 1)) / rows);
       const gw = cols * ww + (cols - 1) * gap;
       const gh = rows * wh + (rows - 1) * gap;
-      const x0 = (w - gw) / 2;
+      const x0 = side + Math.max(0, (areaW - gw) / 2);
       const y0 = top + Math.max(0, (areaH - gh) / 2);
       ids.forEach((id, i) => {
         const c = i % cols;
@@ -188,7 +214,23 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
 
       const nodesMap = nodesRef.current;
       const ids = Object.keys(nodesMap);
-      const rects = layout(ids, w, h);
+
+      /* workspace dock (right side on wide screens, bottom on narrow) */
+      const ws = workspaceRef.current;
+      const wsActive = !!ws;
+      let wsRect = null;
+      let rightLimit = w;
+      if (wsActive) {
+        const narrow = w < 760;
+        const dockW = narrow ? Math.min(360, w - 24) : Math.max(250, Math.min(320, w * 0.24));
+        const dockH = narrow ? 150 : Math.max(150, h - TASKBAR_H - 24);
+        wsRect = narrow
+          ? { x: 12, y: h - TASKBAR_H - dockH - 8, w: dockW, h: dockH }
+          : { x: w - dockW - 12, y: 12, w: dockW, h: dockH };
+        if (!narrow) rightLimit = wsRect.x - 4;
+      }
+      wsRectRef.current = wsRect;
+      const rects = layout(ids, w, h, rightLimit);
 
       /* --- background --- */
       ctx.clearRect(0, 0, w, h);
@@ -302,11 +344,102 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
         ctx.restore();
       }
 
+      /* --- workspace file-explorer window (real CoW data) --- */
+      if (wsRect && ws) {
+        const wsSt = ws.status === 'COMMITTED'
+          ? { border: 'rgba(52,211,153,0.8)', glow: null, dot: '#34d399', label: 'COMMITTED' }
+          : ws.status === 'ROLLED_BACK'
+            ? { border: 'rgba(251,191,36,0.8)', glow: 'rgba(251,191,36,0.25)', dot: '#fbbf24', label: 'ROLLED_BACK' }
+            : { border: 'rgba(34,211,238,0.8)', glow: 'rgba(34,211,238,0.35)', dot: '#22d3ee', label: 'STAGING' };
+
+        ctx.save();
+        if (wsSt.glow) {
+          ctx.shadowColor = wsSt.glow;
+          ctx.shadowBlur = 14;
+        }
+        rr(wsRect.x, wsRect.y, wsRect.w, wsRect.h, 10);
+        ctx.fillStyle = 'rgba(15,23,42,0.9)';
+        ctx.fill();
+        ctx.strokeStyle = wsSt.border;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const wtbH = 24;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(wsRect.x, wsRect.y, wsRect.w, wtbH);
+        ctx.clip();
+        ctx.fillStyle = 'rgba(2,6,23,0.65)';
+        ctx.fillRect(wsRect.x, wsRect.y, wsRect.w, wtbH);
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(51,65,85,0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(wsRect.x + 1, wsRect.y + wtbH);
+        ctx.lineTo(wsRect.x + wsRect.w - 1, wsRect.y + wtbH);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(wsRect.x + 12, wsRect.y + wtbH / 2, 3, 0, Math.PI * 2);
+        ctx.fillStyle = wsSt.dot;
+        ctx.fill();
+        text(`workspace ${String(ws.id || '').slice(0, 16)}`, wsRect.x + 22, wsRect.y + wtbH / 2 + 3.5, { font: `bold 11px ${MONO}`, fill: 'rgba(226,232,240,0.95)' });
+        text(wsSt.label, wsRect.x + wsRect.w - 10, wsRect.y + wtbH / 2 + 3, { font: `9px ${MONO}`, fill: wsSt.dot, align: 'right' });
+
+        const bx = wsRect.x + 12;
+        let by = wsRect.y + wtbH + 18;
+        const bh = 15;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(wsRect.x, wsRect.y + wtbH, wsRect.w, wsRect.h - wtbH);
+        ctx.clip();
+
+        text(`task: ${String(ws.taskId || '—')} • lazy CoW`, bx, by, { fill: 'rgba(148,163,184,0.85)' });
+        by += bh;
+
+        const changes = ws.changes || [];
+        if (ws.status === 'STAGING') {
+          text('staging… writes tracked (lazy CoW)', bx, by, { fill: 'rgba(103,232,249,0.8)' });
+          by += bh;
+          text('atomic on commit — zero side effects', bx, by, { fill: 'rgba(100,116,139,0.7)' });
+          by += bh + 6;
+          const dots = Math.floor(now / 400) % 4;
+          text('commit pending' + '·'.repeat(dots), bx, by, { fill: 'rgba(34,211,238,0.6)' });
+        } else {
+          changes.slice(0, 8).forEach((c) => {
+            const added = c.status !== 'modified';
+            const marker = added ? '+' : '~';
+            const fill = added ? 'rgba(52,211,153,0.9)' : 'rgba(251,191,36,0.9)';
+            const p = String(c.path || '');
+            const label = p.length > 30 ? '…' + p.slice(-29) : p;
+            text(`${marker} ${label}`, bx, by, { fill });
+            if (c.stagingDigest) {
+              text(String(c.stagingDigest).slice(0, 14), bx + wsRect.w - 24, by, { font: `8px ${MONO}`, fill: 'rgba(100,116,139,0.6)', align: 'right' });
+            }
+            by += bh;
+          });
+          if (changes.length > 8) {
+            text(`… +${changes.length - 8} more`, bx, by, { fill: 'rgba(100,116,139,0.7)' });
+            by += bh;
+          }
+          by += 6;
+          if (ws.status === 'COMMITTED') {
+            text(`✓ committed ${ws.changedFiles ?? changes.length} files atomic`, bx, by, { fill: 'rgba(52,211,153,0.95)' });
+            by += bh;
+            if (ws.committedAt) text(new Date(ws.committedAt).toLocaleTimeString(), bx, by, { font: `9px ${MONO}`, fill: 'rgba(100,116,139,0.7)' });
+          } else {
+            text('⊘ rolled back — zero side effects', bx, by, { fill: 'rgba(251,191,36,0.95)' });
+          }
+        }
+        ctx.restore();
+      }
+
       /* --- idle overlay --- */
       if (!ids.length) {
         ctx.textAlign = 'center';
         text('NEXA', w / 2, h / 2 - 18, { font: `bold 30px ${MONO}`, fill: 'rgba(34,211,238,0.5)', align: 'center' });
-        text('agent desktop idle — press RUN DAG', w / 2, h / 2 + 10, { font: `11px ${MONO}`, fill: 'rgba(100,116,139,0.85)', align: 'center' });
+        text('agent desktop idle — press RUN DAG or WORKSPACE DEMO', w / 2, h / 2 + 10, { font: `11px ${MONO}`, fill: 'rgba(100,116,139,0.85)', align: 'center' });
         text('cursor animates on real SSE node events', w / 2, h / 2 + 28, { font: `10px ${MONO}`, fill: 'rgba(71,85,105,0.8)', align: 'center' });
         ctx.textAlign = 'left';
       }
@@ -338,13 +471,16 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
         const age = now - fx.t;
         if (age > 750) continue;
         aliveFx.push(fx);
-        const rect = rects[fx.nodeId];
+        const rect = fx.nodeId === '@workspace' ? wsRectRef.current : rects[fx.nodeId];
         if (!rect) continue;
         const cx = rect.x + rect.w / 2;
         const cy = rect.y + rect.h / 2;
         const radius = 8 + age * 0.09;
         const alpha = Math.max(0, 1 - age / 750);
-        const color = fx.type === 'success' ? `rgba(52,211,153,${alpha})` : fx.type === 'fail' ? `rgba(248,113,113,${alpha})` : `rgba(34,211,238,${alpha})`;
+        const color = fx.type === 'success' || fx.type === 'ws-commit' ? `rgba(52,211,153,${alpha})`
+          : fx.type === 'fail' ? `rgba(248,113,113,${alpha})`
+          : fx.type === 'ws-rollback' ? `rgba(251,191,36,${alpha})`
+          : `rgba(34,211,238,${alpha})`;
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.strokeStyle = color;
@@ -370,6 +506,9 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
         const rect = rects[runningId];
         tx = rect.x + rect.w / 2;
         ty = rect.y + rect.h / 2 - 8;
+      } else if (wsRect) {
+        tx = wsRect.x + wsRect.w / 2;
+        ty = wsRect.y + wsRect.h / 2 - 8;
       } else if (ids.length) {
         tx = w / 2;
         ty = h - TASKBAR_H - 16;
@@ -450,19 +589,33 @@ export default function AgentCanvasEmulator({ nodes = {}, connectionStatus = '' 
       <div ref={wrapRef} className="relative h-[380px] w-full">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       </div>
-      <div className="px-4 py-2.5 border-t border-slate-800/60 bg-slate-900/40 flex justify-between items-center text-[10px] font-mono text-slate-500">
+      <div className="px-4 py-2.5 border-t border-slate-800/60 bg-slate-900/40 flex justify-between items-center gap-2 text-[10px] font-mono text-slate-500">
         <span className="truncate">
           {action ? (
             <>
-              cursor → <span className="text-cyan-300">{action}</span> • reacting to real SSE node states
+              cursor → <span className="text-cyan-300">{action}</span> • reacting to real SSE events
             </>
           ) : (
-            'Awaiting DAG execution — cursor animates on real node events'
+            'Awaiting events — RUN DAG or WORKSPACE DEMO animates the cursor on real state'
           )}
         </span>
-        <span className="flex items-center gap-1.5 shrink-0">
-          <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>
-          60fps canvas
+        <span className="flex items-center gap-2 shrink-0">
+          {workspace && (
+            <span className={`px-2 py-0.5 rounded-full border font-mono ${workspace.status === 'COMMITTED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : workspace.status === 'ROLLED_BACK' ? 'bg-amber-500/10 border-amber-500/20 text-amber-300' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-300'}`}>
+              WS {workspace.status}{workspace.changedFiles != null ? ` • ${workspace.changedFiles}f` : ''}
+            </span>
+          )}
+          <button
+            onClick={onWorkspaceDemo}
+            disabled={demoBusy}
+            className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-300 rounded text-[10px] font-mono disabled:opacity-50 transition-colors"
+          >
+            {demoBusy ? 'running…' : '▶ WORKSPACE DEMO'}
+          </button>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>
+            60fps
+          </span>
         </span>
       </div>
     </div>

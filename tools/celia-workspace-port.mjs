@@ -105,7 +105,7 @@ export function createTransactionalWorkspacePort({ root = process.cwd(), staging
 
       console.log(`[workspace-port] created ${id} method=${method} staging=${stagingPath} evidence=${evidenceRef?.slice(0,16) || 'none'}`);
 
-      return { workspaceId: id, stagingPath, realPath: root, method };
+      return { workspaceId: id, taskId, stagingPath, realPath: root, method };
     },
 
     async writeFile(workspaceId, filePath, content, evidenceRef) {

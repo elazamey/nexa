@@ -58,6 +58,8 @@ export default function NexaDashboard() {
   const [evidence, setEvidence] = useState([]);
   const [memory, setMemory] = useState([]);
   const [thinking, setThinking] = useState({ steps: [], model: 'grok-2' });
+  const [workspace, setWorkspace] = useState(null);
+  const [wsDemoBusy, setWsDemoBusy] = useState(false);
 
   useEffect(() => {
     const fetchState = async () => {
@@ -139,10 +141,13 @@ export default function NexaDashboard() {
         } else if (data.type === 'DAG_NODE_INJECTED') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔀 DAG injected ${data.payload.failedNodeId} → ${data.payload.injectedIds?.join(',')} v${data.payload.version}`, ...prev].slice(0,30));
         } else if (data.type === 'WORKSPACE_CREATED') {
+          setWorkspace({ id: data.payload.workspaceId, taskId: data.payload.taskId, method: data.payload.method, status: 'STAGING', changes: [], changedFiles: 0, lastEventAt: Date.now() });
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 📦 Workspace created ${data.payload.workspaceId} task=${data.payload.taskId}`, ...prev].slice(0,30));
         } else if (data.type === 'WORKSPACE_COMMIT') {
+          setWorkspace(prev => prev && prev.id === data.payload.workspaceId ? { ...prev, status: 'COMMITTED', changes: data.payload.changes || [], changedFiles: data.payload.changedFiles, committedAt: data.payload.committedAt, lastEventAt: Date.now() } : prev);
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ Workspace committed ${data.payload.workspaceId} ${data.payload.changedFiles} files atomic`, ...prev].slice(0,30));
         } else if (data.type === 'WORKSPACE_ROLLBACK') {
+          setWorkspace(prev => prev && prev.id === data.payload.workspaceId ? { ...prev, status: 'ROLLED_BACK', rolledBackAt: data.payload.rolledBackAt, lastEventAt: Date.now() } : prev);
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] 🔄 Workspace rollback ${data.payload.workspaceId} zero side effects`, ...prev].slice(0,30));
         } else if (data.type === 'REPLAY') {
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⏪ Replay from ${data.payload.fromIndex} checkpoint ${data.payload.checkpointIndex} no LLM calls`, ...prev].slice(0,30));
@@ -189,6 +194,39 @@ export default function NexaDashboard() {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ▶ Demo executed`, ...prev].slice(0,30));
     } catch (e) {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Demo failed: ${e.message}`, ...prev].slice(0,30));
+    }
+  };
+
+  // Real CoW workspace demo: create → write×3 → atomic commit (all via the live API)
+  const runWorkspaceDemo = async () => {
+    try {
+      setWsDemoBusy(true);
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] ▶ WS demo: create → write×3 → commit (real CoW)`, ...prev].slice(0,30));
+      const createRes = await fetch('/api/v1/workspace/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: 'nexa-live-desktop', evidenceRef: 'evidence:live-desktop-create' })
+      }).then(r => r.json());
+      const wsId = createRes.workspaceId;
+      const files = [
+        { path: '.nexa/live/plan.md', content: '# Live plan\n- observe DAG\n- stage files (CoW)\n- atomic commit\n' },
+        { path: '.nexa/live/patch.diff', content: '--- a/demo\n+++ b/demo\n@@\n+console.log("committed atomically");\n' },
+        { path: '.nexa/live/report.json', content: JSON.stringify({ task: 'nexa-live-desktop', ok: true, evidence: 'evidence:live-demo' }, null, 2) }
+      ];
+      for (const f of files) {
+        await fetch('/api/v1/workspace/write', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceId: wsId, path: f.path, content: f.content, evidenceRef: `evidence:live-demo:${f.path}` })
+        });
+      }
+      const commitRes = await fetch('/api/v1/workspace/commit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: wsId, evidenceRef: 'evidence:live-demo-commit' })
+      }).then(r => r.json());
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✅ WS demo committed ${commitRes.changedFiles} files (atomic)`, ...prev].slice(0,30));
+    } catch (e) {
+      setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ WS demo failed: ${e.message}`, ...prev].slice(0,30));
+    } finally {
+      setWsDemoBusy(false);
     }
   };
 
@@ -250,6 +288,10 @@ export default function NexaDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
+            <AgentCanvasEmulator nodes={nodes} workspace={workspace} connectionStatus={connectionStatus} onWorkspaceDemo={runWorkspaceDemo} demoBusy={wsDemoBusy} />
+          </div>
+
           <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-xl border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[460px] group hover:border-slate-700/80 transition-colors">
             <div className="px-4 py-3 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
               <h3 className="text-[11px] font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">

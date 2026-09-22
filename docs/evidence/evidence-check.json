@@ -1,12 +1,13 @@
 {
   "schema": "nexa-evidence-check/v1",
-  "checkedAt": "2026-09-22T01:29:33.609Z",
+  "checkedAt": "2026-09-22T01:40:30.524Z",
   "limits": "A digest match proves the bytes are unchanged since the digest was recorded. It does not prove the run happened, that the file describes the current code, or that any claim inside the file is true. Commit provenance is checked only when the package records a commit.",
   "packages": [
     {
       "package": "celia-library",
       "sums": "absent",
-      "note": "no SHA256SUMS: nothing in this package can be checked",
+      "note": "no SHA256SUMS: permanently unverifiable, acknowledged in UNVERIFIABLE.md",
+      "acknowledged": true,
       "manifest": {
         "present": false
       },
@@ -23,6 +24,12 @@
       },
       "provenance": {
         "recorded": false
+      },
+      "supersession": {
+        "valid": true,
+        "recorded": "2026-09-21",
+        "sealedAtCommit": "unrecorded",
+        "supersededBy": "p03-wiring, and p03-restore (sealed at commit 9a742fe)"
       },
       "files": [
         {
@@ -177,9 +184,11 @@
         },
         {
           "name": "tools/celia-workspace-commit-port.mjs",
-          "status": "mismatch",
+          "status": "superseded-explained",
           "recorded": "7d2d8532ec38368d83513cc20e6670b142bb2d46e5bf002f62ea31ef4444885b",
           "actual": "478e547ac58159580df7e812cf5586429afb4679c6d611eab3b3b7c3dfeec976",
+          "supersededRecorded": "2026-09-21",
+          "sealedAtCommit": "unrecorded",
           "bytes": 22819
         },
         {
@@ -602,7 +611,8 @@
   "summary": {
     "packages": 10,
     "match": 63,
-    "mismatch": 1,
+    "mismatch": 0,
+    "superseded-explained": 1,
     "missing": 0,
     "unlisted": 14,
     "malformed": 0,

@@ -10,10 +10,18 @@
  * to a commit unrelated to HEAD.
  *
  * So this tool emits facts, never judgements:
- *   - `match`    the recorded digest equals the recomputed digest
- *   - `mismatch` the file exists and its bytes differ from the record
- *   - `missing`  SHA256SUMS lists a file that is not on disk
- *   - `unlisted` a file exists in the package but no digest covers it
+ *   - `match`                 the recorded digest equals the recomputed digest
+ *   - `mismatch`              the file exists and its bytes differ from the record
+ *   - `missing`               SHA256SUMS lists a file that is not on disk
+ *   - `unlisted`              a file exists in the package but no digest covers it
+ *   - `superseded-explained`  a mismatch with a valid SUPERSEDED.md naming it
+ *
+ * `superseded-explained` is NOT a pass. It is a mismatch whose cause has been
+ * written down and attributed. It is produced only from the PRESENCE of a
+ * valid record, never from its absence: delete the record and the status
+ * reverts to `mismatch`. Old bundles are never re-sealed to make a mismatch go
+ * away — regenerated digests verify cleanly and describe nothing
+ * (docs/principles.md P5).
  *
  * The word "verified" does not appear in the output, and there is no score,
  * no aggregate grade and no badge. Digest agreement proves a file has not
@@ -71,6 +79,44 @@ function commitProvenance(commit) {
   }
 }
 
+/**
+ * Parse SUPERSEDED.md. Required fields: Status, Recorded, Reason, Files, and
+ * `Original sealed at commit` (which may be the literal `unrecorded` when the
+ * bundle genuinely did not record one — guessing a commit is forbidden).
+ *
+ * A malformed record does NOT downgrade a mismatch. An unparseable explanation
+ * is not an explanation.
+ */
+function readSupersession(directory) {
+  const path = join(directory, 'SUPERSEDED.md');
+  if (!fs.existsSync(path)) return null;
+  const text = fs.readFileSync(path, 'utf8');
+  const field = label => {
+    const match = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+(?:\\n(?!\\s*-\\s\\*\\*)[^\\n]+)*)`, 'i').exec(text);
+    return match ? match[1].trim().replace(/\s+/g, ' ') : null;
+  };
+  const record = {
+    status: field('Status'),
+    recorded: field('Recorded'),
+    sealedAtCommit: field('Original sealed at commit'),
+    reason: field('Reason'),
+    files: field('Files'),
+    supersededBy: field('Superseded by'),
+  };
+  const missingFields = ['status', 'recorded', 'sealedAtCommit', 'reason', 'files']
+    .filter(key => !record[key]);
+  if (missingFields.length) return { valid: false, missingFields, path: 'SUPERSEDED.md' };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(record.recorded)) {
+    return { valid: false, missingFields: ['Recorded must be YYYY-MM-DD'], path: 'SUPERSEDED.md' };
+  }
+  if (!/^(unrecorded|[0-9a-f]{7,40})$/i.test(record.sealedAtCommit)) {
+    return { valid: false, missingFields: ['Original sealed at commit must be a sha or `unrecorded`'], path: 'SUPERSEDED.md' };
+  }
+  // Only the files this record actually names may be downgraded.
+  const named = new Set(record.files.split(/[,\s]+/).filter(Boolean));
+  return { valid: true, ...record, covers: named };
+}
+
 function readManifest(directory) {
   const path = join(directory, 'manifest.json');
   if (!fs.existsSync(path)) return { present: false };
@@ -104,16 +150,23 @@ export function verifyEvidence({ evidenceDir = EVIDENCE_DIR } = {}) {
     const manifest = readManifest(directory);
 
     if (!fs.existsSync(sumsPath)) {
+      // An UNVERIFIABLE.md marks this as a permanent, acknowledged state
+      // rather than an outstanding task. It does not make the bundle checkable.
+      const marked = fs.existsSync(join(directory, 'UNVERIFIABLE.md'));
       packages.push({
         package: entry.name,
         sums: 'absent',
-        note: 'no SHA256SUMS: nothing in this package can be checked',
+        note: marked
+          ? 'no SHA256SUMS: permanently unverifiable, acknowledged in UNVERIFIABLE.md'
+          : 'no SHA256SUMS: nothing in this package can be checked',
+        acknowledged: marked,
         manifest, files: [],
       });
       continue;
     }
 
     const listed = parseSums(fs.readFileSync(sumsPath, 'utf8'));
+    const supersession = readSupersession(directory);
     const files = [];
     const covered = new Set();
     for (const record of listed) {
@@ -137,17 +190,25 @@ export function verifyEvidence({ evidenceDir = EVIDENCE_DIR } = {}) {
         continue;
       }
       const actual = sha256(filePath);
+      let status = actual === record.digest ? 'match' : 'mismatch';
+      // A mismatch is downgraded only when a VALID record names this file.
+      const explained = status === 'mismatch' && supersession?.valid
+        && (supersession.covers.has(record.name) || supersession.covers.has(bare));
+      if (explained) status = 'superseded-explained';
       files.push({
         name: record.name,
-        status: actual === record.digest ? 'match' : 'mismatch',
+        status,
         recorded: record.digest,
-        ...(actual === record.digest ? {} : { actual }),
+        ...(status === 'match' ? {} : { actual }),
+        ...(explained ? { supersededRecorded: supersession.recorded, sealedAtCommit: supersession.sealedAtCommit } : {}),
         bytes: fs.statSync(filePath).size,
       });
     }
     // Files present but covered by no digest are reported, not ignored.
     for (const name of fs.readdirSync(directory)) {
-      if (name === 'SHA256SUMS' || covered.has(name)) continue;
+      // SUPERSEDED.md is a comment ON the bundle, not a member of it, so it is
+      // deliberately outside SHA256SUMS and is not reported as unlisted.
+      if (name === 'SHA256SUMS' || name === 'SUPERSEDED.md' || covered.has(name)) continue;
       files.push({ name, status: 'unlisted', bytes: fs.statSync(join(directory, name)).size });
     }
 
@@ -156,6 +217,9 @@ export function verifyEvidence({ evidenceDir = EVIDENCE_DIR } = {}) {
       sums: 'present',
       manifest,
       provenance: commitProvenance(manifest.commit),
+      ...(supersession ? { supersession: supersession.valid
+        ? { valid: true, recorded: supersession.recorded, sealedAtCommit: supersession.sealedAtCommit, supersededBy: supersession.supersededBy ?? null }
+        : { valid: false, missingFields: supersession.missingFields, note: 'record is malformed; mismatches are NOT downgraded' } } : {}),
       files,
     });
   }
@@ -163,7 +227,7 @@ export function verifyEvidence({ evidenceDir = EVIDENCE_DIR } = {}) {
   return { schema: 'nexa-evidence-check/v1', checkedAt: new Date().toISOString(), limits: LIMITS, packages, summary: summarise(packages) };
 }
 
-const emptySummary = () => ({ packages: 0, match: 0, mismatch: 0, missing: 0, unlisted: 0, malformed: 0, packagesWithoutSums: 0 });
+const emptySummary = () => ({ packages: 0, match: 0, mismatch: 0, 'superseded-explained': 0, missing: 0, unlisted: 0, malformed: 0, packagesWithoutSums: 0 });
 
 function summarise(packages) {
   const summary = emptySummary();
@@ -173,6 +237,7 @@ function summarise(packages) {
     for (const file of pkg.files) {
       if (file.status === 'match') summary.match++;
       else if (file.status === 'mismatch') summary.mismatch++;
+      else if (file.status === 'superseded-explained') summary['superseded-explained']++;
       else if (file.status === 'missing') summary.missing++;
       else if (file.status === 'unlisted') summary.unlisted++;
       else if (file.status === 'malformed-record') summary.malformed++;
@@ -198,7 +263,8 @@ function main() {
       console.log(`${pkg.package.padEnd(36)} ${pkg.sums === 'present' ? JSON.stringify(counts) : 'NO SHA256SUMS'}  ${provenance}`);
     }
     const s = report.summary;
-    console.log(`\n${s.packages} packages: ${s.match} match, ${s.mismatch} mismatch, ${s.missing} missing, ${s.unlisted} unlisted, ${s.malformed} malformed, ${s.packagesWithoutSums} without SHA256SUMS`);
+    console.log(`\n${s.packages} packages: ${s.match} match, ${s.mismatch} mismatch, ${s['superseded-explained']} superseded-explained, ${s.missing} missing, ${s.unlisted} unlisted, ${s.malformed} malformed, ${s.packagesWithoutSums} without SHA256SUMS`);
+    if (s['superseded-explained']) console.log('superseded-explained is a documented gap, not a pass.');
     console.log(`\n${report.limits}`);
     console.log(`\nwrote ${relative(ROOT, output)}`);
   }

@@ -22,6 +22,9 @@ const STATUS_STYLE = {
   missing: { color: '#ffb86b', label: 'missing' },
   unlisted: { color: '#9aa4b2', label: 'unlisted (no digest)' },
   'malformed-record': { color: '#ffb86b', label: 'malformed record' },
+  // Grey, never green: a documented gap is still a gap.
+  'superseded-explained': { color: '#9aa4b2', label: 'SHA mismatch — superseded, explained' },
+  'no-sha256sums': { color: '#ffb86b', label: 'no SHA256SUMS — not checkable' },
 };
 
 function age(iso) {
@@ -107,8 +110,12 @@ export default function EvidenceCheckPanel() {
         </tbody>
       </table>
       <div style={{ ...muted, marginTop: 12 }}>
-        {report.summary.match} match · {report.summary.mismatch} mismatch · {report.summary.missing} missing ·{' '}
+        {report.summary.match} match · {report.summary.mismatch} mismatch ·{' '}
+        {report.summary['superseded-explained']} superseded-explained · {report.summary.missing} missing ·{' '}
         {report.summary.unlisted} unlisted · {report.summary.packagesWithoutSums} package(s) without SHA256SUMS
+        <div style={{ marginTop: 6 }}>
+          superseded-explained is a documented gap, not a pass. unlisted means no digest covers the file.
+        </div>
         <div style={{ marginTop: 6 }}>Checked {age(report.checkedAt)} ago. {report.limits}</div>
       </div>
     </section>

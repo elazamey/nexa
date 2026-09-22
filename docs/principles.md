@@ -123,6 +123,78 @@ the ignorance the mistake depends on.
 
 ---
 
+## P5 — Do not complete evidence retroactively
+
+**The rule:** an evidence bundle is sealed once, covers only what existed at
+that moment, and is never re-sealed. A bundle that is incomplete stays
+incomplete. It is annotated, not repaired.
+
+**What triggered it:** the evidence checker's first run reported 63 matches, one
+real mismatch, 14 files covered by no digest, and seven bundles recording no
+commit. The obvious next move was to regenerate the sums and backfill the
+commits. That move is a defect, and it is worth naming exactly why, because it
+looks like diligence.
+
+Regenerated digests **verify**. They are correct hashes of real files. They are
+also meaningless: they describe the bundle as it is today while presenting
+themselves as the seal taken at the moment the evidence was produced. The
+report would go green and the gap would vanish from it. The check would pass
+without measuring what it claims to measure — **P1, applied to the archive**.
+
+Backfilling a commit is worse, because it manufactures a fact. The HEAD at seal
+time is not known for those seven bundles. It could be inferred from timestamps
+and would probably even be right, but a guess written into an evidence record
+is indistinguishable from a measurement once it is written down. The only
+honest value is `unrecorded`.
+
+**The distinction that governs the response:**
+
+| Cause | Response |
+|---|---|
+| A file changed because the code moved on | `SUPERSEDED.md` beside the bundle. Never re-seal. |
+| `SHA256SUMS` is itself corrupt (truncated line, bad encoding) | Documented manual repair, original preserved. |
+| A file reads as `missing` because the record used a different path form | Fix the path resolution in the tool. The record is fine. |
+
+The first and third both occurred. The third was a bug in the checker, which
+initially reported 27 phantom missing files in `h2-atomicity` because that
+bundle records repo-relative paths while others record bare names — fixed in
+the resolver, with no evidence touched.
+
+**`superseded-explained` is not a pass.** It is a mismatch whose cause has been
+written down and attributed, and the checker emits it only from the *presence*
+of a valid record. Delete the record and the status reverts to `mismatch`. A
+malformed record downgrades nothing, because an unparseable explanation is not
+an explanation.
+
+**Where it is enforced:**
+- `tools/seal-evidence.mjs` refuses to seal a bundle that already has a
+  `SHA256SUMS`, and records `sealed_at`, `sealed_at_commit` and
+  `sealed_over_dirty_tree` read from the repository rather than supplied by hand.
+- `tools/verify-evidence.mjs` reports `unlisted` and `no commit recorded` as
+  standing facts about the historical record.
+- `tests/evidence-check.test.js` fails if a malformed record launders a
+  mismatch, if a record downgrades a file it does not name, or if
+  `superseded-explained` is ever counted as a match.
+
+**The general form:** the question is never "how do we close the gap", it is
+"how do we record that the gap is known". Closing a gap you cannot measure is
+decoration.
+
+**A corollary learned the hard way.** The mutation run for this very principle
+destroyed the bundle it was protecting: the test invoked the sealer against the
+live `h2-atomicity` while mutation M5 had the re-seal refusal disabled, and the
+real archive was overwritten (`docs/incidents/2026-09-mutation-destroyed-evidence.md`).
+The suite stayed green, because a re-sealed bundle is internally consistent —
+that is precisely what re-sealing does. It was caught by noticing a finding had
+*disappeared* from the report.
+
+> A test that invokes a write-capable tool must point it at a throwaway
+> directory. A mutation run deliberately breaks guards, so any test whose
+> safety depends on the guard it is testing will become destructive at exactly
+> the moment it matters.
+
+---
+
 ## How these are enforced
 
 - P1 — every package ships a mutation matrix in `docs/evidence/`; mutations run
@@ -133,6 +205,9 @@ the ignorance the mistake depends on.
 - P4 — `node tools/check-branch-sync.mjs` names dirty files before every push;
   `--strict` blocks while uncommitted work is present.
 - Repository state — `node tools/check-branch-sync.mjs` before committing.
+- P5 — `tools/seal-evidence.mjs` refuses to re-seal; old bundles keep their
+  `unlisted` and `no commit recorded` findings; gaps are annotated with
+  `SUPERSEDED.md` or `UNVERIFIABLE.md`, never regenerated.
 - Evidence claims — `npm run verify-evidence` recomputes digests; the dashboard
   displays that output and is forbidden by test from adding a verdict
   (`tests/evidence-check.test.js`).

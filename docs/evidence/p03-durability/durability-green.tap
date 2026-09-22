@@ -1,0 +1,56 @@
+TAP version 13
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-m8OfP0/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-fVn2OC/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-0Lrreq/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-bLPsuT/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/4: a cut before fsync leaves no uninterpretable state
+ok 1 - P03/4: a cut before fsync leaves no uninterpretable state
+  ---
+  duration_ms: 454.340519
+  type: 'test'
+  ...
+# {"attempt":1,"present":false,"state":null,"applied":[]}
+# {"attempt":2,"present":false,"state":null,"applied":[]}
+# {"attempt":3,"present":false,"state":null,"applied":[]}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-SMedJ8/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-kxNy5y/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-0wSdt3/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/5: a cut after fsync but before rename leaves the old target and an orphan temp
+ok 2 - P03/5: a cut after fsync but before rename leaves the old target and an orphan temp
+  ---
+  duration_ms: 427.245087
+  type: 'test'
+  ...
+# {"attempt":1,"temps":[".intent.json.34037.tmp"],"present":false}
+# {"attempt":2,"temps":[".intent.json.34048.tmp"],"present":false}
+# {"attempt":3,"temps":[".intent.json.34059.tmp"],"present":false}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-CWShr5/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/6: an orphan temp is never mistaken for a committed intent
+ok 3 - P03/6: an orphan temp is never mistaken for a committed intent
+  ---
+  duration_ms: 146.486764
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-EEZA3F/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/corrupt: an unreadable active intent is fail-closed, never treated as empty
+ok 4 - P03/corrupt: an unreadable active intent is fail-closed, never treated as empty
+  ---
+  duration_ms: 135.512297
+  type: 'test'
+  ...
+# An empty log and an unreadable log are different facts and never collapse into one.
+# Subtest: P03/order: a spent grant is refused 403 even while the root is unconfirmed
+ok 5 - P03/order: a spent grant is refused 403 even while the root is unconfirmed
+  ---
+  duration_ms: 228.906345
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1476.980026

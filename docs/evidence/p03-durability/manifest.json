@@ -1,0 +1,40 @@
+{
+  "package": "P03_DURABILITY_TESTS_4_6",
+  "date": "2026-09-21",
+  "branch": "arena/01a0c63f-nexa",
+  "node": "v22.22.3",
+  "designFirst": "durability ladder, corruption rule, decision order and lock decision written before any test",
+  "implemented": [
+    "test4 before-fsync contract",
+    "test5 after-fsync before-rename",
+    "test6 orphan temp not a commit",
+    "intent corruption fail-closed",
+    "decision-order contract"
+  ],
+  "notImplemented": [
+    "test7 crash during restore",
+    "test8 competing transactions",
+    "test9 signed recovery evidence"
+  ],
+  "changedFiles": {
+    "tools/celia-commit-intent-log.mjs": "6793a26a080bf2e258fe3025fdd4999b2b291f90e5a3cc82895f8fb9acf35c5b",
+    "tools/celia-workspace-commit-port.mjs": "f1a1bd30ed83ea83a3b690f4bb600acfd2a89dd51f12fc3e895b03e12c5043b9",
+    "tests/celia-commit-crash-durability.test.js": "d2aa20a99f007319fcaf6c9747b7c8db3e244c55af2a9752df4c6c7eac80e795",
+    "docs/design/p03-intent-log.md": "ca3aad7b1c510e41b25eda6daf2718f10ebd6f1c9f8d369b0ad6f9446284e67b"
+  },
+  "results": {
+    "durability": "5/5",
+    "priorBoundaries": "42/42",
+    "fullVerify": "525 PASS / 0 FAIL",
+    "gates": "6 CLOSED",
+    "attacks": "31/31"
+  },
+  "mutationMatrix": "mutation-matrix.md: 4 targeted mutations, every test killed by at least one, none kills all",
+  "notClaimed": [
+    "P03 closed",
+    "power-loss durability",
+    "independent recovery",
+    "rolling a commit forward",
+    "non-POSIX filesystems"
+  ]
+}

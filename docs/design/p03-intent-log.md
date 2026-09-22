@@ -107,6 +107,91 @@ declared limit — it does not simulate power loss.
 
 ---
 
+## 7bis. Declared durability ladder (fixed before tests 4-6)
+
+Without this ladder test 4 cannot fail, and a test that cannot fail is worse
+than one that passes wrongly. Each rung states what a reader may observe after
+a `SIGKILL` at that point.
+
+| Point | Guarantee |
+|---|---|
+| **before `fsync(file)`** | **No guarantee.** The last write may be lost on process death or power loss. This is **accepted and declared**, not a failure. |
+| **after `fsync(file)`, before `rename`** | Bytes are durable, but invisible through the target name. A reader sees the OLD content plus an orphan temp file. |
+| **after `rename`, before `fsync(dir)`** | The name is visible in cache; it may be absent after a machine restart. |
+| **after `fsync(dir)`** | Durably visible. |
+
+`SIGKILL` kills a process, not the page cache: data written but not `fsync`ed
+still survives process death. So these rungs are asserted against **process
+death**; only the `fsync` rungs are claimed for power loss, and no test here
+simulates power loss.
+
+### What tests 4-6 must assert
+
+**Test 4 (before `fsync`).** Do NOT assert a particular disk state — that would
+encode a filesystem timing accident as a contract. Assert the **contract**: at
+startup, either the write is present, or the intent reads `opened`, and in
+**no case** is there an unexplained partial state. The absence of an
+uninterpretable state is the property.
+
+**Test 5 (after `fsync`, before `rename`).** Old target plus an orphan temp
+file; the intent says `applying`. Correct recovery is **delete the temp and
+clear the intent** — this is *not* a rollback, because no write ever reached
+the name. It gets its own explicitly named branch in `planRecovery`
+(`ORPHAN_TEMP`), never silently folded into the restore path.
+
+**Test 6 (after `rename`, before the intent update).** The target carries
+`toDigest` while the intent still says `applying`. Decision: **roll the intent
+forward to `committed`, but only when EVERY `op.toDigest` matches the disk.**
+This advances digests only and writes no payload bytes, so it stays inside the
+"digests, never bytes" rule. If any digest fails to match, do not advance —
+classify and block.
+
+## 7ter. Intent-log corruption is fail-closed
+
+An active intent that cannot be parsed or validated at startup is the most
+dangerous state in the system, because every later decision reads it.
+
+- **No automatic erase, no inference, no "assume empty".** An empty log and an
+  unreadable log are different facts and must never collapse into one.
+- State `CORRUPT_INTENT` stops all commits on that root for an operator.
+- This mirrors the consumption store's existing rule that a missing or torn
+  journal is never treated as a fresh empty ledger.
+
+`inspectIntent` already returns `{ present: true, unconfirmed: true,
+unreadable: true }` for this case; tests 4-6 must cover it rather than leave it
+implied.
+
+## 7quater. Decision order is itself a contract
+
+The H1 regression in phase 1 was not a coding error; it was two correct rules
+disagreeing about order. Every new decision point is another chance for that
+same class of conflict, so the order is fixed here and tested as a unit rather
+than discovered per-point:
+
+```text
+1. authorize        (identity, capability, policy)
+2. consume          (durable, atomic; a spent grant is 403 even on a bad root)
+3. inspectIntent    (read on-disk transaction state)
+4. planRecovery     (classify: clear | forward | block)
+5. open intent      (durable BEFORE the first repository byte)
+6. apply            (targets, with per-op durable records)
+7. verify post-state
+8. close            (committed | recovered), then erase
+```
+
+**Rule 2-before-3 is load-bearing:** a spent authorization must be refused with
+`403` regardless of root state, so crash state can never mask a replay as a
+mere `503`. A test asserts this ordering directly.
+
+## 7quinquies. Locking is by file, not by process
+
+The in-memory `recoveryRequiredRoots` latch does not survive `SIGKILL`, which
+is precisely the failure P03 exists to handle. Mutual exclusion therefore
+relies on the **`O_EXCL` lock file** already used by the consumption store, and
+test 8 will be written against that contract. A lock is never broken merely
+because its owning PID died — a dead owner leaves an unconfirmed root, which is
+an operator decision, not an automatic reclaim.
+
 ## 8. RED plan (fixed before implementation)
 
 | # | Test | Proves |
@@ -121,7 +206,15 @@ declared limit — it does not simulate power loss.
 | 8 | two competing transactions on one root | lock + explicit refusal |
 | 9 | proven recovery then evidence | no `ok:true` without a real read |
 
-Tests 1–3 are implemented first. The rest only after the WAL is proven.
+**Packaging.** Tests 1-3 shipped as phase 1. Tests **4-6 are one package**: the
+same primitive (atomic write) cut at different points, sharing one harness and
+one decision (the durability ladder). Test **7 is a separate package** because
+it is a different state machine — the restore as a transaction. Tests **8-9
+follow 7**, and 8 depends on the file-lock decision in section 7quinquies.
+
+Merging these would repeat the P02.x trap: tests asserting what was chosen
+later instead of what the design forces, and no ability to attribute a
+regression to one change.
 
 **`SIGKILL` method:** real `spawn` + `process.kill(pid, 'SIGKILL')`, triggered at **named
 cut points** the child announces on `stderr` — never a race on `setTimeout`. Each cut point

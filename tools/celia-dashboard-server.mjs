@@ -42,6 +42,7 @@ import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/gov
 import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
 import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
 import { createPerimeter, HEALTH_ROUTE, SESSION_ROUTE, unauthorizedPayload } from './celia-perimeter-auth.mjs';
+import { createRateLimiter, sendTooManyRequests, rateLimitHeaders } from './celia-rate-limit.mjs';
 import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
 import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
@@ -97,6 +98,14 @@ const MIME = {
 // local/dev/test behaviour); production without a key refuses to start (layer 3).
 // Nothing here grants a capability: every gate is still enforced in-kernel.
 const perimeter = createPerimeter({
+  env: process.env,
+  onAudit: (entry) => emitDagEvent(entry.type, entry),
+});
+
+// === D1.10 / P0-B layer 2 — rate limit (defence in depth, never authorization).
+// Fixed window per identity (per peer for unauthenticated traffic). It bounds
+// credential-guessing and flood cost only; every gate decision stays in-kernel.
+const rateLimit = createRateLimiter({
   env: process.env,
   onAudit: (entry) => emitDagEvent(entry.type, entry),
 });
@@ -724,9 +733,23 @@ const server = createServer(async (req, res) => {
   }
 
   // --- D1.10 layer 1: identity. Order is contractual: session route → wall →
-  // CSRF → (layer 2 rate limit) → routes. Authenticated ≠ authorized: passing
-  // this point only names the caller; every gate below still decides on its own.
+  // rate limit → CSRF → routes. Authenticated ≠ authorized: passing this point
+  // only names the caller; every gate below still decides on its own.
   if (url.pathname === SESSION_ROUTE) {
+    // A login attempt has no identity yet, so it is charged to the peer address,
+    // and this is the one route where a small budget genuinely matters: it is
+    // the credential-guessing surface. The status probe (GET) is exempt — it is
+    // the SPA's "may I mount?" read, and a limiter there would show a login form
+    // to an operator who simply refreshed too often.
+    if (String(req.method).toUpperCase() === 'POST') {
+      const loginBudget = rateLimit.consume(rateLimit.keyFor(req, { kind: 'login' }), {
+        limit: rateLimit.loginMax,
+      });
+      if (!loginBudget.ok) {
+        sendTooManyRequests(res, loginBudget);
+        return;
+      }
+    }
     await perimeter.handleSession(req, res, url);
     return;
   }
@@ -735,6 +758,20 @@ const server = createServer(async (req, res) => {
   // — and static files carry no state and no data.
   if (url.pathname.startsWith('/api/')) {
     const identity = perimeter.authenticate(req, url);
+    // Layer 2 sits between authentication and authorization: a key is charged to
+    // the identity that reached it, and failed identity to the peer at the (much
+    // smaller) login budget. 429 therefore outranks 401 when both apply — the
+    // 401 path must not stay an unlimited credential oracle.
+    const budget = rateLimit.consume(rateLimit.keyFor(req, { context: identity.context }), {
+      limit: identity.ok ? rateLimit.max : rateLimit.loginMax,
+    });
+    if (!budget.ok) {
+      sendTooManyRequests(res, budget);
+      return;
+    }
+    for (const [name, value] of Object.entries(rateLimitHeaders(budget))) {
+      res.setHeader(name, value);
+    }
     if (!identity.ok) {
       res.writeHead(identity.status, {
         'Content-Type': 'application/json',

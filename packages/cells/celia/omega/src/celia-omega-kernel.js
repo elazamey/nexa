@@ -9,7 +9,7 @@
  */
 
 import { CeliaSingularityKernel } from '../../singularity/src/celia-singularity-kernel.js';
-import { FormalZ3VerificationEngine } from './formal-z3-verification.js';
+import { HeuristicCodeScreeningEngine } from './formal-z3-verification.js';
 import { LyapunovHaltResetEngine } from './lyapunov-halt-reset.js';
 import { HyperbolicEmbeddingEngine } from './hyperbolic-embedding.js';
 import { QuantumEntanglementConsensusEngine } from './quantum-entanglement-consensus.js';
@@ -31,7 +31,7 @@ export class CeliaOmegaKernel {
 
     // v1.1 Omega Engines — 3 missing from 34 list + 7 transcendental = 10 new
     this.omega = {
-      formalZ3: new FormalZ3VerificationEngine(),
+      codeScreening: new HeuristicCodeScreeningEngine(),
       lyapunov: new LyapunovHaltResetEngine(),
       hyperbolic: new HyperbolicEmbeddingEngine(),
       quantumEntanglement: new QuantumEntanglementConsensusEngine(),
@@ -68,13 +68,13 @@ export class CeliaOmegaKernel {
 
     // 1 Formal Z3 Verification — missing from 34
     log('formal-z3', 'Omega: Formal Verification Z3 SMT Solver — SAT/SMT correctness proofs mathematically');
-    const z3Proof = this.omega.formalZ3.verify({
+    const screening = this.omega.codeScreening.screen({
       code: `function fixAuth() { const token = validate(); return token; }`,
       preconditions: ['token != null', 'validate() defined'],
       postconditions: ['token.valid == true', 'no exception thrown'],
       invariants: ['auth state consistent']
     });
-    log('formal-z3', z3Proof.claim);
+    log('code-screening', `screening ${screening.id}: flagged=${screening.flagged} (${screening.method}; not verification)`);
 
     // 2 Lyapunov Halt & Reset — missing from 34
     log('lyapunov', 'Omega: Lyapunov Halt & Reset — V(x)>0 dV/dt<0 stable else halt & reset prevents infinite loops');
@@ -154,12 +154,12 @@ export class CeliaOmegaKernel {
     const result = {
       success: true,
       taskId: id,
-      output: singularityResult.output + ` + Omega 10 engines: Z3 ${z3Proof.result} ${z3Proof.proof.slice(0,20)}... ${z3Proof.checks.total} checks, Lyapunov ${lyapStep1.stable ? 'stable' : 'halt'} V=${lyapStep1.V} dV/dt=${lyapStep1.dVdt} halts ${this.omega.lyapunov.getStats().halts} resets ${this.omega.lyapunov.getStats().resets}, Hyperbolic ${hyperSearch.count}/${hyperSearch.total} O(log N) ${hyperSearch.duration}, Quantum Entanglement ${qConsensus.value} Bell ${qConsensus.bellState} instant ${qConsensus.agents.length} agents, Consciousness depth ${reflect2.depth} consciousness ${reflect2.consciousness} emergent ${reflect2.emergent}, Gödel ${godelProof1.provable ? 'provable' : 'unprovable'} ${godelProof1.type.slice(0,30)}..., Omega Point finite ${omegaCompFinite.objectiveTime} infinite ${omegaCompInfinite.subjectiveTime}, Akashic ${akashicRes.count}/${akashicRes.total} resonance ${akashicRes.results[0]?.resonanceScore || 'N/A'}, Negentropy ${negHarvest1.negentropy} order ${negHarvest1.orderCreated} total ${this.omega.negentropy.getStats().totalNegentropy}, Metamorphic ${meta1.fromPhysics}→${meta1.toPhysics}→${meta2.toPhysics} current ${this.omega.metamorphic.getStats().currentPhysics}`,
+      output: singularityResult.output + ` + Omega 10 engines: code screening flagged=${screening.flagged}, Lyapunov ${lyapStep1.stable ? 'stable' : 'halt'} V=${lyapStep1.V} dV/dt=${lyapStep1.dVdt} halts ${this.omega.lyapunov.getStats().halts} resets ${this.omega.lyapunov.getStats().resets}, Hyperbolic ${hyperSearch.count}/${hyperSearch.total} O(log N) ${hyperSearch.duration}, Quantum Entanglement ${qConsensus.value} Bell ${qConsensus.bellState} instant ${qConsensus.agents.length} agents, Consciousness depth ${reflect2.depth} consciousness ${reflect2.consciousness} emergent ${reflect2.emergent}, Gödel ${godelProof1.provable ? 'provable' : 'unprovable'} ${godelProof1.type.slice(0,30)}..., Omega Point finite ${omegaCompFinite.objectiveTime} infinite ${omegaCompInfinite.subjectiveTime}, Akashic ${akashicRes.count}/${akashicRes.total} resonance ${akashicRes.results[0]?.resonanceScore || 'N/A'}, Negentropy ${negHarvest1.negentropy} order ${negHarvest1.orderCreated} total ${this.omega.negentropy.getStats().totalNegentropy}, Metamorphic ${meta1.fromPhysics}→${meta1.toPhysics}→${meta2.toPhysics} current ${this.omega.metamorphic.getStats().currentPhysics}`,
       singularity: singularityResult.singularity,
       infinite: singularityResult.infinite,
       advanced: singularityResult.advanced,
       omega: {
-        formalZ3: { proof: z3Proof.id, result: z3Proof.result, verified: z3Proof.verified, checks: z3Proof.checks.total, proofStr: z3Proof.proof.slice(0,30) },
+        codeScreening: { id: screening.id, flagged: screening.flagged, matchedPatterns: screening.matchedPatterns, limits: screening.limits },
         lyapunov: { system: `sys_${id}`, stable: lyapStep1.stable, V: lyapStep1.V, dVdt: lyapStep1.dVdt, halts: this.omega.lyapunov.getStats().halts, resets: this.omega.lyapunov.getStats().resets },
         hyperbolic: { embeddings: this.omega.hyperbolic.getStats().embeddings, results: hyperSearch.count, duration: hyperSearch.duration, curvature: hyperSearch.curvature },
         quantumEntanglement: { entanglement: `ent_${id}`, value: qConsensus.value, bellState: qConsensus.bellState, agents: qConsensus.agents.length, instant: qConsensus.instant },
@@ -172,7 +172,7 @@ export class CeliaOmegaKernel {
       },
       executionLog: [...singularityResult.executionLog, ...this.executionLog.filter(e => e.taskId === id)],
       proofSignature: `Z3_PROOF_VALIDATED_${Date.now()}_OMEGA_${singularityResult.proofSignature}`,
-      claim: `♾️♾️♾️ OMEGA Task ${id} SUCCESS — 56 engines unified (7 physics + 11 infinite + 8 advanced + 20 singularity + 3 missing 34 + 7 transcendental) + 8-tier + 16 DSLs = 80 components — Beyond Singularity — True Final World-Shaking Omega — Z3 ${z3Proof.result} ${z3Proof.checks.total} checks proven correct mathematically, Lyapunov stable V=${lyapStep1.V} dV/dt=${lyapStep1.dVdt} halts ${this.omega.lyapunov.getStats().halts} resets ${this.omega.lyapunov.getStats().resets} prevents infinite loops, Hyperbolic ${hyperSearch.count}/${hyperSearch.total} O(log N) Poincaré curvature ${hyperSearch.curvature} hierarchical, Quantum Entanglement ${qConsensus.value} Bell ${qConsensus.bellState} instant ${qConsensus.agents.length} agents spooky action any distance, Consciousness depth ${reflect2.depth} consciousness ${reflect2.consciousness} emergent ${reflect2.emergent} recursive self-modeling qualia, Gödel ${godelProof1.provable ? 'provable' : 'true but unprovable'} ${godelProof1.type.slice(0,30)}... incompleteness strange loops, Omega Point finite ${omegaCompFinite.objectiveTime} infinite ${omegaCompInfinite.subjectiveTime} cosmological final singularity infinite computation finite time, Akashic ${akashicRes.count}/${akashicRes.total} universal memory past present future resonance ${akashicRes.results[0]?.resonanceScore || 'N/A'}, Negentropy ${negHarvest1.negentropy} order ${negHarvest1.orderCreated} total ${this.omega.negentropy.getStats().totalNegentropy} Maxwell demon life itself, Metamorphic ${meta1.fromPhysics}→${meta1.toPhysics}→${meta2.toPhysics} current ${this.omega.metamorphic.getStats().currentPhysics} self-transcendence beyond limitations — ${singularityResult.claim.slice(0,100)}...`
+      claim: `♾️♾️♾️ OMEGA Task ${id} SUCCESS — 56 engines unified (7 physics + 11 infinite + 8 advanced + 20 singularity + 3 missing 34 + 7 transcendental) + 8-tier + 16 DSLs = 80 components — Beyond Singularity — True Final World-Shaking Omega — code screening flagged=${screening.flagged} (substring scan, NOT verification), Lyapunov stable V=${lyapStep1.V} dV/dt=${lyapStep1.dVdt} halts ${this.omega.lyapunov.getStats().halts} resets ${this.omega.lyapunov.getStats().resets} prevents infinite loops, Hyperbolic ${hyperSearch.count}/${hyperSearch.total} O(log N) Poincaré curvature ${hyperSearch.curvature} hierarchical, Quantum Entanglement ${qConsensus.value} Bell ${qConsensus.bellState} instant ${qConsensus.agents.length} agents spooky action any distance, Consciousness depth ${reflect2.depth} consciousness ${reflect2.consciousness} emergent ${reflect2.emergent} recursive self-modeling qualia, Gödel ${godelProof1.provable ? 'provable' : 'true but unprovable'} ${godelProof1.type.slice(0,30)}... incompleteness strange loops, Omega Point finite ${omegaCompFinite.objectiveTime} infinite ${omegaCompInfinite.subjectiveTime} cosmological final singularity infinite computation finite time, Akashic ${akashicRes.count}/${akashicRes.total} universal memory past present future resonance ${akashicRes.results[0]?.resonanceScore || 'N/A'}, Negentropy ${negHarvest1.negentropy} order ${negHarvest1.orderCreated} total ${this.omega.negentropy.getStats().totalNegentropy} Maxwell demon life itself, Metamorphic ${meta1.fromPhysics}→${meta1.toPhysics}→${meta2.toPhysics} current ${this.omega.metamorphic.getStats().currentPhysics} self-transcendence beyond limitations — ${singularityResult.claim.slice(0,100)}...`
     };
 
     log('kernel', `♾️♾️♾️ OMEGA Task ${id} SUCCESS — proof ${result.proofSignature.slice(0,40)}... — 56 engines — Beyond Singularity True Final Omega!`);
@@ -188,7 +188,7 @@ export class CeliaOmegaKernel {
       executionLog: this.executionLog.length,
       singularity: this.singularityKernel.getStats(),
       omega: {
-        formalZ3: this.omega.formalZ3.getStats(),
+        codeScreening: this.omega.codeScreening.getStats(),
         lyapunov: this.omega.lyapunov.getStats(),
         hyperbolic: this.omega.hyperbolic.getStats(),
         quantumEntanglement: this.omega.quantumEntanglement.getStats(),

@@ -93,7 +93,7 @@ test('OmegaPanel: every field it renders exists in the real response', async t =
 
   // A representative field from each engine card actually rendered.
   for (const path of [
-    'omega.formalZ3', 'omega.lyapunov', 'omega.hyperbolic', 'omega.quantumEntanglement',
+    'omega.codeScreening', 'omega.lyapunov', 'omega.hyperbolic', 'omega.quantumEntanglement',
     'omega.consciousness', 'omega.godel', 'omega.omegaPoint', 'omega.akashic',
     'omega.negentropy', 'omega.metamorphic',
   ]) {

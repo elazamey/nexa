@@ -3,7 +3,7 @@
  * Exports all 10 omega engines (3 missing from 34 + 7 transcendental) + unified kernel 56 engines total
  */
 
-export { FormalZ3VerificationEngine } from './formal-z3-verification.js';
+export { HeuristicCodeScreeningEngine } from './formal-z3-verification.js';
 export { LyapunovHaltResetEngine } from './lyapunov-halt-reset.js';
 export { HyperbolicEmbeddingEngine } from './hyperbolic-embedding.js';
 export { QuantumEntanglementConsensusEngine } from './quantum-entanglement-consensus.js';

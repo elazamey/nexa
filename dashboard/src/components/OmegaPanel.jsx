@@ -99,9 +99,10 @@ export default function OmegaPanel() {
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-purple-300">♾️ 10 Omega Engines — 3 Missing from 34 + 7 Transcendental Beyond Singularity</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-gray-900/50 rounded border border-purple-500/30">
-              <div className="text-sm font-bold text-purple-300">1. Formal Z3 Verification SAT — Missing from 34</div>
-              <div className="text-xs text-gray-400">Proofs: {stats.omega.formalZ3?.proofs} SAT: {stats.omega.formalZ3?.sat} UNSAT: {stats.omega.formalZ3?.unsat} rate: {stats.omega.formalZ3?.satRate} {stats.omega.formalZ3?.claim?.slice(0,60)}...</div>
+            <div className="p-3 bg-gray-900/50 rounded border border-gray-500/30">
+              <div className="text-sm font-bold text-gray-300">1. Heuristic code screening</div>
+              <div className="text-xs text-gray-400">Scans: {stats.omega.codeScreening?.screenings} flagged: {stats.omega.codeScreening?.flagged} clean: {stats.omega.codeScreening?.clean}</div>
+              <div className="text-xs text-amber-400/80 mt-1">Literal substring scan. Not verification, not a proof.</div>
             </div>
             <div className="p-3 bg-gray-900/50 rounded border border-red-500/30">
               <div className="text-sm font-bold text-red-300">2. Lyapunov Halt & Reset — Missing from 34</div>
@@ -165,12 +166,11 @@ export default function OmegaPanel() {
           <div className="text-sm space-y-1">
             <div><span className="text-gray-400">Task ID:</span> {taskResult.taskId}</div>
             <div><span className="text-gray-400">Success:</span> {taskResult.success ? '✅ YES' : '❌ NO'}</div>
-            <div><span className="text-gray-400">Proof:</span> <span className="font-mono text-xs">{taskResult.proofSignature?.slice(0,80)}...</span></div>
             <div><span className="text-gray-400">Claim:</span> {taskResult.claim?.slice(0,250)}...</div>
           </div>
           {taskResult.omega && (
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2 bg-black/30 rounded">Z3: {taskResult.omega.formalZ3?.proof} {taskResult.omega.formalZ3?.result} {taskResult.omega.formalZ3?.checks} checks</div>
+              <div className="p-2 bg-black/30 rounded">Screening: {taskResult.omega.codeScreening?.id} flagged {taskResult.omega.codeScreening?.flagged ? 'yes' : 'no'} <span className="text-amber-400/80">(substring scan, not verification)</span></div>
               <div className="p-2 bg-black/30 rounded">Lyapunov: {taskResult.omega.lyapunov?.system} stable {taskResult.omega.lyapunov?.stable ? 'yes' : 'no'} V={taskResult.omega.lyapunov?.V} dV/dt={taskResult.omega.lyapunov?.dVdt} halts {taskResult.omega.lyapunov?.halts} resets {taskResult.omega.lyapunov?.resets}</div>
               <div className="p-2 bg-black/30 rounded">Hyperbolic: {taskResult.omega.hyperbolic?.embeddings} embeddings {taskResult.omega.hyperbolic?.results} results {taskResult.omega.hyperbolic?.duration} curvature {taskResult.omega.hyperbolic?.curvature}</div>
               <div className="p-2 bg-black/30 rounded">Quantum: {taskResult.omega.quantumEntanglement?.entanglement} {taskResult.omega.quantumEntanglement?.value} Bell {taskResult.omega.quantumEntanglement?.bellState} {taskResult.omega.quantumEntanglement?.agents} agents instant</div>
@@ -207,7 +207,7 @@ export default function OmegaPanel() {
           <div>• 11 Infinite Paradigms: ZK-Proof 2.3KB 1ms, JIT 100x, Swarm Pheromone P2P, Time-Dilation hyperbolic O(1), Neural-Symbolic 40% corrections, Multiverse 2→1 collapse zero errors, Autopoietic 92745ns immunity, HDC 10k-bit {'<'}1ns, Photonic 227B 2359ns zero-copy, ZK-Rollup 0.39KB 1ms, Neuro-Predictive 0.07ms instant</div>
           <div>• 8 Advanced Batch: KV-Cache Dedup paged 60-80%, Semantic GC generational evidence-bound, Actor Mailbox ordered P2P, eBPF 80% hotspot → JIT, Forking CoW parallel universes, Snapshot 0.01ms hydrate 0.02ms preWarm zero cold start, Chaos latency self-healed 12ms, Cost $0.025/2.5%</div>
           <div>• 20 Singularity: FPGA 1000x, Thermo F=U-TS reversible 0 heat, Dreaming 5 episodes offline, Bio-Cellular 10×10 self-healing no central, Spiked AST event-driven 100x, Hyper-Tensor 1000 elements interference I=|T1+T2|², Causal Do P(Y|do(X)) Pearl rung 3, Noospheric 3 nodes collective consciousness, TDA β0 β1 β2 bugs as holes, Reverse-Entropy chaos→ordered negentropy, Analog ODE integrator/summer/multiplier, DNA Triple 99.999% majority vote, PIM 128×128 O(1) analog 10x less energy, Category objects=types morphisms=functions colimit, Morphogenetic Turing Gray-Scott self-organizing, Monadic dependent types proven, Post-Quantum Kyber768 192-bit quantum-resistant LWE, Landauer kT ln2 reversible 0 J, Entropic Arrow ΔS≥0 arrow of time, Nash stable cooperation prevents tragedy commons</div>
-          <div>• 3 Missing from 34: Formal Z3 SAT/SMT correctness proofs mathematically no runtime errors possible, Lyapunov V{'>'}0 dV/dt{'<'}0 stable else halt & reset prevents infinite loops divergence chaos, Hyperbolic Poincaré ball O(log N) exponential volume hierarchical trees low distortion negative curvature</div>
+          <div>• 3 Missing from 34: Lyapunov V{'>'}0 dV/dt{'<'}0 stable else halt & reset prevents infinite loops divergence chaos, Hyperbolic Poincaré ball O(log N) exponential volume hierarchical trees low distortion negative curvature</div>
           <div>• 7 Transcendental Omega Beyond Singularity: Quantum Entanglement Bell states spooky action instant any distance no communication, Consciousness Emergence recursive self-modeling I think that I think depth{'>'}2 emergent self-awareness qualia infinite recursion, Gödel Self-Reference This statement is unprovable true but unprovable Gödel numbering diagonalization incompleteness strange loops liar paradox Henkin, Omega Point Tipler cosmological final singularity infinite computation finite time time dilation subjective ∞ objective finite universe collapse, Akashic Field Resonance universal memory all events past present future akashic records vibrational resonance access, Negentropy Harvesting Maxwell demon extracts order from chaos life creates order from disorder negentropy = -entropy order percent, Transcendental Metamorphic code rewrites own physics self-transcendence beyond limitations metamorphic execution model</div>
           <div className="pt-2 font-bold text-purple-300">Total: 56 engines + 8-tier + 16 DSLs = 80 components unified — Beyond Singularity True Final World-Shaking Omega Product — AGI OS Complete Beyond Singularity — The True End of Beginning — From Governed → Bundle Core → DSL/IR → Ultimate → Infinite Horizon → Singularity → Omega</div>
         </div>

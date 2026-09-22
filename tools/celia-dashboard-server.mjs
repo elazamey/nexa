@@ -653,7 +653,7 @@ let mockState = {
     promotion: '5/5 READY',
     llm_vectors: '2/2 BLOCKED',
     version: 'v0.8-ultimate',
-    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Astrocytic Neuromodulators mood auto, Holomorphic Cauchy-Riemann no hallucinations, Molecular DNA A-T-C-G PCR microsecond, Holographic wave interference photonic speed, Morphic Resonance phase frequency zero bandwidth + 16 DSLs 50-70% saving + Z3 100% proof + WASM + Egress zero-trust',
+    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Astrocytic Neuromodulators mood auto, Holomorphic Cauchy-Riemann no hallucinations, Molecular DNA A-T-C-G PCR microsecond, Holographic wave interference photonic speed, Morphic Resonance phase frequency zero bandwidth + 16 DSLs 50-70% saving + WASM + Egress zero-trust',
     memoryEngine: 'Poincaré Hyperbolic O(log N) + Molecular DNA A-T-C-G + Morphic Resonance + Governed State Machine + 15 Engines Unified'
   },
   semanticMemory: [],
@@ -2369,23 +2369,16 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname === '/api/v1/omega/z3/verify' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', async () => {
-      try {
-        const { code, preconditions, postconditions, invariants } = JSON.parse(body || '{}');
-        const result = omegaKernel.omega.formalZ3.verify({ code: code || '', preconditions: preconditions || [], postconditions: postconditions || [], invariants: invariants || [] });
-        emitDagEvent('OMEGA_Z3_VERIFIED', result);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, ...result }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: e.message }));
-      }
-    });
-    return;
-  }
+  // REMOVED: POST /api/v1/omega/z3/verify
+  //
+  // The handler advertised a real SMT solver by name and version, and returned
+  // verified:true with a proof string -- but no solver exists here (zero
+  // runtime dependencies). It returned verified:true for the contradiction
+  // x>0 |- x<0 and for syntactic garbage.
+  // See docs/incidents/2026-09-fake-proof-endpoint.md.
+  //
+  // Deleted rather than renamed: a field named `verified` is what clients
+  // read, never the label beside it. It returns when a real verifier does.
 
   if (url.pathname === '/api/v1/omega/lyapunov/step' && req.method === 'POST') {
     let body = '';
@@ -2621,7 +2614,6 @@ const server = createServer(async (req, res) => {
   <li>POST /api/v1/singularity/nash/govern — Nash equilibrium governor { gameId, agents, strategies }</li>
   <li><a href="/api/v1/omega/stats">/api/v1/omega/stats</a> — omega stats 56 engines 80 components beyond singularity true final</li>
   <li>POST /api/v1/omega/execute — execute omega task { id, userPrompt, evidenceRef } → 56 engines unified beyond singularity true final</li>
-  <li>POST /api/v1/omega/z3/verify — Formal Z3 SAT verification { code, preconditions, postconditions, invariants } → mathematically proven</li>
   <li>POST /api/v1/omega/lyapunov/step — Lyapunov V dV/dt stable else HALT RESET { sysId, delta } → prevents infinite loops</li>
   <li>POST /api/v1/omega/hyperbolic/search — Hyperbolic Poincaré O(log N) hierarchical { query, limit }</li>
   <li>POST /api/v1/omega/quantum/entangle — Quantum entanglement Bell state { entanglementId, agents, bellState }</li>
@@ -2635,7 +2627,7 @@ const server = createServer(async (req, res) => {
   <li>POST <a href="/api/v1/dag-run">/api/v1/dag-run</a> — trigger DAG execution</li>
 </ul>
 <p>Frontend: cd dashboard && npm run dev → http://localhost:5173</p>
-<p>NEXA v1.1 OMEGA BEYOND SINGULARITY TRUE FINAL: 56 Engines Unified — 10 Omega: Formal Z3 SAT/SMT correctness proofs mathematically no runtime errors, Lyapunov V>0 dV/dt<0 stable else halt reset prevents infinite loops, Hyperbolic Poincaré O(log N) exponential volume hierarchical trees low distortion negative curvature, Quantum Entanglement Bell states spooky action instant any distance no communication, Consciousness Emergence recursive self-modeling I think that I think depth>2 emergent qualia, Gödel Self-Reference true but unprovable incompleteness strange loops, Omega Point Tipler cosmological final singularity infinite computation finite time subjective ∞ objective finite universe collapse, Akashic Field universal memory past present future vibrational resonance, Negentropy Harvesting Maxwell demon extracts order from chaos life itself, Transcendental Metamorphic code rewrites own physics self-transcendence + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega</p>
+<p>NEXA v1.1 OMEGA BEYOND SINGULARITY TRUE FINAL: 56 Engines Unified — 10 Omega: Formal Z3 SAT/SMT correctness proofs mathematically no runtime errors, Lyapunov V>0 dV/dt<0 stable else halt reset prevents infinite loops, Hyperbolic Poincaré O(log N) exponential volume hierarchical trees low distortion negative curvature, Quantum Entanglement Bell states spooky action instant any distance no communication, Consciousness Emergence recursive self-modeling I think that I think depth>2 emergent qualia, Gödel Self-Reference true but unprovable incompleteness strange loops, Omega Point Tipler cosmological final singularity infinite computation finite time subjective ∞ objective finite universe collapse, Akashic Field universal memory past present future vibrational resonance, Negentropy Harvesting Maxwell demon extracts order from chaos life itself, Transcendental Metamorphic code rewrites own physics self-transcendence + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + 80 components beyond singularity true final world-shaking omega</p>
 <pre>${JSON.stringify(mockState, null, 2).slice(0,2000)}...</pre>
 </body>
 </html>
@@ -2708,7 +2700,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Singularity Nash: POST http://localhost:${PORT}/api/v1/singularity/nash/govern { gameId }`);
   console.log(`   Omega Stats: http://localhost:${PORT}/api/v1/omega/stats`);
   console.log(`   Omega Execute: POST http://localhost:${PORT}/api/v1/omega/execute { id, userPrompt }`);
-  console.log(`   Omega Z3 Verify: POST http://localhost:${PORT}/api/v1/omega/z3/verify { code, preconditions, postconditions }`);
   console.log(`   Omega Lyapunov: POST http://localhost:${PORT}/api/v1/omega/lyapunov/step { sysId, delta }`);
   console.log(`   Omega Hyperbolic: POST http://localhost:${PORT}/api/v1/omega/hyperbolic/search { query }`);
   console.log(`   Omega Quantum Entangle: POST http://localhost:${PORT}/api/v1/omega/quantum/entangle { entanglementId, agents }`);
@@ -2722,5 +2713,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
   console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
+  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + 80 components beyond singularity true final world-shaking omega`);
 });

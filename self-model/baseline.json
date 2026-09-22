@@ -36,6 +36,10 @@
     {
       "date": "2026-09-22",
       "event": "إغلاق D1.2: 584/584 أخضر (545 أساس + 39 إضافات؛ صفر فشل، صفر كسر). الشواهد: self-model/evidence/d1.2-red.tap ثم d1.2-green.tap"
+    },
+    {
+      "date": "2026-09-22",
+      "event": "تسجيل الملحق O التشغيلي: D1.9–D1.16 + عائلة O01..O08 + 13 مُعيد إنتاج؛ 597/597 أخضر (584 أساس + 13 مُعيدًا؛ صفر فشل، صفر كسر)"
     }
   ],
   "post_d1_2": {
@@ -47,6 +51,19 @@
     "pass": 584,
     "fail": 0,
     "breakdown": "545 الأساس + 16 اختبار انعكاس D1.2 + 13 حارسًا + 10 مُعيدِي إنتاج فجوات مفتوحة (D1.3–D1.7)",
+    "side_effects_restored": [
+      "dashboard/data/hunt-memory.json"
+    ]
+  },
+  "post_registration_o": {
+    "date": "2026-09-22",
+    "commit": "working tree — تغيير التسجيل (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 597,
+    "pass": 597,
+    "fail": 0,
+    "breakdown": "584 الأساس + 3 (D1.9) + 3 (D1.10) + 1 (D1.11) + 2 (D1.12) + 1 (D1.13) + 1 (D1.14) + 1 (D1.15) + 1 (D1.16)",
     "side_effects_restored": [
       "dashboard/data/hunt-memory.json"
     ]

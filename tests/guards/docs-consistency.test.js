@@ -72,8 +72,19 @@ test('Guard D1.1/docs: مصادر الفشل A01..A13 كلها معرفة في �
     const code = `A${String(i).padStart(2, '0')}`;
     assert.ok(audit.includes(`**${code}**`), `التقرير لا يعرف ${code}`);
   }
+  // ملحق O (gaps.json v2.1.0-ops): العائلة التشغيلية O01..O08 معرفة في التقرير أيضًا.
+  for (let i = 1; i <= 8; i++) {
+    const code = `O${String(i).padStart(2, '0')}`;
+    assert.ok(audit.includes(`**${code}**`), `التقرير لا يعرف ${code}`);
+  }
   const usedSources = new Set(gaps.gaps.flatMap(g => g.sources));
-  assert.equal(usedSources.size, 13, 'كل مصادر الفشل A01..A13 يجب أن تُستخدم في الفهرس');
+  for (let i = 1; i <= 13; i++) {
+    assert.ok(usedSources.has(`A${String(i).padStart(2, '0')}`), 'كل مصادر A01..A13 يجب أن تبقى مستخدمة في الفهرس');
+  }
+  // تعميم محافظ: أي مصدر مستخدم (A أو O) يجب أن يكون معرّفًا في التقرير — لا إسناد وهمي.
+  for (const code of usedSources) {
+    assert.ok(audit.includes(`**${code}**`), `مصدر مستخدم بلا تعريف في التقرير: ${code}`);
+  }
 });
 
 test('Guard D1.1/docs: العقد v0.3 يحمل البنود المرجعية للتذاكر والتعديلات الختامية', () => {

@@ -112,3 +112,88 @@
 
 ---
 *نُقل هذا التقرير إلى الفرع `arena/01a0cb16-nexa` ضمن commit إعادة البناء. المراجع التعاقدية: `docs/Artifact_Reader_Contract.md` (v0.3-rebuild)، `docs/Detector_Independence_Assertions.md` (17 assertion).*
+
+---
+
+## ملحق O — نتائج حدود التشغيل (إضافة 2026-09-22، فرع `arena/01a0cb5b-nexa`)
+
+> **طبيعة هذا الملحق:** إضافة (append-only) — لا تعديل على §§0–7 أعلاه ولا على
+> الأرقام المجمدة. يوثق نتائج مراجعة الحدود التشغيلية (خارج خط الأنابيب الأمني):
+> الخادم HTTP، عزل المخرجات، المزامنة التوثيقية، الـ CI. كل نتيجة مسندة إلى
+> `ملف:سطر`، ومسجلة في `self-model/gaps.json` كتذاكر D1.9–D1.16 بعائلة مصادر
+> جديدة `O01..O08` (الحرف O = operational، لتمييزها عن عائلة A الخاصة بخط الصيد).
+
+### O1. سجل القرار: حالة النشر على Render (سؤال P0-3 الأول)
+
+* `render.yaml` موجود (blueprint باسم `nexa-dashboard`، `autoDeploy: true`)، لكن
+  **لا يوجد أي مرجع لمنشور فعلي** في المستودع (لا `onrender.com`، لا tags، لا URLs).
+* فحص حي بتاريخ 2026-09-22 للـ URL الافتراضي `https://nexa-dashboard.onrender.com/`
+  و`/api/celia/state` أعاد نص `Not Found` — وهو **ليس** رد خادم NEXA (الذي يخدم
+  HTML في `/` وJSON في `/api/celia/state`)، بل رد موجّه المنصة لخدمة غير موجودة.
+* **القرار:** الحالة = **غير منشور** على الـ URL الافتراضي. لا طوارئ نشر؛ الترتيب
+  المعتمد (P0-A → P0-B → P0-C…) يبقى كما هو. إن رُبط الريبو بـ Render لاحقًا،
+  فـ `autoDeploy: true` سينشر تلقائيًا — لذا تبقى P0-B مبكرة احترازيًا.
+
+### O2. خريطة التغطية بالمصرّحات (سؤال P0-3 الثاني — من الكود مباشرة)
+
+| المسار | الحماية الفعلية | الحكم |
+|:---|:---|:---|
+| `POST /api/v1/workspace/write` | `authorizeWorkspaceWrite` (توقيع/قدرة/سياسة، رفض افتراضي) `tools/celia-dashboard-server.mjs:1177` | ✅ مقفل |
+| `POST /api/v1/workspace/commit` | `commitWorkspace` (هوية→قدرة→سياسة→منفذ) `:1216` | ✅ مقفل |
+| `POST /api/v1/terminal/execute` | `approvalLedger.consume` — لكن الـ approval نفسه مفتوح (أدناه) | ⚠️ مفتوح عبر سلسلة |
+| `POST /api/v1/authorizations/request` | لا شيء — يُسجَّل الطلب باسم `dashboardOperator.kid` لأي متصل `:1362` | ❌ مفتوح |
+| `POST /api/v1/authorizations/{id}/approve` | `approverKid ?? dashboardOperator.kid` + فحص سلسلة نصية بلا توقيع (`packages/policy/src/approval.js:399-402`) | ❌ مفتوح — **لا يوجد `CELIA_TERMINAL_AUTH` أصلًا** |
+| `POST /api/v1/workspace/rollback` | لا شيء سوى `workspaceId` `:1245` | ❌ مفتوح (تغيير حالة) |
+| `POST /api/v1/workspace/create` | لا شيء سوى `taskId` `:1131` | ❌ مفتوح (إنشاء) |
+| `POST /api/v1/missions/create` + `/run` | لا شيء `:1582` | ❌ مفتوح |
+
+سلسلة التجاوز عن بُعد (بلا أي سر): `request` → `approve {}` (يُقبل كهوية المشغّل
+افتراضيًا) → `terminal/execute` (تنفيذ حقيقي داخل الـ jail). التخفيفات الباقية
+(jail + قائمة برامج + ربط الهدف) دفاع أخير، لا حدّ مصادقة.
+
+**علة عقدية ملازمة (اكتُشفت أثناء كتابة مُعيد D1.10):** مسار
+`authorizations/{id}/approve|deny|consume` يستخرج المعرف بـ `split('/')` خامًا
+بلا `decodeURIComponent`، بينما الواجهة (`NexaDashboard.jsx:371,386,400`) ترمّز
+المعرف دائمًا — فنداء الواجهة الحقيقي يفشل 400. لا اختبار HTTP يغطي `approve`
+أصلًا. تُعالج ضمن إغلاق D1.10 (فك الترميز + تثبيت العقد raw/encoded باختبار).
+
+### O3. سجل عملاء الخادم (سؤال P0-3 الثالث + بوابة ما قبل الـ strangler)
+
+| العميل | النوع | الدليل |
+|:---|:---|:---|
+| Dashboard SPA | `fetch` نسبي (~30 موقعًا) | `dashboard/src/**/*.jsx` |
+| اختبارات HTTP | تنسخ السيرفر إلى tmpdir وتشغّله كابن (env لا يرث الأسرار) | `tests/celia-workspace-auth-helpers.mjs` (`PORT: '0'`) |
+| لا عملاء آخرون | `bughunter.mjs` و`autopilot.js` لا يخاطبان الخادم عبر HTTP إطلاقًا (لا `fetch` ولا `http.request` إليه) | بحث شامل في `src/` و`tools/` |
+
+أي تغيير على المحيط (مصادقة/حد معدل) يجب أن يبقى مفتوحًا عند غياب الـ env حتى
+لا ينكسر العميلان أعلاه — وهذا قيد تصميم P0-B، لا خيار.
+
+### O4. مصادر التشغيل O01–O08
+
+| الرمز | مصدر التشغيل | الإسناد |
+|:---|:---|:---|
+| **O01** | ملفات tracked تُعدَّل من التشغيل: `HuntMemory` الافتراضي + `bug-report.json` المتصلب + سكربت اختبار بلا عزل | `src/security/hunter/hunt-memory.js:9`، `src/security/agentic-hunter.js:143-149`، `package.json` |
+| **O02** | محيط HTTP بلا مصادقة عامة: سلسلة request→approve→execute مفتوحة + rollback/create/missions بلا مصرّح | `tools/celia-dashboard-server.mjs:1131,1245,1357,1431,1582` + `packages/policy/src/approval.js:399-402` |
+| **O03** | الإنتاج يعمل مع `mock://memory` بصمت بلا حارس بدء | `tools/celia-dashboard-server.mjs:104-105` |
+| **O04** | ادعاءات أعداد متقادمة في ثلاثة أماكن (501 مقابل 545 مقابل 314) | `README.md:66,504,512`، `pub-verifier.sh:29`، `publish-v0.1.plan.json` |
+| **O05** | متغيرات env بلا مرجع مركزي ولا `.env.example` | `CELIA_*`/`SUPABASE_*`/`PORT` مبعثرة في `tools/` |
+| **O06** | توثيق بلا فهرس/مالك (30+ ملفًا) | غياب `docs/README.md` |
+| **O07** | ازدواج ملفات بلا حارس مزامنة (7 نسخ edge-rag متطابقة + workspace.html مكرر + index.html متباينان) | `adapters/edge-rag/` مقابل `dashboard/public/` |
+| **O08** | بناء الداشبورد غير مُختبر في PRs | `.github/workflows/ci.yml` بلا خطوة dashboard (فقط `deploy-pages.yml` على main) |
+
+### O5. التذاكر التشغيلية (تُدار في `self-model/gaps.json`)
+
+| الفجوة | المسار | الأولوية | المصدر | الحالة |
+|:---|:---|:---|:---|:---|
+| **D1.9** | P0-A عزل مخرجات الاختبار (bootstrap إلزامي) | high | O01 | مفتوحة |
+| **D1.10** | P0-B مصادقة محيط + حد معدل (env-gated) | critical | O02 | مفتوحة |
+| **D1.11** | P0-C حارس بدء الإنتاج (fail-fast مع mock) | high | O03 | مفتوحة |
+| **D1.12** | P1-A مزامنة أعداد الاختبارات | medium | O04 | مفتوحة |
+| **D1.13** | P1-B ملف `.env.example` | low | O05 | مفتوحة |
+| **D1.14** | P1-C فهرس `docs/` | low | O06 | مفتوحة |
+| **D1.15** | P1-D حارس الملفات المكررة | medium | O07 | مفتوحة |
+| **D1.16** | P2 بناء الداشبورد في CI | medium | O08 | مفتوحة |
+
+قواعد ملزمة لهذه التذاكر (نفس نمط D1.x): إغلاق = اختبار انعكاس في `tests/`
+خارج known-gaps + `enforced:true` + `verification` + `closed_at` في التغيير نفسه؛
+مُعيد الإنتاج يُزال في تغيير الإغلاق نفسه؛ أي حارس يُعدَّل يُوثَّق سبب تعديله هنا.

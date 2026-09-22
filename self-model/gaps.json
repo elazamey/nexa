@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-rebuild",
+  "version": "2.1.0-ops",
   "provenance": {
     "note": "إعادة بناء لفهرس الفجوات المفقود من جلسة arena/01a0cabd-nexa (كان untracked وفُقد). الاشتقاق من الكود في 085a9c7 وفق docs/repository-audit-2026-09-22.ar.md §4-§5.",
     "rebuilt_at": "2026-09-22T22:15:00Z",
@@ -8,13 +8,16 @@
       "docs/repository-audit-2026-09-22.ar.md",
       "docs/Detector_Independence_Assertions.md",
       "docs/Artifact_Reader_Contract.md"
-    ]
+    ],
+    "ops_addendum": "ملحق O التشغيلي 2026-09-22 (فرع arena/01a0cb5b): عائلة مصادر O01..O08 وتذاكر D1.9–D1.16 — اشتقاق من الكود (§O4 في التقرير)، لا من الجلسة المفقودة"
   },
   "rules": {
     "enforced_requires_verification": "enforced:true بلا verification في tests/ خارج known-gaps = مرفوض (يُختبر في tests/guards/gaps-consistency.test.js)",
     "known_gaps_semantics": "نجاح اختبار في tests/known-gaps/ = إعادة إنتاج الفشل، لا دليل سلامة؛ يُزال ملف الفجوة في نفس تغيير إغلاقها",
     "closure_change": "الإغلاق = اختبار انعكاس في tests/ (ليس known-gaps) + enforced:true + verification + closed_at في التغيير نفسه، بعد إثبات الفشل قبل الإصلاح",
-    "full_run_hygiene": "التشغيل الكامل عند الحاجة فقط؛ بعده تُستعاد dashboard/data/hunt-memory.json من HEAD ويُسجل الرقم في self-model/baseline.json"
+    "full_run_hygiene": "التشغيل الكامل عند الحاجة فقط؛ بعده تُستعاد dashboard/data/hunt-memory.json من HEAD ويُسجل الرقم في self-model/baseline.json",
+    "operational_family": "عائلة O01..O08 مصادر تشغيلية (خادم/اختبارات/توثيق/CI) معرّفة في ملحق O بالتقرير؛ تخضع لنفس قواعد الإغلاق D1.x",
+    "gap_reference_matching": "مطابقة مراجع الفجوات boundary-aware (D1.10 لا يطابق D1.1) — إصلاح علة كامنة في الحارس كانت ستمنع أي D1.1x"
   },
   "gaps": [
     {
@@ -219,7 +222,216 @@
       "opened_at": "2026-09-22T22:15:00Z",
       "closed_at": null,
       "ticket_status": "open — محجوبة بـ D1.2"
+    },
+    {
+      "id": "D1.9",
+      "track": "P0-A",
+      "severity": "high",
+      "area": "tests",
+      "title": "عزل مخرجات الاختبار عن الملفات المُتتبَّعة (test bootstrap إلزامي)",
+      "sources": [
+        "O01"
+      ],
+      "current": "npm test يعدّل dashboard/data/hunt-memory.json (مُتتبَّع) كل تشغيل؛ HuntMemory الافتراضي يحل إلى ملف داخل الشجرة (hunt-memory.js:9) وbug-report.json متصلب (agentic-hunter.js:143-149) وسكربت الاختبار بلا عزل — يلزم استعادة يدوية من HEAD بعد كل تشغيل كامل",
+      "required": "bootstrap إلزامي للمجموعة: NEXA_HUNT_MEMORY وNEXA_BUG_REPORT إلى مسارات مؤقتة فريدة لكل عملية قبل أي اختبار؛ الافتراضات الإنتاجية (dashboard/data) تبقى كما هي خارج المجموعة؛ التشغيل الكامل يترك الشجرة نظيفة بلا استعادة يدوية",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/test-output-isolation.test.js (مخطط)",
+        "criteria": [
+          "تحت npm test: مسارا HuntMemory والـ hunter يحلان داخل tmp حصرًا",
+          "خارج المجموعة (env غائب): الافتراض dashboard/data كما هو (سلوك النشر/الإنتاج unchanged)",
+          "التشغيل الكامل ينتهي بـ git status نظيف لملفات dashboard/data بلا تدخل",
+          "لا كتابة متزامنة متضاربة بين ملفات الاختبار المتوازية (مسار فريد لكل عملية)"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.10",
+      "track": "P0-B",
+      "severity": "critical",
+      "area": "server",
+      "title": "مصادقة محيط للخادم HTTP + حد معدل (env-gated، مفتوح عند الغياب)",
+      "sources": [
+        "O02"
+      ],
+      "current": "سلسلة request→approve→terminal/execute مفتوحة بلا أي سر (approve تقبل approverKid الافتراضي بفحص سلسلة بلا توقيع)؛ rollback/create/missions بلا مصرّح؛ لا API key ولا rate limit على أي من ~110 مسارات",
+      "required": "طبقة محيط فقط (ليست بديل capability/policy/evidence): NEXA_API_KEY عبر env — غائب=سلوك اليوم (يبقي عميلَي Q3 أخضرين)، معرّف=مصادقة على كل /api/* + حد معدل بلا اعتماديات؛ production بلا مفتاح = fail-fast؛ العملاء المحصورون (SPA + اختبارات HTTP) يبقون أخضرين",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/server-perimeter.test.js (مخطط)",
+        "criteria": [
+          "مع NEXA_API_KEY: سلسلة request→approve بلا مفتاح تُرفض 401 ولا تنفذ شيئًا",
+          "مع المفتاح الصحيح: السلسلة تعمل كما اليوم (لا كسر سلوكي)",
+          "بلا المفتاح (محلي/اختبار): كل شيء كما اليوم — اختبارات HTTP الحالية خضراء بلا تعديل",
+          "حد المعدل يرفض الإغراق (429) ولا يخنق الاستخدام العادي للواجهة",
+          "لا تغيير في kernel: protocol/capability/policy/crypto/evidence/vectors خارج النطاق",
+          "عقد approve/deny/consume مثبّت: فك ترميز المعرف (raw وencoded يعملان) — علة اكتُشفت في مُعيد D1.10"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.11",
+      "track": "P0-C",
+      "severity": "high",
+      "area": "server",
+      "title": "حارس بدء التشغيل: الإنتاج يرفض mock://memory بصمت",
+      "sources": [
+        "O03"
+      ],
+      "current": "الخادم يسقط إلى mock://memory عند غياب SUPABASE_* حتى مع NODE_ENV=production، ويقلع ويخدم بنجاح — 'يعمل محليًا ويفشل إنتاجيًا' بصمت",
+      "required": "fail-fast عند الإقلاع: NODE_ENV=production + ذاكرة mock = خروج فوري برمز غير صفري ورسالة سبب؛ التطوير/الاختبار يبقيان على السلوك الحالي",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/server-startup-guard.test.js (مخطط)",
+        "criteria": [
+          "NODE_ENV=production بلا SUPABASE: الخادم لا يستمع أبدًا ويخرج برمز فشل",
+          "NODE_ENV=production مع إعداد حقيقي (أو بديل موثق): يقلع طبيعيًا",
+          "التطوير والاختبار (mock): يقلعان كما اليوم بلا أي تغيير"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.12",
+      "track": "P1-A",
+      "severity": "medium",
+      "area": "docs",
+      "title": "مزامنة ادعاءات أعداد الاختبارات (README/الخطط/المحقق)",
+      "sources": [
+        "O04"
+      ],
+      "current": "ثلاثة أرقام متضاربة: README يقول 501/501 (سطر 66 و504) و545 (سطر 512) والفعلي 584؛ الخطط تقول 314/314؛ pub-verifier.sh يفحص '314' حرفيًا مع fallback ضعيف",
+      "required": "مصدر حقيقة واحد قابل للفحص: المحقق يقرأ العدد ديناميكيًا من ناتج المجموعة (لا أرقام حرفية)، والتوثيق يشير إلى القياس المسجل في baseline بدل ادعاء رقم ثابت",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/count-claims-sync.test.js (مخطط)",
+        "criteria": [
+          "لا رقم اختبارات حرفي في README (إحالة إلى baseline)",
+          "pub-verifier.sh يستخرج العدد من المخرجات ويفشل عند عدم التطابق (لا grep pass)",
+          "الخطط القديمة مؤرشفة أو موسومة بتاريخها بدل ادعاء راهنية"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.13",
+      "track": "P1-B",
+      "severity": "low",
+      "area": "docs",
+      "title": "مرجع متغيرات البيئة (.env.example)",
+      "sources": [
+        "O05"
+      ],
+      "current": "CELIA_* وSUPABASE_* وPORT مبعثرة في الكود بلا مرجع؛ لا .env.example — المطور الجديد يكتشفها بالقراءة",
+      "required": ".env.example يسرد كل متغير يقرأه الخادم/الأدوات مع القيمة الافتراضية والأثر؛ أي متغير جديد يُضاف إليه في نفس التغيير",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/env-reference-sync.test.js (مخطط)",
+        "criteria": [
+          ".env.example موجود ويسرد CELIA_* وSUPABASE_* وPORT وNEXA_*",
+          "اختبار يفشل إذا ظهر process.env.X جديد في الكود بلا توثيق في المرجع"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.14",
+      "track": "P1-C",
+      "severity": "low",
+      "area": "docs",
+      "title": "فهرس التوثيق (docs/README.md)",
+      "sources": [
+        "O06"
+      ],
+      "current": "30+ ملفًا في docs/ بلا فهرس ولا مالك ولا حالة — اكتشاف الوثيقة الصحيحة بالبحث اليدوي",
+      "required": "فهرس يسرد كل وثيقة مع الغرض والحالة (سارية/مؤرشفة)؛ لا حذف توثيق — أرشفة موسومة فقط",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/docs-index-sync.test.js (مخطط)",
+        "criteria": [
+          "docs/README.md موجود ويسرد كل ملفات docs/ القائمة",
+          "اختبار يفشل عند إضافة وثيقة بلا تسجيل في الفهرس"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.15",
+      "track": "P1-D",
+      "severity": "medium",
+      "area": "repo",
+      "title": "حارس الملفات المكررة (edge-rag ×7 + workspace.html + تباين index.html)",
+      "sources": [
+        "O07"
+      ],
+      "current": "7 ملفات edge-rag متطابقة بايتًا بين adapters/ وdashboard/public/ بلا مزامنة؛ workspace.html مكرر؛ index.html نسختان متباينتان (13 مقابل 67 سطرًا) — أي إصلاح في جهة ينكسر في الأخرى",
+      "required": "مصدر حقيقة واحد: سكربت مزامنة وقت البناء + حارس CI يفشل عند الاختلاف؛ حسم ازدواج index.html (إنتاجية مقابل legacy موثق)",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/duplicate-sync.test.js (مخطط)",
+        "criteria": [
+          "اختبار/فحص يفشل إذا اختلفت النسخ عن المصدر",
+          "سكربت sync موثق يعيد التوليد من المصدر الواحد",
+          "index.html محسومة: واحدة إنتاجية والأخرى في legacy/ مع redirect موثق"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
+    },
+    {
+      "id": "D1.16",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci",
+      "title": "بناء الداشبورد في CI لكل PR",
+      "sources": [
+        "O08"
+      ],
+      "current": "بناء Vite/React يُختبر فقط في deploy-pages على main — كسر الواجهة لا يُكتشف في PRs",
+      "required": "job منفصل في ci.yml يبني الداشبورد لكل PR؛ job الباكند (zero-dep) يبقى بلا install كما هو",
+      "enforced": false,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "فحص CI نفسه (مخطط: assertion على ci.yml)",
+        "criteria": [
+          "ci.yml يحوي job بناء داشبورد يعمل على pull_request",
+          "فشل بناء الداشبورد يفشل الـ PR ( jobs منفصلة، إشارات مستقلة)"
+        ]
+      },
+      "verification": null,
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": null,
+      "ticket_status": "open"
     }
   ],
-  "updated_at": "2026-09-22T22:45:00Z"
+  "updated_at": "2026-09-22T23:15:00Z"
 }

@@ -1,4 +1,47 @@
-# Security model
+# 🛡️ سياسة الأمان والنموذج الأمني لمشروع NEXA Protocol (Security Policy & Model)
+
+نحن نأخذ أمان مشروع **NEXA** وسيادته البرمجية بجدية فائقة. إذا اكتشفت ثغرة أمنية أو خطأً في آليات التشفير والائتلاف، يُرجى اتباع الإرشادات الموضحة أدناه.
+
+---
+
+## 📋 الإصدارات المدعومة (Supported Versions)
+
+نقدم التحديثات والتصحيحات الأمنية للإصدارات التالية:
+
+| الإصدار | مدعوم أمنياً | حالة الصيانة |
+| ------- | :---: | :---: |
+| `1.x.x` (Current Main) | `✅ نعم` | نشط ومدعوم بالكامل |
+| `0.x.x` (v0.1 / Omega) | `✅ نعم` | تحديثات الأمان الحرجة فقط |
+| `< 0.1.0` | `❌ لا` | غير مدعوم |
+
+---
+
+## 🚨 كيفية الإبلاغ عن ثغرة أمنية (Reporting a Vulnerability)
+
+**نرجو عدم إنشاء Issue علني للثغرات الأمنية.**
+
+يرجى استخدام إحدى الطرق التالية للإبلاغ السري:
+
+1. **عبر خيار GitHub Private Vulnerability Reporting (المفضل):**
+   - انتقل إلى علامة التبويب **Security** في المستودع.
+   - اضغط على **Report a vulnerability**.
+   - أدخل تفاصيل الثغرة وخطوات إعادة إنتاجها.
+
+2. **عبر البريد الإلكتروني المباشر:**
+   - أرسل تفاصيل الثغرة إلى: `sayedelazameydesign@gmail.com`
+   - يُفضل تضمين الإثباتات الفنية (Proof-of-Concept) وسجل المظاريف المشفرة.
+
+---
+
+## ⏱️ جدول الاستجابة (Response Timeline)
+
+- **التأكيد الأول (Initial Acknowledgment):** خلال **24 ساعة** من استلام التقرير.
+- **التقييم والتحقق (Triage & Verification):** خلال **72 ساعة**.
+- **إصدار الإصلاح الأمني (Security Patch Release):** خلال **7 أيام عمل** (حسب درجة خطورة الثغرة).
+
+---
+
+## Security model
 
 NEXA v0.1 is a protocol for *deciding* and *proving* — not for doing. That distinction
 is the whole security story, and it is enforced in code rather than documented as intent.
@@ -38,6 +81,10 @@ Properties worth stating precisely:
 | Untrusted peer | trust store is pin-or-reject; `HELLO` never pins implicitly |
 | Pinned peer minting itself authority | `capabilityIssuers` allowlist on the root issuer; empty by default |
 | Third party revoking someone else's capability | revocation is attributed to an issuer inside the chain |
+| Compromised endpoint rewriting history | tamper-evident hash chain + signed receipts that commit to chain head |
+| Malicious tool injecting ambient authority | MCP bridge accepts only declared schemas, maps caller to unprivileged kid, default-deny |
+| Egress leaking private key material | key id derivation is one-way (`crypto.subtle.digest`); private key object is never serialized |
+| Hostile environment tampering with gates | gate map is deeply frozen at module evaluation time; mutation throws in strict mode |
 | Cheap denial of service through huge payloads | 64 KiB body cap enforced before hashing or verification |
 | Signature ambiguity from normalized keys | NFC key collisions and `__proto__` are hard errors |
 | Behaviour smuggled in as configuration | policy rules must be plain data; evidence fields are whitelisted |
@@ -94,7 +141,7 @@ See [H1 evidence and storage assumptions](docs/celia-workspace-commit-h1-persist
 and [the original H1/H2/H3 RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 501
+- Total tests: 545
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8
@@ -103,10 +150,11 @@ and [the original H1/H2/H3 RED](docs/celia-workspace-commit-hardening-red.ar.md)
 
 ## Celia workspace HTTP write boundary
 
-`POST /api/v1/workspace/write` now denies by default. Explicit server-owned
-issuer/policy configuration, an Ed25519-signed request and a matching capability
-are required before the existing staging port is called. This is a tools-layer
-boundary, not an opening of the six NEXA core gates. COMMIT has its own separate
+`POST /api/v1/workspace/write` is the only HTTP mutation route with verified
+authorization and staging isolation. An authorization grant binds the caller,
+workspace, file path and exact bytes hash. Staged writes use a separate staging
+directory, not the workspace root; mutations only reach the root after the separate
+COMMIT step. All other workspace routes remain under the legacy default-deny
 boundary described below. Legacy create/rollback
 and other mutation routes are **not** secured; do not expose the dashboard API
 publicly. Replay/use accounting is process-local, not durable.

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXA - Autonomous AI Agent Workspace (2026)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --panel-bg: #111827;
+      --card-bg: #1f2937;
+      --border-color: #374151;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-purple: #8b5cf6;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; }
+
+    /* Top Navigation Bar */
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); height: 60px; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: bold; font-size: 1.1rem; color: #fff; }
+    .badge { background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; }
+    .status-bar { display: flex; gap: 1rem; align-items: center; font-size: 0.85rem; color: var(--text-muted); }
+    .status-item { display: flex; align-items: center; gap: 0.4rem; background: var(--card-bg); padding: 0.3rem 0.7rem; border-radius: 6px; border: 1px solid var(--border-color); }
+
+    /* Main Workspace Layout (Split Screen) */
+    .workspace { display: grid; grid-template-columns: 420px 1fr; height: calc(100vh - 60px); }
+
+    /* Left Pane: Agent Chat & Thoughts Stream (Manus Style) */
+    .stream-pane { background: var(--panel-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; }
+    .stream-content { flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+    
+    .step-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.9rem; font-size: 0.88rem; }
+    .step-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600; color: var(--accent-blue); }
+    .step-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; color: var(--text-muted); }
+    .step-list li.done { color: var(--accent-green); text-decoration: line-through; }
+    .step-list li.active { color: #fff; font-weight: bold; display: flex; align-items: center; gap: 0.5rem; }
+
+    .tool-execution { background: #000; border-radius: 6px; padding: 0.6rem 0.8rem; font-family: monospace; font-size: 0.8rem; color: #34d399; margin-top: 0.5rem; }
+
+    .input-area { padding: 1rem; border-top: 1px solid var(--border-color); background: var(--panel-bg); }
+    .prompt-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.6rem; display: flex; gap: 0.5rem; align-items: center; }
+    .prompt-box input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 0.9rem; }
+    .prompt-box button { background: var(--accent-blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+    /* Right Pane: Artifacts & Workspace Canvas (Claude Style) */
+    .canvas-pane { display: flex; flex-direction: column; background: var(--bg-dark); }
+    .canvas-tabs { display: flex; background: var(--panel-bg); border-bottom: 1px solid var(--border-color); }
+    .tab { padding: 0.75rem 1.25rem; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab.active { color: #fff; border-bottom-color: var(--accent-blue); background: rgba(255,255,255,0.02); }
+
+    .canvas-viewer { flex: 1; padding: 1.5rem; overflow-y: auto; }
+    .artifact-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .artifact-header { padding: 0.8rem 1.2rem; background: var(--card-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .code-editor { background: #0d1117; color: #e6edf3; padding: 1.2rem; font-family: 'Fira Code', monospace; font-size: 0.88rem; flex: 1; overflow-x: auto; line-height: 1.5; }
+
+    .receipt-box { background: rgba(16, 185, 129, 0.08); border: 1px solid var(--accent-green); border-radius: 6px; padding: 0.8rem; margin-top: 1rem; color: var(--accent-green); font-size: 0.8rem; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <i class="fa-solid fa-shield-halved" style="color: var(--accent-blue)"></i>
+      NEXA Autonomous Workspace
+      <span class="badge">2026 Edition</span>
+    </div>
+    <div class="status-bar">
+      <div class="status-item"><i class="fa-solid fa-microchip"></i> Model: Qwen3-Coder (Local $0)</div>
+      <div class="status-item"><i class="fa-solid fa-key" style="color:var(--accent-green)"></i> Ed25519 Signed</div>
+      <div class="status-item"><i class="fa-solid fa-network-wired"></i> AI Mesh Active</div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="workspace">
+
+    <!-- Left Pane: Stream (Manus Style) -->
+    <section class="stream-pane">
+      <div class="stream-content">
+        <div class="step-card">
+          <div class="step-header">🎯 الهدف الموجه للوكيل (Task Goal)</div>
+          <p style="color: var(--text-main);">مسح واختبار أمان بوابة API وإثبات صحة الثوابت الأمنية S1-S9c تلقائياً.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">🧠 خطة عمل NEXA Autopilot (Manus Execution Tree)</div>
+          <ul class="step-list">
+            <li class="done"><i class="fa-solid fa-check"></i> 1. استطلاع ومسح مسارات الهجوم (ReconAgent)</li>
+            <li class="active"><i class="fa-solid fa-spinner fa-spin"></i> 2. فحص ثغرات الـ Web2/Web3 (VulnEngine)</li>
+            <li>3. تصفية نتائج البوابة (SevenGateValidator)</li>
+            <li>4. إنشاء التوقيع والإيصال الرقمي (Ed25519 Bridge)</li>
+          </ul>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header"><i class="fa-solid fa-terminal"></i> أداة التنفيذ النشطة: Playwright / Terminal</div>
+          <div class="tool-execution">
+            > Executing agentic-hunter.js --target packages/
+            > Inspecting S9 Invariant rules... [0 leaks detected]
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt Input (Claude Style) -->
+      <div class="input-area">
+        <div class="prompt-box">
+          <input type="text" placeholder="اطلب من NEXA تنفيذ مهمة برمجية أو أمنية جديدة..." value="قم بتشغيل فحص السجل الحتمي ومطابقة الأدلة المشفرة">
+          <button><i class="fa-solid fa-paper-plane"></i> تشغيل</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Pane: Artifact Viewer (Claude Style) -->
+    <section class="canvas-pane">
+      <div class="canvas-tabs">
+        <div class="tab active"><i class="fa-solid fa-code"></i> Code Canvas / Output</div>
+        <div class="tab"><i class="fa-solid fa-shield"></i> Security Audit Report</div>
+        <div class="tab"><i class="fa-solid fa-diagram-project"></i> AI OS Mesh Graph</div>
+      </div>
+
+      <div class="canvas-viewer">
+        <div class="artifact-card">
+          <div class="artifact-header">
+            <span style="font-weight: 600; font-size: 0.9rem;"><i class="fa-solid fa-file-code"></i> src/security/evidence-verified.ts</span>
+            <span style="font-size: 0.75rem; color: var(--accent-green);">● Executed & Verified Sandbox</span>
+          </div>
+          <pre class="code-editor"><code>import { NexaEvidenceBridge } from './hunter/nexa-evidence-bridge.js';
+
+// NEXA 2026 Deterministic Evidence Ledger Inspector
+export async function verifyLedgerState() {
+  const bridge = new NexaEvidenceBridge();
+  
+  const receipt = bridge.signFinding({
+    event: "AUTONOMOUS_HUNTER_EXECUTION",
+    status: "PASS_100_PERCENT",
+    testsPassed: 535,
+    timestamp: new Date().toISOString()
+  });
+
+  console.log("✅ Verified Ed25519 Evidence Receipt:", receipt.findingId);
+  return receipt;
+}</code></pre>
+          <div style="padding: 1rem;">
+            <div class="receipt-box">
+              🔑 <strong>Ed25519 Signed Evidence Receipt:</strong><br>
+              ID: NEXA-EVID-1790066771127 | Gate Score: 7/7_PASSED | Digest: 58abcb705e8a...
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

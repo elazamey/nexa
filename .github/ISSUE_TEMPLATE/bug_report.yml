@@ -1,0 +1,41 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve NEXA protocol and AI OS mesh
+title: "[BUG]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please provide deterministic reproduction steps.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Provide exact commands (e.g. `npm run mesh:route -- "..."` or `npm test`).
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js & OS Version
+      placeholder: "e.g. Node v22.1.0 on Ubuntu 24.04"
+    validations:
+      required: true

@@ -5,6 +5,13 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "publishConfig": {
+    "@elazamey:registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elazamey/nexa.git"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
@@ -32,11 +39,30 @@
     "metrics": "node tools/check-metrics.mjs",
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
     "dashboard": "node tools/celia-dashboard-server.mjs",
+    "workspace": "node tools/celia-dashboard-server.mjs",
     "learning": "node tools/celia-learning.mjs",
     "celia:system": "node tools/celia-system.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",
     "demo:celia": "node tools/celia-demo.mjs",
-    "celia:vectors": "node tools/permission-probe.mjs --security"
+    "celia:vectors": "node tools/permission-probe.mjs --security",
+    "hunt:bugs": "node src/security/agentic-hunter.js packages",
+    "bughunter": "node tools/bughunter.mjs",
+    "hunt:recon": "node tools/bughunter.mjs recon",
+    "hunt:autopilot": "node tools/bughunter.mjs autopilot",
+    "hunt:validate": "node tools/bughunter.mjs validate",
+    "hunt:report": "node tools/bughunter.mjs report",
+    "hunt:jwt": "node tools/bughunter.mjs jwt",
+    "hunt:web3": "node tools/bughunter.mjs web3",
+    "hunt:llm": "node tools/bughunter.mjs llm-redteam",
+    "mesh": "node tools/nexa-mesh.mjs",
+    "mesh:runtimes": "node tools/nexa-mesh.mjs runtimes",
+    "mesh:route": "node tools/nexa-mesh.mjs route",
+    "mesh:memory": "node tools/nexa-mesh.mjs memory",
+    "mesh:computer": "node tools/nexa-mesh.mjs computer",
+    "mesh:improve": "node tools/nexa-mesh.mjs improve",
+    "mesh:verify": "node tools/nexa-mesh.mjs verify-ledger",
+    "mesh:demo": "node tools/nexa-mesh.mjs full-demo",
+    "synthesis": "node tools/celia-grand-synthesis.mjs"
   },
   "keywords": [
     "protocol",

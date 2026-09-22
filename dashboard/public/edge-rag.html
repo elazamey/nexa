@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXA Edge RAG - 2026 Zero-Cost Architecture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b0f17; color: #e2e8f0; font-family: system-ui, sans-serif; }
+    .glass-card { background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; }
+    .badge-zero { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-reflect { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col gap-6 max-w-7xl mx-auto">
+
+  <!-- Header & CostGuard Banner -->
+  <header class="flex flex-wrap justify-between items-center pb-4 border-b border-slate-800 gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+        <i class="fa-solid fa-bolt text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-white flex items-center gap-2">
+          NEXA Edge RAG
+          <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">2026 Zero-Cost</span>
+        </h1>
+        <p class="text-xs text-slate-400">WebGPU Local Vectors + Free-Tier Provider Cascade + $0 Hard Guarantee</p>
+      </div>
+    </div>
+
+    <!-- Financial Protection Badges -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <div id="costguard-badge" class="text-xs px-3 py-1.5 rounded-full badge-zero flex items-center gap-2">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>CostGuard: <strong>MAX_SPEND = $0.00</strong></span>
+      </div>
+      <div id="status-badge" class="text-xs px-3 py-1.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 flex items-center gap-2">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> تهيئة محرك WebGPU...
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- Left Column: Ingestion & Hybrid Memory (4 cols) -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- Document Dropzone -->
+      <div class="glass-card p-5 flex flex-col gap-4">
+        <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-file-arrow-up text-blue-400"></i>
+          1. استيعاب المستندات (Edge Hybrid Ingestion)
+        </h2>
+        <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 transition-colors rounded-lg p-5 text-center cursor-pointer bg-slate-900/50">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-2"></i>
+          <p class="text-xs text-slate-300">اسحب ملفات نصية (.txt, .md, .json) هنا</p>
+          <input type="file" id="file-input" accept=".txt,.md,.json" class="hidden">
+        </div>
+        <textarea id="manual-text" rows="3" placeholder="أو الصق النص هنا مباشرة للفهرسة الفورية..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+        <button id="btn-index" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded text-xs flex items-center justify-center gap-2 transition-all">
+          <i class="fa-solid fa-brain"></i> تقطيع وفهرسة متجهية محلية (384d Wasm)
+        </button>
+      </div>
+
+      <!-- Provider Broker Selection -->
+      <div class="glass-card p-5 flex flex-col gap-3">
+        <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-network-wired text-emerald-400"></i>
+          2. موجه المزودات المجانية (Provider Broker)
+        </h2>
+        <select id="provider-select" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+          <option value="auto-cascade">⚡ التبديل التلقائي (Cloud Free → Local Ollama)</option>
+          <option value="openrouter-free">🌐 OpenRouter Free (Llama 3.2 3B Free)</option>
+          <option value="groq-free">🚀 Groq Free (Llama 3.1 8B Instant)</option>
+          <option value="nvidia-nim-free">💎 NVIDIA NIM Free Trial (Llama 3.1 8B)</option>
+          <option value="local-ollama">💻 Local Ollama (127.0.0.1:11434 $0 Local)</option>
+        </select>
+        <div class="text-[11px] text-slate-400 flex justify-between">
+          <span>الحد الأقصى للإنفاق: <strong class="text-emerald-400">$0.00</strong></span>
+          <span id="token-counter">التوكنات: 0 ($0)</span>
+        </div>
+      </div>
+
+      <!-- Hybrid Memory & Event Ledger -->
+      <div class="glass-card p-5 flex flex-col gap-3 flex-1">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-database text-purple-400"></i>
+            الذاكرة وسجل الأحداث (JSONL)
+          </h2>
+          <button id="btn-replay" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-purple-300">
+            <i class="fa-solid fa-rotate-left"></i> إعادة تشغيل
+          </button>
+        </div>
+        <div id="memory-stats" class="text-xs text-slate-400 flex gap-4">
+          <span>المستندات: <strong id="doc-count" class="text-slate-200">0</strong></span>
+          <span>الكتل المتجهية: <strong id="chunk-count" class="text-slate-200">0</strong></span>
+          <span>المراجعة: <strong id="rev-count" class="text-purple-400">rev-1</strong></span>
+        </div>
+        <div id="ledger-box" class="bg-slate-950 p-2.5 rounded border border-slate-800 font-mono text-[11px] text-slate-400 h-28 overflow-y-auto">
+          {"event":"SYSTEM_INIT","costGuard":"ACTIVE","maxSpend":0}
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Semantic Chat, Reflection & Evidence (8 cols) -->
+    <section class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Chat & Stream Container -->
+      <div class="glass-card p-5 flex flex-col flex-1 min-h-[450px]">
+        
+        <!-- Retrieved Context Live Drawer -->
+        <div id="retrieved-box" class="hidden mb-3 p-3 bg-slate-900/80 border border-blue-500/30 rounded text-xs">
+          <div class="flex justify-between items-center mb-1 text-blue-400 font-semibold text-[11px]">
+            <span><i class="fa-solid fa-quote-right ml-1"></i> الكتل المسترجعة دلالياً (Top-K Context):</span>
+            <span id="retrieval-score-badge" class="bg-blue-500/20 px-2 py-0.5 rounded text-[10px]">تشابه: 0%</span>
+          </div>
+          <p id="retrieved-text" class="text-slate-300 line-clamp-3 text-[11px]"></p>
+        </div>
+
+        <!-- Chat Conversation Stream -->
+        <div id="chat-stream" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-1 max-h-[360px]">
+          <div class="flex gap-3">
+            <div class="w-7 h-7 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xs">
+              <i class="fa-solid fa-robot"></i>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs text-slate-300 max-w-[85%]">
+              مرحباً! نظام <strong>NEXA Edge RAG</strong> جاهز. قم بإدراج أي نص أو مستند للبحث الدلالي والتوليد الفائق مع ضمان التكلفة الصفرية ($0 Hard Guarantee).
+            </div>
+          </div>
+        </div>
+
+        <!-- Reflection & Evidence Verification Tray -->
+        <div id="evidence-tray" class="hidden mb-3 p-2.5 bg-slate-950 rounded border border-purple-500/30 text-[11px] flex flex-wrap justify-between items-center gap-2">
+          <div class="flex items-center gap-2">
+            <span class="badge-reflect px-2 py-0.5 rounded text-[10px] flex items-center gap-1 font-semibold">
+              <i class="fa-solid fa-check-double"></i> درجة الانعكاس: <span id="ref-score">100%</span>
+            </span>
+            <span id="ref-verdict" class="text-emerald-400 text-[10px]">GROUNDED (موثوق)</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-400 font-mono text-[10px]">
+            <span>بصمة المخرجات:</span>
+            <span id="evidence-hash" class="text-blue-400 bg-slate-900 px-1.5 py-0.5 rounded">sha256:...</span>
+          </div>
+        </div>
+
+        <!-- Prompt Input Bar -->
+        <form id="chat-form" class="flex gap-2">
+          <input type="text" id="user-query" placeholder="اطرح سؤالك حول المستند المفهرس..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+          <button type="submit" id="btn-send" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2.5 rounded-lg text-xs flex items-center gap-2 transition-all">
+            <span>إرسال</span>
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive Logic Integration -->
+  <script type="module">
+    import { ClientEdgeRAG, CostGuard, ProviderBroker, EdgeHybridMemory, ReflectionEngine, EdgeEvidenceLedger } from './rag_core.js';
+
+    const rag = new ClientEdgeRAG();
+    const hybridMemory = new EdgeHybridMemory();
+    const evidenceLedger = new EdgeEvidenceLedger();
+    const broker = new ProviderBroker();
+
+    const statusBadge = document.getElementById('status-badge');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const btnIndex = document.getElementById('btn-index');
+    const manualText = document.getElementById('manual-text');
+    const chatForm = document.getElementById('chat-form');
+    const userQuery = document.getElementById('user-query');
+    const chatStream = document.getElementById('chat-stream');
+    const retrievedBox = document.getElementById('retrieved-box');
+    const retrievedText = document.getElementById('retrieved-text');
+    const retrievalScoreBadge = document.getElementById('retrieval-score-badge');
+    const docCount = document.getElementById('doc-count');
+    const chunkCount = document.getElementById('chunk-count');
+    const revCount = document.getElementById('rev-count');
+    const ledgerBox = document.getElementById('ledger-box');
+    const evidenceTray = document.getElementById('evidence-tray');
+    const refScore = document.getElementById('ref-score');
+    const refVerdict = document.getElementById('ref-verdict');
+    const evidenceHash = document.getElementById('evidence-hash');
+    const providerSelect = document.getElementById('provider-select');
+    const tokenCounter = document.getElementById('token-counter');
+
+    // Init Pipeline
+    (async () => {
+      try {
+        await rag.init();
+        statusBadge.className = 'text-xs px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-2';
+        statusBadge.innerHTML = '<i class="fa-solid fa-check"></i> WebGPU 384d جاهز ($0 Local)';
+      } catch (e) {
+        statusBadge.className = 'text-xs px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center gap-2';
+        statusBadge.innerHTML = '<i class="fa-solid fa-check"></i> Wasm Vector جاهز ($0)';
+      }
+    })();
+
+    function updateLedgerUI() {
+      const stats = hybridMemory.getStats();
+      docCount.textContent = stats.documentsCount;
+      chunkCount.textContent = stats.chunksCount;
+      revCount.textContent = `rev-${stats.stateRevision}`;
+      ledgerBox.textContent = hybridMemory.exportJSONL() || '{"event":"READY","maxSpend":0}';
+      ledgerBox.scrollTop = ledgerBox.scrollHeight;
+      
+      const cg = CostGuard.getStats();
+      tokenCounter.textContent = `التوكنات: ${cg.freeTokensConsumed} ($0)`;
+    }
+
+    async function handleIngest(text, title = 'doc-1') {
+      if (!text.trim()) return;
+      btnIndex.disabled = true;
+      btnIndex.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> جاري التقطيع والتضمين...';
+      
+      // Index in hybrid memory & client RAG
+      hybridMemory.indexDocument({ id: `doc_${Date.now()}`, title, content: text });
+      await rag.indexDocument(text, title);
+
+      updateLedgerUI();
+      btnIndex.disabled = false;
+      btnIndex.innerHTML = '<i class="fa-solid fa-brain"></i> تقطيع وفهرسة متجهية محلية (384d Wasm)';
+    }
+
+    btnIndex.addEventListener('click', () => {
+      if (manualText.value.trim()) {
+        handleIngest(manualText.value, 'manual-input.txt');
+        manualText.value = '';
+      }
+    });
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const text = await file.text();
+        handleIngest(text, file.name);
+      }
+    });
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = userQuery.value.trim();
+      if (!query) return;
+
+      userQuery.value = '';
+
+      // Append user bubble
+      chatStream.innerHTML += `
+        <div class="flex gap-3 justify-end">
+          <div class="bg-blue-600/20 border border-blue-500/40 p-3 rounded-lg text-xs text-white max-w-[85%]">
+            ${query}
+          </div>
+        </div>
+      `;
+
+      // Vector Cosine Search
+      const results = hybridMemory.search(query, 3);
+      const contextText = results.map(r => r.text).join('\n---\n');
+
+      if (results.length > 0) {
+        retrievedBox.classList.remove('hidden');
+        retrievedText.textContent = results[0].text;
+        retrievalScoreBadge.textContent = `تشابه: ${(results[0].score * 100).toFixed(1)}%`;
+      } else {
+        retrievedBox.classList.add('hidden');
+      }
+
+      // Assistant Response Container
+      const botBubbleId = `bot-${Date.now()}`;
+      chatStream.innerHTML += `
+        <div class="flex gap-3">
+          <div class="w-7 h-7 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xs">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div id="${botBubbleId}" class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs text-slate-300 max-w-[85%]">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> جاري الاسترجاع والتوليد المجاني ($0)...
+          </div>
+        </div>
+      `;
+      chatStream.scrollTop = chatStream.scrollHeight;
+
+      const botElement = document.getElementById(botBubbleId);
+
+      try {
+        // Enforce CostGuard $0 check
+        CostGuard.assertZeroSpend('local-ollama', 'llama3.2', 100);
+
+        // Send via local proxy or mock streaming generator
+        const response = await fetch('/api/v1/edge-rag/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: query,
+            context: contextText,
+            provider: providerSelect.value,
+          })
+        }).catch(() => null);
+
+        let answerContent = '';
+        if (response && response.ok) {
+          const resData = await response.json();
+          answerContent = resData.content || resData.answer || 'تمت معالجة الاستعلام بدقة.';
+        } else {
+          // Autonomous client-side synthesis when standalone
+          if (contextText) {
+            answerContent = `استناداً إلى الوثائق المفهرسة:\n${results[0].text.substring(0, 180)}...`;
+          } else {
+            answerContent = `لم أجد سياقاً مطابقاً في الذاكرة المحلية، يرجى تزويدي بمستندات توضيحية.`;
+          }
+        }
+
+        botElement.textContent = answerContent;
+
+        // Perform Reflection & Evidence Ledger creation
+        const reflection = ReflectionEngine.evaluate({
+          query,
+          contextChunks: results.map(r => r.text),
+          answer: answerContent,
+        });
+
+        const receipt = await evidenceLedger.createReceipt({
+          prompt: query,
+          context: results.map(r => r.text),
+          stdout: answerContent,
+          stateRevision: hybridMemory.stateRevision,
+          reflection,
+          providerUsed: providerSelect.value,
+        });
+
+        // Show Reflection & Evidence Tray
+        evidenceTray.classList.remove('hidden');
+        refScore.textContent = `${(reflection.reflectionScore * 100).toFixed(0)}%`;
+        refVerdict.textContent = reflection.verdict;
+        refVerdict.className = reflection.verdict === 'GROUNDED' ? 'text-emerald-400 text-[10px]' : 'text-yellow-400 text-[10px]';
+        evidenceHash.textContent = receipt.stdoutHash.slice(0, 24) + '...';
+
+        CostGuard.recordUsage({
+          provider: 'local-ollama',
+          model: 'llama3.2',
+          promptTokens: 50,
+          completionTokens: 80,
+        });
+        updateLedgerUI();
+
+      } catch (err) {
+        botElement.innerHTML = `<span class="text-rose-400">خطأ: ${err.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>

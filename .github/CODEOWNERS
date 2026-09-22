@@ -1,0 +1,15 @@
+# NEXA Code Owners & Governance Approvers
+
+# Global project maintenance
+* @elazamey
+
+# Security policies, protocol invariants, and cryptographic core
+/SECURITY.md @elazamey
+/packages/protocol/ @elazamey
+/packages/capability/ @elazamey
+/packages/policy/ @elazamey
+/src/mesh/governance-kernel.js @elazamey
+/src/security/ @elazamey
+
+# Workflows & CI/CD
+/.github/workflows/ @elazamey

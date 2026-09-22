@@ -1,5 +1,10 @@
 # NEXA
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/elazamey/nexa)
+[![CodeQL Security Scan](https://github.com/elazamey/nexa/actions/workflows/codeql.yml/badge.svg)](https://github.com/elazamey/nexa/actions/workflows/codeql.yml)
+[![Security Invariants Guard](https://github.com/elazamey/nexa/actions/workflows/security-scan.yml/badge.svg)](https://github.com/elazamey/nexa/actions/workflows/security-scan.yml)
+[![Deploy Dashboard](https://github.com/elazamey/nexa/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/elazamey/nexa/actions/workflows/deploy-pages.yml)
+
 **Two layers, one rule: AI proposes, the deterministic system decides.**
 
 * **NEXA v0.1** — a signed, capability-gated *protocol* for agent tooling. Default-deny,
@@ -504,7 +509,7 @@ not the one it can assert:
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 501
+- Total tests: 545
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

@@ -18,9 +18,51 @@ import { execFileSync } from 'node:child_process';
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
+/**
+ * P4: report uncommitted work before anything can discard it.
+ *
+ * Three times now, a command that looked like recovery was actually loss: a
+ * stale-looking local copy, and twice `git checkout <file>` reverting a
+ * mutation along with the real production change underneath it
+ * (docs/incidents/2026-09-local-revert.md,
+ *  docs/incidents/2026-09-fake-proof-endpoint.md).
+ *
+ * `git checkout -- <file>` has no undo. There is no reflog for the working
+ * tree. So dirty files are named here, loudly, before any push or revert, and
+ * the operator is told to run `git diff --stat` or `git stash` first.
+ */
+function reportDirtyFiles() {
+  let status;
+  try { status = git('status', '--porcelain'); }
+  catch { return { known: false, files: [] }; }
+  // The git() helper trims, so a leading-space code like " M" loses a column.
+  // Parse on the separator instead of a fixed offset.
+  const files = status.split('\n').filter(Boolean).map(line => {
+    const match = /^(\S{1,2})\s+(.+)$/.exec(line.trim());
+    return match ? { code: match[1], path: match[2] } : { code: '?', path: line.trim() };
+  });
+  const atRisk = files.filter(f => f.code.includes('M') || f.code.startsWith('??'));
+  if (atRisk.length) {
+    console.error('UNCOMMITTED WORK PRESENT — these files would be lost by `git checkout -- <file>`:');
+    for (const f of atRisk) {
+      console.error(`  ${f.code.startsWith('??') ? 'untracked' : 'modified '}  ${f.path}`);
+    }
+    console.error('\nBefore reverting any of them, run `git diff --stat` or `git stash`.');
+    console.error('`git checkout -- <file>` is not recoverable, and it does not restore untracked files.\n');
+  }
+  return { known: true, files: atRisk };
+}
+
 function main() {
   const branch = process.argv[2] ?? git('rev-parse', '--abbrev-ref', 'HEAD');
   const head = git('rev-parse', 'HEAD');
+  const dirty = reportDirtyFiles();
+  // --strict makes the hazard blocking: refuse to report a clean sync while
+  // uncommitted changes sit in the tree waiting to be clobbered.
+  if (process.argv.includes('--strict') && dirty.files.length) {
+    console.error(`BLOCKED: ${dirty.files.length} uncommitted file(s). Commit, stash, or pass without --strict.`);
+    return 1;
+  }
 
   let remote;
   try { remote = git('ls-remote', 'origin', `refs/heads/${branch}`); }

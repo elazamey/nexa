@@ -8,6 +8,7 @@ import UltimatePanel from './UltimatePanel.jsx';
 import InfinitePanel from './InfinitePanel.jsx';
 import SingularityPanel from './SingularityPanel.jsx';
 import OmegaPanel from './OmegaPanel.jsx';
+import EvidenceCheckPanel from './EvidenceCheckPanel.jsx';
 import AgentCanvasEmulator from './AgentCanvasEmulator.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
@@ -771,6 +772,12 @@ export default function NexaDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
+            <EvidenceCheckPanel />
           </div>
         </div>
 

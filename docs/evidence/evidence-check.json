@@ -1,0 +1,611 @@
+{
+  "schema": "nexa-evidence-check/v1",
+  "checkedAt": "2026-09-22T01:29:33.609Z",
+  "limits": "A digest match proves the bytes are unchanged since the digest was recorded. It does not prove the run happened, that the file describes the current code, or that any claim inside the file is true. Commit provenance is checked only when the package records a commit.",
+  "packages": [
+    {
+      "package": "celia-library",
+      "sums": "absent",
+      "note": "no SHA256SUMS: nothing in this package can be checked",
+      "manifest": {
+        "present": false
+      },
+      "files": []
+    },
+    {
+      "package": "h2-atomicity",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": "2026-09-20T20:56:03.918018+00:00"
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "docs/evidence/h2-atomicity/advisory-regression.tap",
+          "status": "match",
+          "recorded": "9f1bbf236b425759ff9d77adfc03b02970f94e98c5c2e52a02514d2608b06071",
+          "bytes": 13260
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/after-verify.txt",
+          "status": "match",
+          "recorded": "962890791bd9dc7e1f532243a29fbe75321c0e31737f158b6306c545711f856a",
+          "bytes": 103387
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/baseline-verify.txt",
+          "status": "match",
+          "recorded": "c0f184a2bc03d41f823b858e74de0648fbccd78a43b0b7dc06ea7fb49a507b8a",
+          "bytes": 101126
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/before.json",
+          "status": "match",
+          "recorded": "ba18896c121590fc1bfd33460cdda55b1f146e775f918c85749cfced1253ab5b",
+          "bytes": 50890
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/comparison.json",
+          "status": "match",
+          "recorded": "e89fc0389c2069dc5b13f18229bce17f9774222df3a4aec8270543c3b3deeab1",
+          "bytes": 25750
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/diff-check.txt",
+          "status": "match",
+          "recorded": "8ff3b7eb0740bfde523425e43da8985234e0909ee1e8e2fb6bccb2e77a14b9b4",
+          "bytes": 109
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/extended-final.tap",
+          "status": "match",
+          "recorded": "4c163ee59fb7e3127bc755bb456839b6b0d2e6261d285dc394f02f628420c10a",
+          "bytes": 4260
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/extended-green.tap",
+          "status": "match",
+          "recorded": "778b67a5bcf2291d35edfc427d351e1f31248509d6953e486d2567d9e0708c92",
+          "bytes": 3854
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/hardening-final.tap",
+          "status": "match",
+          "recorded": "9f233be83f9fc2eebbc0fee88b5b38ef809884bd42e1af0baa9be0733dc6fe34",
+          "bytes": 3328
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/intermediate-security-68.tap",
+          "status": "match",
+          "recorded": "eec662246dd423b8d0be3e9719cdb22831e4f2572db3a27bf5bfd8872a3de91c",
+          "bytes": 18309
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/intermediate-verify-437.txt",
+          "status": "match",
+          "recorded": "20d488a76937b0c4b69425ff47d79c634159129fdd18f5365ab8a32eaefc9bc7",
+          "bytes": 102990
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/mode-green.tap",
+          "status": "match",
+          "recorded": "2c099593848ebf282f186f7084910119ac96be04abcbf58a9c65cd92c6935773",
+          "bytes": 518
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/mode-red.tap",
+          "status": "match",
+          "recorded": "bef425a2d5c0c447f00e23eb7e6b48c4d27937ff84c499d1d30a7c812fbf2740",
+          "bytes": 1068
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/original-green.tap",
+          "status": "match",
+          "recorded": "a02007db263826a288b54e59521acb6b69d51b21a0adc9bab76040505098bdb6",
+          "bytes": 585
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/original-red.tap",
+          "status": "match",
+          "recorded": "7262352ccfe5a5c6164b0bf7b8271c22485f0fbc3148f3db6c774509d1497d9d",
+          "bytes": 2506
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/persistence-boundaries.tap",
+          "status": "match",
+          "recorded": "b005cb28a1ba9a6875cbe5e1b27ab3275a9229e8a7a2be5347042a2dc4907eaa",
+          "bytes": 14566
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/port-before.txt",
+          "status": "match",
+          "recorded": "d81329a284c0038c70c8e9124a0d10d88e469a4adcf95b4485b1170bb122fd74",
+          "bytes": 7271
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/previous-boundaries.tap",
+          "status": "match",
+          "recorded": "c5e3d956e83100d3ed4339d758259612db78293d79a645f5175081dad1acd5f9",
+          "bytes": 9613
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/provenance.json",
+          "status": "match",
+          "recorded": "e8e934367aa3938ac4ad1d2765a3c55c66a75187dc64e451d9437dec8638e63d",
+          "bytes": 18171
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/remote-tree.json",
+          "status": "match",
+          "recorded": "3ab3e1f072898bbeb98b1eb67e0a76b8f009a8e5d6951918d18b70dec980c3cf",
+          "bytes": 117523
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/runs.json",
+          "status": "match",
+          "recorded": "e3bc94311bfb0216bb66df581e7a6cf74003968026376d7871eb1a19f7cb49b9",
+          "bytes": 2964
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/security-regression.tap",
+          "status": "match",
+          "recorded": "adaa55bf372efbf9272c3d6491258ae154605d3f0d8cb0e0a81e44a10657afda",
+          "bytes": 18705
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/source.patch",
+          "status": "match",
+          "recorded": "c0477e594a9f514ac24deb60d3f29b8884147e5f60ee91a455ccf489bb2b0ed3",
+          "bytes": 6367
+        },
+        {
+          "name": "docs/nexa-remaining-phases-and-h2.ar.md",
+          "status": "match",
+          "recorded": "b27df25a59ce6c781da8b405bb363aaeb7a4eff7e1f74de96d3402183c56c35b",
+          "bytes": 19375
+        },
+        {
+          "name": "tests/celia-workspace-commit-h2.test.js",
+          "status": "match",
+          "recorded": "16f855bfbd2e4a8325346b71b62a1bd29336eb05ab6d48b92b0ba67de068a198",
+          "bytes": 11112
+        },
+        {
+          "name": "tools/celia-workspace-commit-port.mjs",
+          "status": "mismatch",
+          "recorded": "7d2d8532ec38368d83513cc20e6670b142bb2d46e5bf002f62ea31ef4444885b",
+          "actual": "478e547ac58159580df7e812cf5586429afb4679c6d611eab3b3b7c3dfeec976",
+          "bytes": 22819
+        },
+        {
+          "name": "docs/evidence/h2-atomicity/manifest.json",
+          "status": "match",
+          "recorded": "ab3c33498af4ed4f13a1f96f58bdc41ee6a92c27d6ed5901ab2711d9dc4bbe8c",
+          "bytes": 4318
+        },
+        {
+          "name": "manifest.sha256",
+          "status": "unlisted",
+          "bytes": 107
+        }
+      ]
+    },
+    {
+      "package": "h3-external-writer",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": null
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "h2-regression.tap",
+          "status": "match",
+          "recorded": "e31bcdc3e25f47523c7866d17548e5e9a3675e390156ca5f000d3c1f82273f65",
+          "bytes": 4261
+        },
+        {
+          "name": "h3-green.tap",
+          "status": "match",
+          "recorded": "f530af8b9b896b55ec2858673aa82c30855c779ac141eea75ad09c5bf2c0c6b5",
+          "bytes": 3038
+        },
+        {
+          "name": "hardening-green.tap",
+          "status": "match",
+          "recorded": "b08db2ed0afe85dc22fbbe3cccb5d74c8dcd8afa0f58a96c474242506e5af8f7",
+          "bytes": 1521
+        },
+        {
+          "name": "mutation-red.tap",
+          "status": "match",
+          "recorded": "f5d8253b52db68ae37d2a7348997a5db21089b10a1ea802c6a04d55230203cd4",
+          "bytes": 9890
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "7d37dd73803ec39d94303f5a5ba9f3b29ccbc54a2d65acf335b0c049331a8079",
+          "bytes": 145368
+        },
+        {
+          "name": "source.patch",
+          "status": "match",
+          "recorded": "0f906a7f75482133edcab547ed6d56d0500d88b7ca023fcfd8e866976dd6ed4b",
+          "bytes": 5259
+        },
+        {
+          "name": "manifest.json",
+          "status": "match",
+          "recorded": "4578d57e39b3f6029e02ad7bc8b5974949c740afee5fe76d117cbbab653b769d",
+          "bytes": 1259
+        }
+      ]
+    },
+    {
+      "package": "p03-durability",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": null
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "durability-green.tap",
+          "status": "match",
+          "recorded": "5488058cd5bd4eb31e38094a16bcce3cdcbf944bbb122b0d734a26da23b69ff3",
+          "bytes": 3024
+        },
+        {
+          "name": "prior-boundaries.tap",
+          "status": "match",
+          "recorded": "8e8a482c7317fd2ad5b6959be01e13d084f16179923f996db383aad96a5717f9",
+          "bytes": 14640
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "7e23f3da34ca1651d3815d221343780638559f9873bba17188875cc39e8e1fe8",
+          "bytes": 153767
+        },
+        {
+          "name": "mutation-matrix.md",
+          "status": "match",
+          "recorded": "d95dca40efc164e9918c1087cd61a1edc2b83b27df154ca700767f3ce5cf304e",
+          "bytes": 1159
+        },
+        {
+          "name": "manifest.json",
+          "status": "match",
+          "recorded": "2f97a270ca4d2531c17b888edef2547e3df8133fae81597bec3c7fbfb0c656a1",
+          "bytes": 1481
+        }
+      ]
+    },
+    {
+      "package": "p03-intent-log",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": null
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "mutation-red.tap",
+          "status": "match",
+          "recorded": "c8ee7a50ad01e59a5d20fc26757b02951cdf1efab618dec5d0f0cdc447df2af1",
+          "bytes": 2753
+        },
+        {
+          "name": "p03-green.tap",
+          "status": "match",
+          "recorded": "2583b7e759288db70015118f64002470b4babc50d98b3c5517f6de10880d3a56",
+          "bytes": 2482
+        },
+        {
+          "name": "prior-boundaries.tap",
+          "status": "match",
+          "recorded": "b4cef3ef8bcdeaefbb176eb4f1ebe01a11e7e4d50db20103d83519067662c430",
+          "bytes": 12273
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "b4848d3717c3c51062fe0c929df08da6501821722956d5f57ac927e201da402e",
+          "bytes": 150768
+        },
+        {
+          "name": "source.patch",
+          "status": "match",
+          "recorded": "5b95dfbb5d1599fe2662f5c3a6d835d9f0ecbc2e37600cb9609a8e719b53b5e5",
+          "bytes": 6398
+        },
+        {
+          "name": "manifest.json",
+          "status": "match",
+          "recorded": "1d488d9a2745ca97a0ef64b6530bbb4425559e0e36ac637b96137de9b147f98c",
+          "bytes": 1912
+        }
+      ]
+    },
+    {
+      "package": "p03-lock",
+      "sums": "present",
+      "manifest": {
+        "present": false
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "lock-green.tap",
+          "status": "match",
+          "recorded": "817749891ddccb51edb2f5bbf5beefc70c021beb0617d071892f57ef3a9b4200",
+          "bytes": 2122
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "9707b8015fe5d7b04502b97902c8f14da25bd49752971313c67c4dc78c2a529a",
+          "bytes": 159239
+        },
+        {
+          "name": "stability-20-runs.txt",
+          "status": "match",
+          "recorded": "eaafbfcec06efa4e81db5fb18159ed0d682d92139cbb55e189e8032a3ed383ae",
+          "bytes": 180
+        },
+        {
+          "name": "mutation-matrix.md",
+          "status": "match",
+          "recorded": "a556569a1a5e260cb79df60dbadcf68b637b40a19621c2412eb0f5785fd5ec21",
+          "bytes": 2212
+        }
+      ]
+    },
+    {
+      "package": "p03-restore",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": "commit_parent",
+        "commit": "9a742fe",
+        "generated": "2026-09-22T00:25:22Z"
+      },
+      "provenance": {
+        "recorded": true,
+        "commit": "9a742fe",
+        "state": "ancestor-of-head"
+      },
+      "files": [
+        {
+          "name": "prior-boundaries.tap",
+          "status": "match",
+          "recorded": "cae3fc6c424e7c00820bcfbf25a1b419a86bcc9a4567d38fd8c699824478a640",
+          "bytes": 15338
+        },
+        {
+          "name": "restore-green.tap",
+          "status": "match",
+          "recorded": "87df71d3bed9504e5abb2739a3c636be711becef8b73771e4a7908293813691f",
+          "bytes": 3466
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "ff140ee68f119ecb9553d436b1af7fc40bf4e647fa7809d5b37da91dda189444",
+          "bytes": 157176
+        },
+        {
+          "name": "mutation-matrix.md",
+          "status": "match",
+          "recorded": "4d6d1fb2a80585ef55553d02f21729da8762840b4bd0d0e87a75ed692c6da25c",
+          "bytes": 2795
+        },
+        {
+          "name": "manifest.json",
+          "status": "unlisted",
+          "bytes": 494
+        }
+      ]
+    },
+    {
+      "package": "p03-wiring",
+      "sums": "present",
+      "manifest": {
+        "present": false
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "wiring-green.tap",
+          "status": "match",
+          "recorded": "dcc6daf428a3df51da5152c5a13cfcf5c8f6affaf70e46d6381ee9e27f8e9155",
+          "bytes": 3183
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "f4b2c4ee76399153686021f6bb8d8a73210153117060198d26ec894076ee6ae5",
+          "bytes": 162399
+        },
+        {
+          "name": "stability-15-runs.txt",
+          "status": "match",
+          "recorded": "dcbc57b2321148f1a93081d76f4ba4ffd9b2b80261f6a5abbabee0030930230a",
+          "bytes": 135
+        },
+        {
+          "name": "mutation-matrix.md",
+          "status": "match",
+          "recorded": "7c7369f8d78d66d8fd5a54672f474ac86166b477cc5a343d140e2430893017a1",
+          "bytes": 2408
+        }
+      ]
+    },
+    {
+      "package": "poststate-verification",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": null
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "mutation-red.tap",
+          "status": "match",
+          "recorded": "af3d35de1b4e3a8d003acbbacd6cb08dc92e4ab12db4fff79d8b5e85ab9ab20d",
+          "bytes": 5734
+        },
+        {
+          "name": "poststate-green.tap",
+          "status": "match",
+          "recorded": "adc3c6fb22550b74ed20e5895159d93e72741305b7644f6ccf650114dd55e4b0",
+          "bytes": 2985
+        },
+        {
+          "name": "prior-boundaries-regression.tap",
+          "status": "match",
+          "recorded": "d51c1306e6f7e30253a0ff36d9deb50c6f31e109abe8f246c1dce5cdee401e39",
+          "bytes": 8591
+        },
+        {
+          "name": "full-verify.txt",
+          "status": "match",
+          "recorded": "ef6adfd990bf33d18a9dc0a518f9aa78c67df4ffdc837ec44e708a766236eba2",
+          "bytes": 148333
+        },
+        {
+          "name": "source.patch",
+          "status": "match",
+          "recorded": "479d1eb1bd30ff418ddfbdfadc4a032a3cbaa5f433b0570ad813055466037e75",
+          "bytes": 4530
+        },
+        {
+          "name": "manifest.json",
+          "status": "match",
+          "recorded": "6eb120a299bbefdfa2abedc10164580c5e1d8df0ff5be81f479f13139a263560",
+          "bytes": 1072
+        }
+      ]
+    },
+    {
+      "package": "workspace-write-recheck-2026-09-20",
+      "sums": "present",
+      "manifest": {
+        "present": true,
+        "commitKey": null,
+        "commit": null,
+        "generated": null
+      },
+      "provenance": {
+        "recorded": false
+      },
+      "files": [
+        {
+          "name": "manifest.json",
+          "status": "match",
+          "recorded": "7294afcd7c4b0b283b93c82f4604d58aee132fc58659893662364fb7c4709fc6",
+          "bytes": 2165
+        },
+        {
+          "name": "01-write.tap",
+          "status": "unlisted",
+          "bytes": 4111
+        },
+        {
+          "name": "02-boundary-regression.stderr.txt",
+          "status": "unlisted",
+          "bytes": 0
+        },
+        {
+          "name": "02-boundary-regression.stdout.txt",
+          "status": "unlisted",
+          "bytes": 14565
+        },
+        {
+          "name": "03-advisory-regression.stderr.txt",
+          "status": "unlisted",
+          "bytes": 0
+        },
+        {
+          "name": "03-advisory-regression.stdout.txt",
+          "status": "unlisted",
+          "bytes": 13262
+        },
+        {
+          "name": "04-full-verify.stderr.txt",
+          "status": "unlisted",
+          "bytes": 208
+        },
+        {
+          "name": "04-full-verify.stdout.txt",
+          "status": "unlisted",
+          "bytes": 101142
+        },
+        {
+          "name": "comparison.json",
+          "status": "unlisted",
+          "bytes": 199
+        },
+        {
+          "name": "initial-test-boundary-lock.json",
+          "status": "unlisted",
+          "bytes": 5013
+        },
+        {
+          "name": "runs.json",
+          "status": "unlisted",
+          "bytes": 2629
+        },
+        {
+          "name": "source-lock.json",
+          "status": "unlisted",
+          "bytes": 45237
+        },
+        {
+          "name": "verification.json",
+          "status": "unlisted",
+          "bytes": 4490
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "packages": 10,
+    "match": 63,
+    "mismatch": 1,
+    "missing": 0,
+    "unlisted": 14,
+    "malformed": 0,
+    "packagesWithoutSums": 1
+  }
+}

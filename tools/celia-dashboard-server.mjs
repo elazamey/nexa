@@ -2538,6 +2538,16 @@ const server = createServer(async (req, res) => {
   }
 
   // Serve static dashboard if built, otherwise return info
+  if (url.pathname === '/workspace' || url.pathname === '/workspace.html') {
+    const wsPath = path.resolve(root, 'dashboard/workspace.html');
+    if (fs.existsSync(wsPath)) {
+      const html = fs.readFileSync(wsPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
+  }
+
   if (url.pathname === '/' || url.pathname === '/index.html') {
     if (req.method === 'GET' && existsSync(DIST)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });

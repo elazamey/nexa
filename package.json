@@ -39,6 +39,7 @@
     "metrics": "node tools/check-metrics.mjs",
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
     "dashboard": "node tools/celia-dashboard-server.mjs",
+    "workspace": "node tools/celia-dashboard-server.mjs",
     "learning": "node tools/celia-learning.mjs",
     "celia:system": "node tools/celia-system.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",

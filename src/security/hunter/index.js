@@ -1,6 +1,7 @@
 export { ReconAgent } from './recon-agent.js';
 export { VulnEngine } from './vuln-engine.js';
 export { SevenGateValidator } from './seven-gate-validator.js';
+export { ArtifactReader } from './artifact-reader.js';
 export { ChainBuilder } from './chain-builder.js';
 export { SecretsHunter } from './secrets-hunter.js';
 export { JwtScanner } from './jwt-scanner.js';

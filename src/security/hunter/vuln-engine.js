@@ -118,21 +118,70 @@ export class VulnEngine {
 
   /**
    * Run full test suite on a given target surface
+   *
+   * كل نتيجة تُرفق بـ artifact أصلي (عقد قارئ الـ artifact v0.3 §3/DI-02):
+   * الكاشف يُنتج الدليل (pattern-trace) — والحكم على صلاحيته للقارئ المستقل فقط.
    */
   scanSurface(surface) {
     const findings = [];
 
     for (const ep of surface.endpoints || []) {
       const idor = this.detectIdor(ep);
-      if (idor) findings.push({ ...idor, endpoint: ep.path });
+      if (idor) {
+        findings.push({
+          ...idor,
+          endpoint: ep.path,
+          artifact: {
+            kind: 'pattern-trace',
+            locator: `endpoint:${ep.path}`,
+            evidence: {
+              detector: 'detectIdor',
+              path: ep.path,
+              authRequired: ep.authRequired === true,
+              method: ep.method || 'ANY'
+            },
+            producedBy: 'VulnEngine.detectIdor'
+          }
+        });
+      }
 
       const race = this.detectRaceCondition(ep);
-      if (race) findings.push({ ...race, endpoint: ep.path });
+      if (race) {
+        findings.push({
+          ...race,
+          endpoint: ep.path,
+          artifact: {
+            kind: 'pattern-trace',
+            locator: `endpoint:${ep.path}`,
+            evidence: {
+              detector: 'detectRaceCondition',
+              path: ep.path,
+              method: ep.method || 'ANY'
+            },
+            producedBy: 'VulnEngine.detectRaceCondition'
+          }
+        });
+      }
     }
 
     for (const p of surface.parameters || []) {
       const ssrf = this.detectSsrf(p.name, p.sink);
-      if (ssrf) findings.push({ ...ssrf, parameter: p.name });
+      if (ssrf) {
+        findings.push({
+          ...ssrf,
+          parameter: p.name,
+          artifact: {
+            kind: 'pattern-trace',
+            locator: `parameter:${p.name}`,
+            evidence: {
+              detector: 'detectSsrf',
+              parameter: p.name,
+              sink: p.sink || 'unknown'
+            },
+            producedBy: 'VulnEngine.detectSsrf'
+          }
+        });
+      }
     }
 
     return findings;

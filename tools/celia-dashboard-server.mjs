@@ -33,7 +33,7 @@
 
 import { createServer } from 'node:http';
 import { join, dirname, resolve, extname } from 'node:path';
-import { existsSync, statSync, createReadStream, mkdirSync } from 'node:fs';
+import { existsSync, statSync, createReadStream, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -2537,13 +2537,33 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Serve static dashboard if built, otherwise return info
+  // Serve static workspace HUD and Edge RAG interfaces
   if (url.pathname === '/workspace' || url.pathname === '/workspace.html') {
-    const wsPath = path.resolve(root, 'dashboard/workspace.html');
-    if (fs.existsSync(wsPath)) {
-      const html = fs.readFileSync(wsPath, 'utf8');
+    const wsPath = resolve(root, 'dashboard/workspace.html');
+    if (existsSync(wsPath)) {
+      const html = readFileSync(wsPath, 'utf8');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
+      return;
+    }
+  }
+
+  if (url.pathname === '/edge-rag' || url.pathname === '/edge-rag.html') {
+    const ragPath = resolve(root, 'dashboard/public/edge-rag.html');
+    if (existsSync(ragPath)) {
+      const html = readFileSync(ragPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
+  }
+
+  if (url.pathname === '/rag_core.js') {
+    const jsPath = resolve(root, 'dashboard/public/rag_core.js');
+    if (existsSync(jsPath)) {
+      const js = readFileSync(jsPath, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+      res.end(js);
       return;
     }
   }

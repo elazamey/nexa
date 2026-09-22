@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXA Edge RAG - Cloudflare Workers + WebGPU + NVIDIA NIM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b0f17; color: #e2e8f0; font-family: system-ui, sans-serif; }
+    .glass-card { background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; }
+  </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col gap-6 max-w-6xl mx-auto">
+
+  <!-- Navbar -->
+  <header class="flex justify-between items-center pb-4 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-bolt text-blue-500 text-2xl"></i>
+      <h1 class="text-xl font-bold text-white">NEXA Edge RAG <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">WebGPU + NIM</span></h1>
+    </div>
+    <div id="status-badge" class="text-xs px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 flex items-center gap-2">
+      <i class="fa-solid fa-circle-notch fa-spin"></i> جاري تحميل نموذج WebGPU...
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+
+    <!-- Document Ingestion Pane -->
+    <section class="glass-card p-5 flex flex-col gap-4 md:col-span-1">
+      <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+        <i class="fa-solid fa-file-arrow-up text-blue-400"></i> رفع وتضمين المستندات
+      </h2>
+
+      <!-- Dropzone -->
+      <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 bg-slate-900/50">
+        <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-500"></i>
+        <p class="text-xs text-slate-400">أسقط ملف نصي (TXT/MD) هنا أو اضغط للاختيار</p>
+        <input type="file" id="file-input" accept=".txt,.md,.json" class="hidden">
+      </div>
+
+      <!-- Indexing Progress Bar -->
+      <div id="progress-container" class="hidden flex-col gap-1">
+        <div class="flex justify-between text-xs text-slate-400">
+          <span>فهرسة الكتل...</span>
+          <span id="progress-text">0%</span>
+        </div>
+        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div id="progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
+        </div>
+      </div>
+
+      <!-- Indexed Context Preview -->
+      <div class="flex-1 flex flex-col gap-2">
+        <span class="text-xs text-slate-400">معاينة السياق المفهرس محلياً:</span>
+        <div id="context-preview" class="p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-400 flex-1 overflow-y-auto max-h-48">
+          لا توجد مستندات مفهرسة حالياً.
+        </div>
+      </div>
+    </section>
+
+    <!-- Chat & Query Stream Pane -->
+    <section class="glass-card p-5 flex flex-col gap-4 md:col-span-2">
+      <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+        <i class="fa-solid fa-comments text-emerald-400"></i> الاستعلام الذكي (NVIDIA NIM Chat)
+      </h2>
+
+      <!-- Chat History -->
+      <div id="chat-box" class="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-4 overflow-y-auto flex flex-col gap-4 min-h-[300px]">
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs text-slate-300">
+          💡 <strong>كيف تعمل المنظومة؟</strong> يتم تقطيع النص وتوليد المتجهات محلياً في متصفحك عبر <strong>WebGPU</strong>، ثم تُرسل أجزاء النص الأكثر صلة فقط لخادم <strong>NVIDIA NIM</strong> عبر Worker مجاني ومستقر.
+        </div>
+      </div>
+
+      <!-- Query Form -->
+      <form id="query-form" class="flex gap-2">
+        <input type="text" id="query-input" placeholder="اكتب سؤالك هنا بناءً على المستند المرفوع..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-50" disabled>
+        <button type="submit" id="send-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50 flex items-center gap-2" disabled>
+          <span>إرسال</span> <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { ClientEdgeRAG } from './rag_core.js';
+
+    const rag = new ClientEdgeRAG();
+    const statusBadge = document.getElementById('status-badge');
+    const queryInput = document.getElementById('query-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatBox = document.getElementById('chat-box');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const contextPreview = document.getElementById('context-preview');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    // 1. تهيئة نموذج RAG المحلي
+    async function initRAG() {
+      await rag.init((p) => {
+        if (p.status === 'progress') {
+          statusBadge.innerHTML = `<i class="fa-solid fa-download fa-spin"></i> تحميل النموذج: ${Math.round(p.progress || 0)}%`;
+        }
+      });
+
+      statusBadge.className = "text-xs px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-2";
+      statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> WebGPU Ready`;
+      queryInput.disabled = false;
+      sendBtn.disabled = false;
+    }
+
+    initRAG();
+
+    // 2. معالجة رفع الملفات
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    async function handleFile(file) {
+      if (!file) return;
+      const text = await file.text();
+
+      progressContainer.classList.remove('hidden');
+      const totalIndexed = await rag.indexDocument(text, file.name, (current, total) => {
+        const pct = Math.round((current / total) * 100);
+        progressBar.style.width = `${pct}%`;
+        progressText.innerText = `${pct}%`;
+      });
+
+      contextPreview.innerText = `تم فهرسة ${totalIndexed} كتلة بنجاح من الملف: ${file.name}`;
+      progressContainer.classList.add('hidden');
+    }
+
+    // 3. معالجة الاستعلام وتدفق SSE
+    document.getElementById('query-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = queryInput.value.trim();
+      if (!query) return;
+
+      // إضافة سؤال المستخدم
+      appendMessage('user', query);
+      queryInput.value = '';
+
+      // إيجاد الكتل الأكثر صلة من المتصفح
+      const relevantChunks = await rag.search(query, 3);
+      const context = relevantChunks.map(c => c.text).join('\n---\n');
+
+      // تجهيز مكان الإجابة
+      const aiMsgDiv = appendMessage('assistant', '<i>جاري التفكير والتوليد عبر NVIDIA NIM...</i>');
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: query, context: context })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullAnswer = "";
+
+        aiMsgDiv.innerHTML = ""; // تفريغ نص التحميل
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+              try {
+                const parsed = JSON.parse(line.substring(6));
+                const content = parsed.choices[0]?.delta?.content || "";
+                fullAnswer += content;
+                aiMsgDiv.innerText = fullAnswer;
+                chatBox.scrollTop = chatBox.scrollHeight;
+              } catch (err) {}
+            }
+          }
+        }
+      } catch (err) {
+        aiMsgDiv.innerHTML = `<span class="text-rose-400">خطأ أثناء التوليد: ${err.message}</span>`;
+      }
+    });
+
+    function appendMessage(role, text) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = role === 'user' 
+        ? 'bg-blue-600/20 border border-blue-500/30 p-3 rounded-lg text-xs text-blue-200 self-end max-w-[85%]'
+        : 'bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs text-slate-200 max-w-[90%] font-mono leading-relaxed';
+      msgDiv.innerHTML = text;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msgDiv;
+    }
+  </script>
+</body>
+</html>

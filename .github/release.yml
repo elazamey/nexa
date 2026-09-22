@@ -1,0 +1,24 @@
+changelog:
+  categories:
+    - title: "🛡️ التحصين الأمني والحوكمة (Security & Governance)"
+      labels:
+        - "security"
+        - "governance"
+        - "audit"
+    - title: "🚀 ميزات الـ AI OS Mesh الجديدة (Mesh Architecture)"
+      labels:
+        - "feature"
+        - "mesh"
+        - "agent"
+    - title: "🐛 إصلاحات الأخطاء والقيود (Bug Fixes & Invariants)"
+      labels:
+        - "fix"
+        - "bug"
+    - title: "⚙️ تحسينات البنية والـ CI/CD (Infrastructure)"
+      labels:
+        - "ci"
+        - "devcontainer"
+        - "documentation"
+  exclude:
+    labels:
+      - "ignore-for-release"

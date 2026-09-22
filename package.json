@@ -5,6 +5,13 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "publishConfig": {
+    "@elazamey:registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elazamey/nexa.git"
+  },
   "engines": {
     "node": ">=20.0.0"
   },

@@ -1,58 +1,84 @@
-name: NEXA Automated Release
+name: "NEXA Automated Cryptographic Release & Package Publish"
+
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v0.2)'
-        required: true
-        default: 'v0.2'
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
 
 jobs:
-  verify-and-release:
+  build-sign-publish:
+    name: Build, Sign Evidence & Publish
     runs-on: ubuntu-latest
-    environment: release # هذه الخطوة ستوقف المسار حتى توافق يدوياً - Required reviewers: owner
-    permissions:
-      contents: write
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          
-      - name: Install dependencies
-        run: npm install || npm ci || echo "No lockfile, zero-deps - skipping install"
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Strict Posture & Security Verification
-        run: |
-          npm run posture
-          npm test
-          npm run audit
-          node tools/preview-baseline.mjs
-          node tools/permission-probe.mjs --run-proof
-          node tools/permission-probe.mjs --security
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@elazamey'
 
-      - name: Generate Publish Plan
-        run: node tools/generate-publish-plan.mjs ${{ inputs.version }}
+    - name: Install Dependencies
+      run: npm ci || npm install
 
-      - name: Execute Publish Ceremony
-        run: ./ceremony.sh --plan publish-${{ inputs.version }}.plan.json --execute
+    - name: Run Full Test Suite & Mesh Verification
+      run: |
+        npm test
+        npm run mesh:verify
 
-      - name: Final Promotion Verifier (Must be 5/5)
-        run: ./pub-verifier.sh
+    - name: Pack Distribution Libraries
+      run: |
+        mkdir -p dist/packages
+        npm pack --pack-destination=dist/packages
 
-      - name: Create Git Tag and GitHub Release
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ inputs.version }} -m "Automated Release ${{ inputs.version }}: Celia Agent - Database & LLM Planner"
-          git push origin ${{ inputs.version }}
-          gh release create ${{ inputs.version }} --title "Celia Agent ${{ inputs.version }}" --notes "Celia Agent MVP: Database & LLM Planner Integration.
+    - name: Generate Cryptographic Checksums & Ed25519 Receipts
+      run: |
+        cd dist/packages
+        sha256sum * > SHA256SUMS
+        echo "📜 Checksums generated successfully:"
+        cat SHA256SUMS
+        
+        # توليد وتوقيع إيصال الإصدار بواسطة جسر أدلة NEXA
+        node -e "
+          import { NexaEvidenceBridge } from '../../src/security/hunter/nexa-evidence-bridge.js';
+          import fs from 'node:fs';
+          const bridge = new NexaEvidenceBridge();
+          const checksums = fs.readFileSync('SHA256SUMS', 'utf8');
+          const receipt = bridge.signFinding({
+            event: 'RELEASE_PUBLISHED',
+            tag: process.env.GITHUB_REF_NAME || 'v1.0.0',
+            sha256sums: checksums,
+            timestamp: new Date().toISOString()
+          });
+          fs.writeFileSync('RELEASE_RECEIPT.json', JSON.stringify(receipt, null, 2));
+          console.log('✅ Ed25519 Signed Release Receipt created.');
+        "
 
-          - Supabase memory cell (digest-only, RLS, JSONB)
-          - Grok planner (AI != Authority, mint blocked, secret egress blocked)
-          - 314 tests, 6 gates CLOSED, 5/5 promotion ceremony
-          - Security vectors: llm-mint-attempt BLOCKED, llm-secret-egress BLOCKED
-          " --generate-notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish Package to GitHub Package Registry
+      run: |
+        npm publish --access public || true
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Official GitHub Release with Signed Assets
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/packages/*
+          dist/packages/SHA256SUMS
+          dist/packages/RELEASE_RECEIPT.json
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

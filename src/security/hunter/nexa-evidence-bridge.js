@@ -18,16 +18,17 @@ export class NexaEvidenceBridge {
   }
 
   /**
-   * Generates a signed cryptographic receipt for a validated finding
+   * Generates a signed cryptographic receipt for a validated finding or release event
    */
-  certifyFinding(finding, target) {
+  certifyFinding(finding, target = 'local') {
     const findingDigest = crypto
       .createHash('sha256')
       .update(JSON.stringify({
-        title: finding.title || finding.name || finding.type,
-        severity: finding.severity,
+        title: finding.title || finding.name || finding.type || finding.event,
+        severity: finding.severity || 'INFO',
         target,
-        timestamp: new Date().toISOString()
+        payload: finding,
+        timestamp: finding.timestamp || new Date().toISOString()
       }))
       .digest('hex');
 
@@ -36,7 +37,7 @@ export class NexaEvidenceBridge {
       .toString('hex');
 
     return {
-      findingId: `NEXA-HUNT-${Date.now()}`,
+      findingId: `NEXA-EVID-${Date.now()}`,
       target,
       findingDigest,
       certifierPublicKey: this.getPublicKeyHex(),
@@ -45,6 +46,13 @@ export class NexaEvidenceBridge {
       gateScore: '7/7_PASSED',
       verified: true
     };
+  }
+
+  /**
+   * Alias for signing generic findings or release metadata
+   */
+  signFinding(payload) {
+    return this.certifyFinding(payload, payload.tag || payload.target || 'release');
   }
 
   /**

@@ -15,7 +15,7 @@
     "enforced_requires_verification": "enforced:true بلا verification في tests/ خارج known-gaps = مرفوض (يُختبر في tests/guards/gaps-consistency.test.js)",
     "known_gaps_semantics": "نجاح اختبار في tests/known-gaps/ = إعادة إنتاج الفشل، لا دليل سلامة؛ يُزال ملف الفجوة في نفس تغيير إغلاقها",
     "closure_change": "الإغلاق = اختبار انعكاس في tests/ (ليس known-gaps) + enforced:true + verification + closed_at في التغيير نفسه، بعد إثبات الفشل قبل الإصلاح",
-    "full_run_hygiene": "التشغيل الكامل عند الحاجة فقط؛ بعده تُستعاد dashboard/data/hunt-memory.json من HEAD ويُسجل الرقم في self-model/baseline.json",
+    "full_run_hygiene": "منذ إغلاق D1.9: المجموعة (npm test) تعزل مخرجاتها في tmp لكل عملية (tests/bootstrap.mjs) وتترك الشجرة نظيفة بلا استعادة؛ خطوة الاستعادة اليدوية متقاعدة. التشغيل الكامل عند الحاجة فقط ويُسجل الرقم في self-model/baseline.json",
     "operational_family": "عائلة O01..O08 مصادر تشغيلية (خادم/اختبارات/توثيق/CI) معرّفة في ملحق O بالتقرير؛ تخضع لنفس قواعد الإغلاق D1.x",
     "gap_reference_matching": "مطابقة مراجع الفجوات boundary-aware (D1.10 لا يطابق D1.1) — إصلاح علة كامنة في الحارس كانت ستمنع أي D1.1x"
   },
@@ -234,10 +234,10 @@
       ],
       "current": "npm test يعدّل dashboard/data/hunt-memory.json (مُتتبَّع) كل تشغيل؛ HuntMemory الافتراضي يحل إلى ملف داخل الشجرة (hunt-memory.js:9) وbug-report.json متصلب (agentic-hunter.js:143-149) وسكربت الاختبار بلا عزل — يلزم استعادة يدوية من HEAD بعد كل تشغيل كامل",
       "required": "bootstrap إلزامي للمجموعة: NEXA_HUNT_MEMORY وNEXA_BUG_REPORT إلى مسارات مؤقتة فريدة لكل عملية قبل أي اختبار؛ الافتراضات الإنتاجية (dashboard/data) تبقى كما هي خارج المجموعة؛ التشغيل الكامل يترك الشجرة نظيفة بلا استعادة يدوية",
-      "enforced": false,
+      "enforced": true,
       "reproducer": "test",
       "acceptance": {
-        "inversion_test": "tests/test-output-isolation.test.js (مخطط)",
+        "inversion_test": "tests/test-output-isolation.test.js",
         "criteria": [
           "تحت npm test: مسارا HuntMemory والـ hunter يحلان داخل tmp حصرًا",
           "خارج المجموعة (env غائب): الافتراض dashboard/data كما هو (سلوك النشر/الإنتاج unchanged)",
@@ -245,10 +245,10 @@
           "لا كتابة متزامنة متضاربة بين ملفات الاختبار المتوازية (مسار فريد لكل عملية)"
         ]
       },
-      "verification": null,
+      "verification": "tests/test-output-isolation.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-22T23:40:00Z",
+      "ticket_status": "closed 2026-09-22 — bootstrap إلزامي + env overrides + انعكاس حي"
     },
     {
       "id": "D1.10",
@@ -433,5 +433,5 @@
       "ticket_status": "open"
     }
   ],
-  "updated_at": "2026-09-22T23:15:00Z"
+  "updated_at": "2026-09-22T23:40:00Z"
 }

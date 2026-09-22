@@ -139,13 +139,15 @@ export class AgenticBugHunter {
     };
 
     // حفظ التقرير في مجلد لوحة التحكم
-    const outputDir = path.resolve('dashboard/data');
+    // D1.9: NEXA_BUG_REPORT يعزل مخرجات الاختبار؛ الافتراضي الإنتاجي unchanged.
+    const reportPath = process.env.NEXA_BUG_REPORT || path.join(path.resolve('dashboard/data'), 'bug-report.json');
+    const outputDir = path.dirname(reportPath);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
     fs.writeFileSync(
-      path.join(outputDir, 'bug-report.json'),
+      reportPath,
       JSON.stringify(summary, null, 2)
     );
 

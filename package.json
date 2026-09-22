@@ -20,8 +20,8 @@
     "adapters/*"
   ],
   "scripts": {
-    "test": "node --test",
-    "audit": "node --test tests/security.test.js",
+    "test": "node --import ./tests/bootstrap.mjs --test",
+    "audit": "node --import ./tests/bootstrap.mjs --test tests/security.test.js",
     "posture": "node tools/check-posture.mjs",
     "proof:permission": "node --permission --allow-fs-read=. tools/permission-proof.mjs",
     "proof:permission:legacy": "node --experimental-permission --allow-fs-read=. tools/permission-proof.mjs",

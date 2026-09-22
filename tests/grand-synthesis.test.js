@@ -8,13 +8,16 @@ import {
   NexaDeterministicCore,
   ZeroCostDistributedFabric,
   GrandSynthesisKernel,
-  CONSTITUTIONAL_PRINCIPLES
+  CONSTITUTIONAL_PRINCIPLES,
+  P2P_PROOF_DOMAIN
 } from '../packages/cells/celia/synthesis/index.js';
 
 import { verifyReceipt } from '../packages/evidence/index.js';
 import { createIdentity } from '../packages/identity/index.js';
 import { buildEnvelope } from '../packages/protocol/index.js';
 import { attenuate } from '../packages/capability/index.js';
+import { sha256Multihash } from '../packages/crypto/index.js';
+import { canonicalBytes } from '../packages/ast/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. OpenAI Frontier Reasoning Engine Tests
@@ -457,7 +460,7 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   );
   assert.equal(isValidProof, true, 'Valid Merkle inclusion proof must verify against root hash');
 
-  // Byzantine peer test: tampered leaf hash must be rejected
+  // Byzantine peer test 1: tampered leaf hash must be rejected
   const byzantineTamperedProof = {
     id: 'byzantine_01',
     leafHash: 'sha256:FORGED_HASH_VAL_0000000000000000000000000',
@@ -474,7 +477,7 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   assert.equal(byzantineIngest.accepted, false);
   assert.equal(byzantineIngest.reason, 'TAMPERED_LEAF_HASH_DETECTED');
 
-  // Byzantine peer test: unauthenticated peer node must be rejected
+  // Byzantine peer test 2: unauthenticated peer node must be rejected
   const unauthenticatedPeerProof = {
     ...byzantineTamperedProof,
     broadcastBy: 'peer:unregistered:hacker'
@@ -482,6 +485,46 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   const unauthIngest = fabric.ingestPeerProof(unauthenticatedPeerProof);
   assert.equal(unauthIngest.accepted, false);
   assert.equal(unauthIngest.reason, 'UNAUTHENTICATED_PEER_NODE');
+
+  // Byzantine peer test 3: Ed25519 signature forgery detection
+  const peerIdentity = createIdentity({ label: 'honest-peer' });
+  fabric.registerPeer(peerIdentity.kid);
+
+  const honestLeafData = {
+    domain: 'NEXA/p2p/proof/v1',
+    receipt: mockReceipt,
+    metadata: { valid: true },
+    timestamp: Date.now()
+  };
+  const honestLeafHash = sha256Multihash(canonicalBytes(honestLeafData));
+  
+  // Valid signed peer proof
+  const validSignedPeerProof = {
+    id: 'peer_proof_valid_01',
+    leafHash: honestLeafHash,
+    leafData: honestLeafData,
+    broadcastBy: peerIdentity.kid,
+    sig: {
+      alg: 'ed25519',
+      kid: peerIdentity.kid,
+      val: peerIdentity.keys.sign(Buffer.concat([Buffer.from(P2P_PROOF_DOMAIN, 'utf8'), Buffer.from(honestLeafHash, 'utf8')]))
+    }
+  };
+  const honestIngest = fabric.ingestPeerProof(validSignedPeerProof);
+  assert.equal(honestIngest.accepted, true);
+
+  // Forged signature bytes
+  const forgedSigPeerProof = {
+    ...validSignedPeerProof,
+    sig: {
+      alg: 'ed25519',
+      kid: peerIdentity.kid,
+      val: 'b'.repeat(88) // Forged!
+    }
+  };
+  const forgedIngest = fabric.ingestPeerProof(forgedSigPeerProof);
+  assert.equal(forgedIngest.accepted, false);
+  assert.equal(forgedIngest.reason, 'BYZANTINE_SIGNATURE_FORGERY_DETECTED');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

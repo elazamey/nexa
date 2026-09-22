@@ -1,0 +1,31 @@
+name: "Agentic Bug Hunter CI"
+
+on:
+  push:
+    branches: [ "main", "arena/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  agentic-scan:
+    name: Run Agentic Bug Hunter & Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+
+    - name: Execute Agentic Bug Hunter
+      run: |
+        node src/security/agentic-hunter.js packages
+
+    - name: Upload Scan Report Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: agentic-bug-report
+        path: dashboard/data/bug-report.json

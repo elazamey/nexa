@@ -36,7 +36,9 @@
     "celia:system": "node tools/celia-system.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",
     "demo:celia": "node tools/celia-demo.mjs",
-    "celia:vectors": "node tools/permission-probe.mjs --security"
+    "celia:vectors": "node tools/permission-probe.mjs --security",
+    "hunt:bugs": "node src/security/agentic-hunter.js packages",
+    "synthesis": "node tools/celia-grand-synthesis.mjs"
   },
   "keywords": [
     "protocol",

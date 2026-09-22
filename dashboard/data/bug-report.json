@@ -1,0 +1,117 @@
+{
+  "timestamp": "2026-09-22T08:07:03.631Z",
+  "targetDir": "/home/user/nexa/packages",
+  "totalFilesScanned": 245,
+  "totalIssues": 15,
+  "critical": 0,
+  "high": 0,
+  "medium": 15,
+  "low": 0,
+  "details": [
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/dsl/src/binary-tokenizer.js",
+      "line": 9,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/dsl/src/index.js",
+      "line": 60,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/infinite/src/celia-infinite-kernel.js",
+      "line": 61,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/infinite/src/jit-kernel.js",
+      "line": 137,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/infinite/src/neural-symbolic-engine.js",
+      "line": 29,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/infinite/src/swarm-pheromone.js",
+      "line": 99,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/memory/src/cell.js",
+      "line": 33,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/memory/src/cell.js",
+      "line": 72,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/memory/src/cell.js",
+      "line": 78,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/memory/src/cell.js",
+      "line": 89,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/memory/src/lifecycle.js",
+      "line": 223,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/omega/src/celia-omega-kernel.js",
+      "line": 49,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/singularity/src/celia-singularity-kernel.js",
+      "line": 78,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/ultimate/src/celia-kernel-engine.js",
+      "line": 72,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    },
+    {
+      "severity": "MEDIUM",
+      "type": "UNHANDLED_ASYNC_ERROR",
+      "file": "packages/cells/celia/ultimate/src/z3-verifier.js",
+      "line": 20,
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+    }
+  ]
+}

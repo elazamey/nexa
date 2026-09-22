@@ -121,6 +121,30 @@ untracked files before any push, and `--strict` refuses to proceed while
 uncommitted work is present. It cannot prevent a `git checkout`, but it removes
 the ignorance the mistake depends on.
 
+### Fourth occurrence: the sandbox reset
+
+The local checkout was later found reset to `9d01947` — four commits behind —
+with fifty modified and untracked files in the tree. Every visible signal said
+the work was gone.
+
+It was not. `git ls-remote` showed `214b75c` on the server: everything had been
+pushed, and the local files were stale duplicates predating those commits. The
+recovery was `git fetch` + `git reset --hard FETCH_HEAD`, after
+`git stash push -u` preserved the local state in case that reading was wrong.
+
+Two rules earned their keep here, and the sequence is the point:
+
+1. **Ask the remote before believing the local tree.** The first instinct — that
+   a reset checkout means lost work — was wrong, and acting on it by rebuilding
+   would have produced a duplicate of work that already existed.
+2. **Stash before resetting.** `git reset --hard` is as irreversible as
+   `git checkout --`. The stash cost one second and made the step reversible.
+
+The deeper point is the same one P4 opened with: *a command that looks like
+recovery can be loss*, and **a state that looks like loss may not be**. Both
+errors come from acting on an assumed world state instead of a measured one.
+Measure first — `git status`, `git ls-remote`, `git diff --stat` — then act.
+
 ---
 
 ## P5 — Do not complete evidence retroactively

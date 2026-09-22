@@ -1,6 +1,6 @@
 {
   "schema": "nexa-evidence-check/v1",
-  "checkedAt": "2026-09-22T01:46:02.061Z",
+  "checkedAt": "2026-09-22T04:48:02.155Z",
   "limits": "A digest match proves the bytes are unchanged since the digest was recorded. It does not prove the run happened, that the file describes the current code, or that any claim inside the file is true. Commit provenance is checked only when the package records a commit.",
   "packages": [
     {
@@ -186,10 +186,10 @@
           "name": "tools/celia-workspace-commit-port.mjs",
           "status": "superseded-explained",
           "recorded": "7d2d8532ec38368d83513cc20e6670b142bb2d46e5bf002f62ea31ef4444885b",
-          "actual": "478e547ac58159580df7e812cf5586429afb4679c6d611eab3b3b7c3dfeec976",
+          "actual": "6b4a37818d5c1e43d29172dfa2df4f75607b88f298f13cd51b3e99b60fee06fd",
           "supersededRecorded": "2026-09-21",
           "sealedAtCommit": "unrecorded",
-          "bytes": 22819
+          "bytes": 23069
         },
         {
           "name": "docs/evidence/h2-atomicity/manifest.json",

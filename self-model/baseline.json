@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "note": "خطوط الأساس المقاسة (قابلة للتحقق) مقابل الادعاءات المجمدة تاريخيًا من الجلسة المفقودة arena/01a0cabd-nexa. تُحدَّث هذه الخانات بعد كل تذكرة تُغلق، وبعدها تُستعاد dashboard/data/hunt-memory.json من HEAD.",
+  "measured": {
+    "date": "2026-09-22",
+    "commit": "085a9c7898c9b8f19b59f33a4a298d67730a8a53",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 545,
+    "pass": 545,
+    "fail": 0,
+    "duration_ms": 32040,
+    "side_effects_restored": ["dashboard/data/hunt-memory.json"]
+  },
+  "frozen_claims": {
+    "tests_545": {
+      "value": 545,
+      "status": "verified — مطابق للقياس 2026-09-22"
+    },
+    "probes_13": {
+      "value": 13,
+      "status": "unverifiable — ادعاء الجلسة المفقودة؛ تعذر تحديد مصدر العد بيقين في المستودع الحالي؛ يُنقل كما هو بلا ادعاء تحقق"
+    },
+    "expected_next_full_run_557": {
+      "value": 557,
+      "status": "obsolete — كان يشمل اختبارات الجلسة المفقودة؛ استُبدل بقياس post-D1.2 يُسجل هنا بعد الإغلاق"
+    }
+  },
+  "history": [
+    {
+      "date": "2026-09-22",
+      "event": "baseline قبل إعادة البناء: 545/545 أخضر عند 085a9c7"
+    }
+  ]
+}

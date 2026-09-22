@@ -13,6 +13,7 @@ run, and reverted. `7-param` is the whole test-7 file (11 assertions).
 | E — parent left `applying` when child opens | ✓ | ✓ | ✓ | ✓ | ✓ | **KILLED ×2** |
 | F — parent erased before the child | ✓ | ✓ | ✓ | ✓ | ✓ | **KILLED** |
 | G — `parentTxId` link unchecked | ✓ | ✓ | ✓ | ✓ | ✓ | **KILLED** |
+| H — no-child assumed RESTORE_COMPLETED | ✓ | ✓ | ✓ | ✓ | ✓ | **KILLED ×2** |
 
 ## Acceptance rule, evaluated
 
@@ -36,9 +37,11 @@ be.
 - Classification only. `planRecovery` never repairs; the operator decides.
 - No restore of a restore — enforced by the API: the child object exposes no
   `openRestore`, and rule 5 rejects a parent carrying `parentTxId`.
-- A cut between the parent's `restore_pending` write and the child's creation is
-  classified `RESTORE_COMPLETED` with targets still at the new bytes. This is
-  declared, not hidden: the operator sees an unrestored target rather than an
-  intent with no exit.
+- ~~A cut between the parent's `restore_pending` write and the child's creation
+  is classified `RESTORE_COMPLETED`.~~ **Closed, not declared.** This was a false
+  verdict, not an acceptable limit: it would have cleared the parent while the
+  targets still held the applied bytes. The classifier now reads the disk and
+  returns `RESTORE_SKIPPED_NO_CHILD` (fail-closed, parent preserved). Mutation H
+  reproduces the old behaviour and kills two assertions. See section 7septies.
 - `INTERRUPTED_RESTORE` remains in the code for intents written by older builds.
   No path in this build can produce it, and every cut point asserts its absence.

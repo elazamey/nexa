@@ -2,81 +2,88 @@ TAP version 13
 # Subtest: P03/7 [after parent -> restore_pending, before the child exists]
 ok 1 - P03/7 [after parent -> restore_pending, before the child exists]
   ---
-  duration_ms: 3.863425
+  duration_ms: 3.431513
   type: 'test'
   ...
-# {"cut":"after parent -> restore_pending, before the child exists","plan":{"action":"clear","txId":"21372b28-5a0b-478a-ba6a-b552c8dcd66e","reason":"RESTORE_COMPLETED"}}
+# {"cut":"after parent -> restore_pending, before the child exists","plan":{"action":"block","reason":"RESTORE_SKIPPED_NO_CHILD","txId":"b0ea3f8e-f275-4339-8e6f-79fab6b59c96"}}
 # Subtest: P03/7 [child opened, nothing restored yet]
 ok 2 - P03/7 [child opened, nothing restored yet]
   ---
-  duration_ms: 1.329524
+  duration_ms: 1.18519
   type: 'test'
   ...
 # {"cut":"child opened, nothing restored yet","plan":{"action":"block","reason":"RESTORE_INCOMPLETE"}}
 # Subtest: P03/7 [child applying, target already back at base]
 ok 3 - P03/7 [child applying, target already back at base]
   ---
-  duration_ms: 0.815502
+  duration_ms: 0.825014
   type: 'test'
   ...
-# {"cut":"child applying, target already back at base","plan":{"action":"restore_complete","txId":"3310817c-c163-41fd-979b-38a02bae194c","parentTxId":"21372b28-5a0b-478a-ba6a-b552c8dcd66e"}}
+# {"cut":"child applying, target already back at base","plan":{"action":"restore_complete","txId":"343f39e4-32da-40ff-86c1-ecfd48cffffb","parentTxId":"b0ea3f8e-f275-4339-8e6f-79fab6b59c96"}}
 # Subtest: P03/7 [child present but the target holds neither base nor new bytes]
 ok 4 - P03/7 [child present but the target holds neither base nor new bytes]
   ---
-  duration_ms: 1.007857
+  duration_ms: 0.932635
   type: 'test'
   ...
 # {"cut":"child present but the target holds neither base nor new bytes","plan":{"action":"block","reason":"CORRUPT_RESTORE_STATE"}}
 # Subtest: P03/7 [child erased, parent still restore_pending]
 ok 5 - P03/7 [child erased, parent still restore_pending]
   ---
-  duration_ms: 1.149057
+  duration_ms: 1.075039
   type: 'test'
   ...
-# {"cut":"child erased, parent still restore_pending","plan":{"action":"clear","txId":"21372b28-5a0b-478a-ba6a-b552c8dcd66e","reason":"RESTORE_COMPLETED"}}
+# {"cut":"child erased, parent still restore_pending","plan":{"action":"clear","txId":"b0ea3f8e-f275-4339-8e6f-79fab6b59c96","reason":"RESTORE_COMPLETED"}}
 # Subtest: P03/7 rule 5: there is no restore of a restore
 ok 6 - P03/7 rule 5: there is no restore of a restore
   ---
-  duration_ms: 0.89467
+  duration_ms: 0.921893
   type: 'test'
   ...
 # openRestore refuses a parent that carries parentTxId; asserted at the API in the port tests.
 # Subtest: P03/7 rule G: a child whose parentTxId names no on-disk parent is fail-closed
 ok 7 - P03/7 rule G: a child whose parentTxId names no on-disk parent is fail-closed
   ---
-  duration_ms: 0.913141
+  duration_ms: 0.899201
   type: 'test'
   ...
 # Subtest: P03/7: an unreadable child is fail-closed and never falls through to the parent
 ok 8 - P03/7: an unreadable child is fail-closed and never falls through to the parent
   ---
-  duration_ms: 0.784255
+  duration_ms: 0.748107
   type: 'test'
   ...
 # Subtest: P03/7 lifecycle: opening a child moves the parent out of applying first
 ok 9 - P03/7 lifecycle: opening a child moves the parent out of applying first
   ---
-  duration_ms: 11.432666
+  duration_ms: 11.114169
   type: 'test'
   ...
 # Subtest: P03/7 lifecycle: the child is erased before the parent, never the reverse
 ok 10 - P03/7 lifecycle: the child is erased before the parent, never the reverse
   ---
-  duration_ms: 13.041174
+  duration_ms: 12.159806
   type: 'test'
   ...
 # Subtest: P03/7 lifecycle: rule 4 and rule 5 are enforced by the API, not by convention
 ok 11 - P03/7 lifecycle: rule 4 and rule 5 are enforced by the API, not by convention
   ---
-  duration_ms: 10.034909
+  duration_ms: 10.22924
   type: 'test'
   ...
-1..11
-# tests 11
+# Subtest: P03/7: restore_pending with no child is decided by the disk, not by the missing file
+ok 12 - P03/7: restore_pending with no child is decided by the disk, not by the missing file
+  ---
+  duration_ms: 0.90712
+  type: 'test'
+  ...
+# same log bytes, three different verdicts, all decided by the disk
+1..12
+# tests 12
 # suites 0
-# pass 11
+# pass 12
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 157.756948
+# duration_ms 138.468137

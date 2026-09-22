@@ -64,10 +64,11 @@ const cutPoints = [
   {
     name: 'after parent -> restore_pending, before the child exists',
     parent: parentIntent('restore_pending'), child: null, observed: NEW,
-    // Rule 3 read literally: no child means the restore completed. The design
-    // accepts this, because the child is written immediately after and a cut
-    // between the two leaves the target still at NEW for the operator to see.
-    expect: { action: 'clear', reason: 'RESTORE_COMPLETED' },
+    // The semantic hole, now closed. No child AND the target still holds the
+    // applied bytes means NO restore ran. Classifying that as RESTORE_COMPLETED
+    // would be a verdict opposite to the disk, and would erase the only record
+    // that a rollback was ever owed.
+    expect: { action: 'block', reason: 'RESTORE_SKIPPED_NO_CHILD' },
   },
   {
     name: 'child opened, nothing restored yet',
@@ -207,4 +208,31 @@ test('P03/7 lifecycle: rule 4 and rule 5 are enforced by the API, not by convent
   // Rule 5: the child exposes no openRestore at all — no restore of a restore.
   assert.equal(typeof child.openRestore, 'undefined');
   child.complete();
+});
+
+
+/**
+ * The absence of a child file is NOT evidence of a completed restore. These two
+ * cases are byte-identical in the log and differ only on disk; the classifier
+ * must therefore read the disk, and must never collapse them into one verdict.
+ */
+test('P03/7: restore_pending with no child is decided by the disk, not by the missing file', t => {
+  const s = store(t);
+  write(s.dir, 'intent.json', parentIntent('restore_pending'));
+  const report = inspectIntent({ directory: s.dir, root: s.root, targetRoot: TARGET_ROOT });
+
+  // Cut BEFORE the child was created: nothing was restored.
+  const skipped = planRecovery(report, () => NEW);
+  assert.equal(skipped.action, 'block', 'an unrestored root must never be cleared');
+  assert.equal(skipped.reason, 'RESTORE_SKIPPED_NO_CHILD');
+  assert.notEqual(skipped.reason, 'RESTORE_COMPLETED');
+  assert.equal(skipped.txId, parentTx, 'the parent is named so the operator can act on it');
+
+  // Cut AFTER the child completed and was erased: the restore really did run.
+  const completed = planRecovery(report, () => BASE);
+  assert.deepEqual(completed, { action: 'clear', txId: parentTx, reason: 'RESTORE_COMPLETED' });
+
+  // Neither base nor applied bytes: still fail-closed, not silently cleared.
+  assert.equal(planRecovery(report, () => digest('X')).reason, 'CORRUPT_RESTORE_STATE');
+  t.diagnostic('same log bytes, three different verdicts, all decided by the disk');
 });

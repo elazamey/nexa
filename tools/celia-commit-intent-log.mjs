@@ -200,10 +200,21 @@ export function planRecovery(report, digestOf) {
   if (!report.present) return { action: 'none' };
   if (report.unreadable) return { action: 'block', reason: 'INTENT_UNREADABLE' };
   if (!report.unconfirmed) return { action: 'block', reason: 'INTENT_NOT_CLOSED' };
-  // Rule 3: parent in restore_pending with NO child means the restore finished.
-  // No other inference is permitted here.
+  // Rule 3, corrected. A parent in restore_pending with NO child is ambiguous
+  // on its face: the child may have completed and been erased, or the cut may
+  // have landed between the parent's state write and the child's creation. The
+  // two are told apart by the DISK, never by the absence of a file. Claiming
+  // RESTORE_COMPLETED without looking would erase the parent and leave the new
+  // bytes on disk with no record that they were ever meant to be rolled back.
   if (report.intent.state === 'restore_pending') {
-    return { action: 'clear', txId: report.intent.txId, reason: 'RESTORE_COMPLETED' };
+    const restored = digestsMatch(report.intent.ops, digestOf, 'fromDigest');
+    if (restored.ok) return { action: 'clear', txId: report.intent.txId, reason: 'RESTORE_COMPLETED' };
+    if (restored.reason.startsWith('UNREADABLE')) return { action: 'block', reason: restored.reason };
+    // Still at the applied bytes: no restore ran at all. Keep the parent as the
+    // only surviving record and hand the decision to the operator.
+    const untouched = digestsMatch(report.intent.ops, digestOf, 'toDigest');
+    if (untouched.ok) return { action: 'block', reason: 'RESTORE_SKIPPED_NO_CHILD', txId: report.intent.txId };
+    return { action: 'block', reason: 'CORRUPT_RESTORE_STATE' };
   }
   // Rule 7: with the child transaction in place this classification is
   // unreachable for intents written by this build.

@@ -1,8 +1,8 @@
 { "package": "P03 test 7 — restore as an independent transaction",
   "commit_parent": "9a742fe",
   "generated": "2026-09-22T00:25:22Z",
-  "results": { "test7": "11/11", "prior_boundaries": "34/34", "full_verify": "536 pass / 0 fail",
+  "results": { "test7": "12/12", "prior_boundaries": "34/34", "full_verify": "537 pass / 0 fail",
                "gates": "6 CLOSED", "attacks": "31/31" },
-  "mutations_executed": ["A","B","C","D","E","F","G"],
+  "mutations_executed": ["A","B","C","D","E","F","G","H"],
   "acceptance": "E kills 2 cut points, F kills 1 — mutation gate satisfied",
   "naming": "crash-recovery with a proven-restore contract" }

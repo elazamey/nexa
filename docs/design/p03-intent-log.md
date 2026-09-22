@@ -260,6 +260,156 @@ E and F measure the invariant that makes this a package at all: **exactly one
 actionable intent at a time**. C deliberately does not kill 7-param; a mutation
 is not required to break everything.
 
+## 7septies. Closed defect — the false RESTORE_COMPLETED
+
+Recorded because it was shipped, not because it was foreseen.
+
+Test 7 originally classified "parent in `restore_pending`, no child on disk" as
+`RESTORE_COMPLETED` unconditionally. That is a verdict opposite to the disk: a
+cut landing between the parent's state write and the child's creation leaves
+the targets on the APPLIED bytes, meaning no restore ran at all. The verdict
+would then have cleared the parent — destroying the only surviving record that
+a rollback was owed, and leaving unrolled-back bytes with no intent behind
+them. "An intent with no exit" would have become "no intent and no trace".
+
+The absence of a file is not evidence. Both cut points produce byte-identical
+logs; only the disk distinguishes them. The classifier therefore reads the
+targets:
+
+| Parent state | Child | Observed digest | Verdict |
+|---|---|---|---|
+| `restore_pending` | none | `fromDigest` (base) | `clear` / `RESTORE_COMPLETED` |
+| `restore_pending` | none | `toDigest` (applied) | **`block` / `RESTORE_SKIPPED_NO_CHILD`** |
+| `restore_pending` | none | neither | `block` / `CORRUPT_RESTORE_STATE` |
+
+`RESTORE_SKIPPED_NO_CHILD` names the reality: no restore ran, the root still
+holds the applied bytes, the parent intent is preserved, and an operator
+decides. It is fail-closed and it never clears. Mutation H restores the old
+unconditional verdict and must kill at least two assertions.
+
+---
+
+## 8bis. Package 8 — two competing transactions
+
+### 8bis.1 Lock scope: the root, not the consumption store
+
+The existing `O_EXCL` lock in `celia-commit-consumption-store.mjs` guards the
+consumption store: it makes grant spend atomic. It does NOT guard the root, the
+intent log, or the target files. Package 8 introduces a SECOND, separate lock:
+
+- `commit.lock`, one per root, in the root's private directory.
+- The consumption lock stays exactly as it is, on its own file.
+
+**Two different hazards get two different locks.** Merging them would make any
+ordering mutation produce a conflict whose origin cannot be attributed — the
+same trap as H1. This is a binding decision, not a preference.
+
+### 8bis.2 Position in the decision order
+
+The contract from 7quater is extended to nine steps:
+
+```
+1 authorize
+2 consume          <- grant spend, guarded by the consumption lock
+3 acquire root lock  <- NEW
+4 inspectIntent
+5 planRecovery
+6 open
+7 apply
+8 verify
+9 close  (lock released last, after close)
+```
+
+The load-bearing rules are now two:
+
+- **2 before 4** (unchanged): an exhausted grant is 403 regardless of root state.
+- **3 before 4** (new): the lock is acquired BEFORE any read of the root, so no
+  competitor can create an intent between inspection and open.
+
+Option (a) — lock before `consume` — is rejected: it locks the root on the DENY
+path, where nothing is written. Option (c) — lock after `inspectIntent` — is
+rejected: it leaves exactly the window the package exists to close.
+
+**Accepted cost, declared:** a crash between step 2 and step 3 loses the grant
+with nothing written. This is safe (no partial effect) and detectable: a
+`consumed` record with no matching `opened` is a spend with no transaction, and
+is visible to reconciliation later. Losing a grant is strictly preferable to
+sharing one.
+
+### 8bis.3 The dead lock after SIGKILL
+
+`O_EXCL` creates a file; a killed process does not remove it. The lock file
+therefore carries `{ pid, startTime, acquiredAt, ttlMs }` and staleness needs
+ALL of:
+
+- the PID is dead, **or** the PID is alive but its `startTime` differs (the PID
+  was reused), **or**
+- the TTL has expired.
+
+PID alone is insufficient (PID reuse); TTL alone is insufficient (a `SIGKILL`
+between renewals, or a hung holder). The combination is the decision.
+
+**A stale lock is never broken silently.** Breaking it first writes a
+`lock-stale-recovery` intent naming the dead holder, then removes the lock,
+then proceeds. Without that step two processes can detect the same dead lock in
+the same instant, both break it, and both continue — the exact failure the lock
+exists to prevent. The break itself must be atomic: the recovery intent is
+created with `O_EXCL`, so only one process can own the break.
+
+Rejected as out of scope: `flock`/`fcntl` advisory locks (not portable across
+the declared ext4/xfs/apfs set with the same semantics under NFS-less
+assumptions we have not tested), lease renewal daemons, and any watcher process.
+
+### 8bis.4 What "competing" means, precisely
+
+> **Two competing transactions = two separate OS processes (different PIDs)
+> attempting to write to the same root at the same time.**
+
+Explicitly excluded, and NOT tested here:
+
+- The same process issuing two sequential requests — ordinary ordering.
+- The same process issuing two concurrent async requests — Node is
+  single-threaded; interleaving happens only at IO boundaries and gives no
+  relief. This is a different hazard and would muddy attribution.
+
+### 8bis.5 The losing transaction
+
+Immediate refusal: `409 ROOT_LOCKED`. No waiting, no timeout, no queue. This
+matches the established posture — `RECOVERY_UNVERIFIED` blocks, it does not
+wait. Waiting would add latency and a new failure mode with no security value.
+
+### 8bis.6 Mutation matrix, written BEFORE the code
+
+| Mutation | Must kill |
+|---|---|
+| H — no-child assumed `RESTORE_COMPLETED` | 7: disk-decided verdict (already executed, kills 2) |
+| I — no root lock, only the consumption lock | 8: the basic contention test |
+| J — lock acquired after `inspectIntent` | 8: the ordering / window test |
+| K — stale lock broken with no recovery intent | 8: SIGKILL-holder recovery |
+| L — the stale break is not atomic | 8: two simultaneous breakers |
+| M — staleness by file existence only, no PID check | 8: dead-lock recovery |
+
+Expected NOT to kill package 8: mutation C (atomic write discipline) and
+mutation B (consume ordering) — they belong to other contracts, and forcing
+every mutation to kill every test destroys attribution.
+
+**Acceptance rule for package 8:** mutations I, J, K and M are run BEFORE any
+green result is read. If none of them kills at least one cut point, the tests
+are measuring a counterfeit lock — precisely what happened in package 7, where
+the first version of test 7 passed 11/11 and survived mutation E completely.
+
+### 8bis.7 Declared limits of package 8
+
+- Single host only. No network lock, no distributed transactions, no multi-host
+  recovery — these remain rejected for all of P03.
+- POSIX filesystems as declared: ext4, xfs, apfs. NFS is out of scope because
+  `O_EXCL` guarantees there depend on server behaviour we do not test.
+- The lock protects against competing WRITERS. It makes no claim about readers.
+- Holding a lock is not authorization. The lock orders access; it never grants
+  it.
+
+---
+
 ## 8. RED plan (fixed before implementation)
 
 | # | Test | Proves |

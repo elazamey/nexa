@@ -67,19 +67,29 @@ test('Agentic Hunter: VulnEngine detects IDOR, SSRF, CORS, SQLi, and Race condit
 test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/7 gate compliance', () => {
   const validator = new SevenGateValidator();
 
+  // D1.2 (§5.1): GATE_2 تتطلب artifact صالحًا — لا يكفي locator نصي
   const validFinding = {
     title: 'IDOR in Billing API',
     severity: 'HIGH',
     endpoint: '/api/v1/billing/101',
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
-    impact: 'Tenant isolation breach'
+    impact: 'Tenant isolation breach',
+    artifact: {
+      kind: 'pattern-trace',
+      locator: 'endpoint:/api/v1/billing/101',
+      evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
+      producedBy: 'VulnEngine.detectIdor'
+    }
   };
 
   const gateResult = validator.evaluateFinding(validFinding, { inScope: true });
   assert.equal(gateResult.isValid, true);
   assert.equal(gateResult.score, '7/7');
   assert.equal(gateResult.status, 'APPROVED_FOR_REPORT');
+  // D1.2 (§10.10): المساند السبعة محسوبة ومعلنة
+  assert.ok(Array.isArray(gateResult.checks) && gateResult.checks.length === 7);
+  assert.ok(gateResult.checks.every(c => c.pass === true));
 
   // False positive / never-submit class
   const weakFinding = {
@@ -93,6 +103,13 @@ test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/
   const weakResult = validator.evaluateFinding(weakFinding, { inScope: true });
   assert.equal(weakResult.isValid, false);
   assert.equal(weakResult.status, 'REJECTED_AT_GATE');
+
+  // D1.2 (§5.1): finding بلا artifact — GATE_2 تفشل حتى مع بقية الحقول سليمة
+  const noArtifactFinding = { ...validFinding };
+  delete noArtifactFinding.artifact;
+  const noArtifactResult = validator.evaluateFinding(noArtifactFinding, { inScope: true });
+  assert.equal(noArtifactResult.isValid, false);
+  assert.ok(noArtifactResult.failedGates.some(g => g.id === 'GATE_2_REPRODUCIBILITY'));
 });
 
 test('Agentic Hunter: ChainBuilder synthesizes multi-stage exploit chains', () => {
@@ -178,27 +195,56 @@ test('Agentic Hunter: Web3Auditor detects Reentrancy and missing access control 
   assert.equal(report.findings[1].ruleId, 'MISSING_ACCESS_CONTROL');
 });
 
-test('Agentic Hunter: NexaEvidenceBridge signs findings with Ed25519 and verifies receipts', () => {
+test('Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 and fails closed otherwise', () => {
   const bridge = new NexaEvidenceBridge();
 
+  // D1.2 (§6.1): finding كامل الشروط — artifact صالح + 7/7 فعلية → إيصال صادق
   const finding = {
     title: 'IDOR in Billing API',
     severity: 'HIGH',
-    type: 'IDOR_BOLA'
+    type: 'IDOR_BOLA',
+    description: 'Direct object reference permits unauthorized invoice access',
+    cwe: 'CWE-639',
+    artifact: {
+      kind: 'pattern-trace',
+      locator: 'endpoint:/api/v1/billing/101',
+      evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
+      producedBy: 'VulnEngine.detectIdor'
+    }
   };
 
   const receipt = bridge.certifyFinding(finding, 'api.example.com');
   assert.ok(receipt.signature);
   assert.ok(receipt.findingDigest);
-  assert.equal(receipt.gateScore, '7/7_PASSED');
+  assert.ok(receipt.artifactDigest);
+  assert.equal(receipt.gateScore, '7/7_PASSED'); // الآن مشروطة بإعادة تقييم فعلية (§10.10)
+  assert.match(receipt.findingId, /^NEXA-EVID-[0-9a-f]{16}$/); // حتمي (§6.3)
 
   const isValid = bridge.verifyReceipt(receipt);
   assert.equal(isValid, true);
+
+  // D1.2 (§6.3): الربط بالحمولة — الإيصال الأصلي مع finding الأصلي ينجح، والمستبدل يُرفض
+  assert.equal(bridge.verifyReceipt(receipt, finding), true);
+  assert.equal(bridge.verifyReceipt(receipt, { ...finding, title: 'Swapped' }), false);
 
   // Tampered receipt fails verification
   const tamperedReceipt = { ...receipt, findingDigest: 'bad_digest_hash' };
   const isTamperedValid = bridge.verifyReceipt(tamperedReceipt);
   assert.equal(isTamperedValid, false);
+
+  // D1.2 (§6.1/§10.9): finding بلا artifact → رفض صريح بلا توقيع (كان يُوقَّع ويُختم 7/7)
+  const bareOutcome = bridge.certifyFinding(
+    { title: 'IDOR in Billing API', severity: 'HIGH', type: 'IDOR_BOLA' },
+    'api.example.com'
+  );
+  assert.equal(bareOutcome.certified, false);
+  assert.equal(bareOutcome.code, 'NEXA-E-REJECTED');
+  assert.equal(bareOutcome.signature, undefined);
+
+  // D1.2 (A10): signFinding لا يختم بوابات على payload عام
+  const genericOutcome = bridge.signFinding({ event: 'release', tag: 'v9.9.9' });
+  assert.equal(genericOutcome.certified, false);
+  assert.equal(genericOutcome.signature, undefined);
 });
 
 test('Agentic Hunter: AutopilotEngine completes autonomous end-to-end hunt loop', async () => {

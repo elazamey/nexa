@@ -40,11 +40,18 @@
       "id": "D1.2",
       "area": "src",
       "title": "Artifact Reader + GATE_2 (§5.1) + certifyFinding (§6.1/§6.3) — أول تذكرة src/",
-      "sources": ["A01", "A03", "A04", "A07", "A08", "A10", "A13"],
+      "sources": [
+        "A01",
+        "A03",
+        "A04",
+        "A07",
+        "A08",
+        "A10",
+        "A13"
+      ],
       "current": "certifyFinding يوقّع أي finding بلا artifact ويختم gateScore='7/7_PASSED' وverified:true حرفيًا؛ GATE_2 يمر بمجرد locator نصي؛ findingId/digest غير حتميين (Date.now + timestamp محقون)؛ verifyReceipt لا يربط التوقيع بالحمولة؛ signFinding يوقّع payloads عامة بنفس الختم",
       "required": "تنفيذ عقد قارئ الـ artifact v0.3-rebuild: ArtifactReader مستقل (§3/§4/§7)، GATE_2 عبر القارئ فقط (§5.1)، certifyFinding fail-closed بإعادة تقييم مستقلة و7/7 محسوبة (§6.1/§10.10)، إيصال حتمي ومربوط (§6.3)، أي فشل = رفض معلَّل بلا توقيع (§10.9)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
       "acceptance": {
         "inversion_test": "tests/artifact-reader.test.js",
         "pre_condition": "الاختبار يُكتب ويُشغَّل قبل التنفيذ ويفشل (أحمر موثق في self-model/evidence/)",
@@ -63,16 +70,18 @@
         ],
         "closure": "enforced:true + verification:tests/artifact-reader.test.js + closed_at في نفس تغيير التنفيذ، مع إزالة known-gap الخاص بالفجوة في نفس التغيير"
       },
-      "verification": null,
+      "verification": "tests/artifact-reader.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open — التذكرة المتفق عليها؛ تُنفَّذ مباشرة بعد commit إعادة البناء هذا"
+      "closed_at": "2026-09-22T22:45:00Z",
+      "ticket_status": "closed — أُغلقت في تغيير التنفيذ نفسه: أحمر موثق (self-model/evidence/d1.2-red.tap) ثم أخضر (d1.2-green.tap)، وأُزيل مُعيد إنتاج الفجوة من known-gaps في نفس التغيير"
     },
     {
       "id": "D1.3",
       "area": "src",
       "title": "GATE_7_SAFE_TESTING_COMPLIANCE بقرار ثابت pass:true",
-      "sources": ["A02"],
+      "sources": [
+        "A02"
+      ],
       "current": "البوابة السابعة تكتب pass:true حرفيًا لكل finding (seven-gate-validator.js:56)",
       "required": "البوابة تُحسب من دليل اختبار آمن فعلي (مثل safeTesting مستنبط من artifact/سياق)، لا قرار ثابت (DI-07)",
       "enforced": false,
@@ -94,7 +103,9 @@
       "id": "D1.4",
       "area": "src",
       "title": "انهيار GATE_3 وGATE_6 في مسند واحد (الأسئلة السبعة فعليًا خمسة)",
-      "sources": ["A09"],
+      "sources": [
+        "A09"
+      ],
       "current": "GATE_3 (سطر 36) وGATE_6 (سطر 55-57) يحملان نفس الشرط الدلالي severity ∈ {CRITICAL,HIGH,MEDIUM}",
       "required": "مسندان متمايزان: الأثر الملموس (impact من الدليل) وعبور حدود فعلي (boundary bypass) — كلٌّ بمصدر مستقل (DI-06)",
       "enforced": false,
@@ -116,7 +127,9 @@
       "id": "D1.5",
       "area": "src",
       "title": "قرار النطاق GATE_1 يعتمد سياق المتصل المُمرَّر حرفيًا",
-      "sources": ["A12"],
+      "sources": [
+        "A12"
+      ],
       "current": "autopilot يمرر {inScope:true} حرفيًا (autopilot.js:55)؛ GATE_1 يثق بالسياق لا بمصدر مستقل (seven-gate-validator.js:26)",
       "required": "قرار النطاق يُشتق من بيانات recon/نطاق موثقة تُمرر للـ validator كبيانات لا كحكم مسبق (DI-13)",
       "enforced": false,
@@ -137,7 +150,9 @@
       "id": "D1.6",
       "area": "src",
       "title": "HuntMemory fail-open: ابتلاع فساد JSON وأخطاء الكتابة",
-      "sources": ["A11"],
+      "sources": [
+        "A11"
+      ],
       "current": "_load يبتلع JSON فاسد بصمت ويرجع ذاكرة فارغة (hunt-memory.js:20-23)؛ save يبتلع أخطاء الكتابة بمجرد console.error (37-40)",
       "required": "فشل القراءة/الكتابة يظهر صراحة: خطأ مفهوم أو إشارة حالة تتحققها الاختبارات (DI-14)",
       "enforced": false,
@@ -158,7 +173,10 @@
       "id": "D1.7",
       "area": "src",
       "title": "كواشف inline داخل المنسِّق + منطق أعمى للنطاق",
-      "sources": ["A05", "A06"],
+      "sources": [
+        "A05",
+        "A06"
+      ],
       "current": "ثلاثة كواشف داخل _inspectFile تدفع إلى this.findings (agentic-hunter.js:81-116)؛ شرط UNHANDLED_ASYNC_ERROR على محتوى الملف كاملًا فيفقد كشفًا حقيقيًا بسبب try في دالة أخرى",
       "required": "كل كاشف وحدة مستقلة (ملف خاص) تُختبر منفردة؛ الشروط تُقيَّم في نطاق الهدف (DI-01، DI-15، DI-16)",
       "enforced": false,
@@ -180,12 +198,16 @@
       "id": "D1.8",
       "area": "src",
       "title": "اتساق bug-report.json مع الإيصالات الفعلية",
-      "sources": ["A13"],
+      "sources": [
+        "A13"
+      ],
       "current": "التقرير يكتب gateValidation من triage وdetails من certified فقط؛ الجوهر الإيصالي (ختم 7/7 الدائم) يعالج في D1.2",
       "required": "أرقام التقرير (totalIssues/validated/certified) تطابق الإيصالات الصادرة فعلًا وتُوثق علاقتها (DI-17)",
       "enforced": false,
       "reproducer": "none",
-      "blocked_by": ["D1.2"],
+      "blocked_by": [
+        "D1.2"
+      ],
       "acceptance": {
         "inversion_test": "tests/bug-report-consistency.test.js (مخطط)",
         "criteria": [
@@ -198,5 +220,6 @@
       "closed_at": null,
       "ticket_status": "open — محجوبة بـ D1.2"
     }
-  ]
+  ],
+  "updated_at": "2026-09-22T22:45:00Z"
 }

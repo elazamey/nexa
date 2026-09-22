@@ -1,9 +1,16 @@
+import { ArtifactReader } from './artifact-reader.js';
+
 /**
  * SevenGateValidator - 7-Question Strict Finding Gate & 4-Gate Triage
  * Filters out theoretical findings, false positives, and out-of-scope reports before submission.
+ *
+ * GATE_2_REPRODUCIBILITY تُقيَّم عبر ArtifactReader المستقل فقط (عقد قارئ الـ artifact
+ * v0.3 §5.1): locator نصي وحده لا يكفي — يلزم artifact صالح البنية.
  */
 export class SevenGateValidator {
   constructor(options = {}) {
+    // §5.1(3): القارئ يُحقن — لا يُقبل ناتج قراءة مُمرَّر من الكاشف
+    this.artifactReader = options.artifactReader || new ArtifactReader();
     this.neverSubmitClasses = [
       'MISSING_CSP_HEADER',
       'MISSING_X_FRAME_OPTIONS',
@@ -28,7 +35,8 @@ export class SevenGateValidator {
       {
         id: 'GATE_2_REPRODUCIBILITY',
         question: 'Is the vulnerability directly reproducible with deterministic steps?',
-        pass: !!(finding.endpoint || finding.file || finding.parameter)
+        // §5.1: المرور الحصري عبر artifact يجتاز القارئ المستقل — لا مجرد locator نصي
+        pass: this.artifactReader.validate(finding.artifact).valid
       },
       {
         id: 'GATE_3_DEMONSTRABLE_IMPACT',
@@ -65,6 +73,8 @@ export class SevenGateValidator {
       isValid,
       score: `${passedChecks.length}/7`,
       status: isValid ? 'APPROVED_FOR_REPORT' : 'REJECTED_AT_GATE',
+      // المساند السبعة كما حُسبت فعليًا — يستخدمها جسر الشهادة في قاعدة 7/7 (§10.10)
+      checks: checks.map(c => ({ id: c.id, question: c.question, pass: c.pass === true })),
       failedGates: checks.filter(c => !c.pass),
       verdict: isValid 
         ? 'Finding passed all 7 validation gates. Ready for submission.'

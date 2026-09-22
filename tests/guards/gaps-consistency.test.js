@@ -99,11 +99,14 @@ test('Guard D1.1/gaps: لا ملفات known-gaps يتيمة ولا لفجوات
 test('Guard D1.1/gaps: acceptance لتذكرة D1.2 يحدد اختبار الانعكاس وشرط الإغلاق', () => {
   const d12 = gaps.gaps.find(g => g.id === 'D1.2');
   assert.ok(d12, 'تذكرة D1.2 موجودة');
-  assert.equal(d12.enforced, false, 'D1.2 تُفتح غير مفروضة');
   assert.equal(d12.acceptance.inversion_test, 'tests/artifact-reader.test.js');
   assert.ok(Array.isArray(d12.acceptance.criteria) && d12.acceptance.criteria.length >= 10);
   assert.ok(d12.acceptance.pre_condition.includes('يفشل'));
   assert.ok(String(d12.acceptance.closure).includes('نفس تغيير'));
+  // بعد الإغلاق: اختبار الانعكاس المخطط هو نفسه verification الحي
+  if (d12.enforced) {
+    assert.equal(d12.verification, 'tests/artifact-reader.test.js', 'D1.2: verification يجب أن يكون اختبار الانعكاس نفسه');
+  }
   // مراجع تعاقدية أساسية داخل معيار القبول
   const joined = d12.acceptance.criteria.join(' ');
   for (const ref of ['§5.1', '§6.1', '§6.3', '§10.9', '§10.10']) {

@@ -1,0 +1,167 @@
+TAP version 13
+# 🚀 [Autopilot] Starting automated hunt loop on target: testdomain.com
+# Subtest: Agentic Hunter: ReconAgent enforces scope rules and maps attack surface
+ok 1 - Agentic Hunter: ReconAgent enforces scope rules and maps attack surface
+  ---
+  duration_ms: 1.771888
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: VulnEngine detects IDOR, SSRF, CORS, SQLi, and Race conditions
+ok 2 - Agentic Hunter: VulnEngine detects IDOR, SSRF, CORS, SQLi, and Race conditions
+  ---
+  duration_ms: 0.768362
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: SevenGateValidator filters false positives and enforces 7/7 gate compliance
+ok 3 - Agentic Hunter: SevenGateValidator filters false positives and enforces 7/7 gate compliance
+  ---
+  duration_ms: 0.571933
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: ChainBuilder synthesizes multi-stage exploit chains
+ok 4 - Agentic Hunter: ChainBuilder synthesizes multi-stage exploit chains
+  ---
+  duration_ms: 0.274508
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: SecretsHunter discovers leaked credentials and tokens
+ok 5 - Agentic Hunter: SecretsHunter discovers leaked credentials and tokens
+  ---
+  duration_ms: 0.814455
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: JwtScanner analyzes tokens and forges alg:none / key-confusion exploits
+ok 6 - Agentic Hunter: JwtScanner analyzes tokens and forges alg:none / key-confusion exploits
+  ---
+  duration_ms: 0.922314
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: LlmRedTeam runs prompt injection and guardrail benchmark
+ok 7 - Agentic Hunter: LlmRedTeam runs prompt injection and guardrail benchmark
+  ---
+  duration_ms: 0.277446
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: Web3Auditor detects Reentrancy and missing access control in Solidity
+ok 8 - Agentic Hunter: Web3Auditor detects Reentrancy and missing access control in Solidity
+  ---
+  duration_ms: 0.558726
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 and fails closed otherwise
+ok 9 - Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 and fails closed otherwise
+  ---
+  duration_ms: 4.171507
+  type: 'test'
+  ...
+# Subtest: Agentic Hunter: AutopilotEngine completes autonomous end-to-end hunt loop
+ok 10 - Agentic Hunter: AutopilotEngine completes autonomous end-to-end hunt loop
+  ---
+  duration_ms: 3.095577
+  type: 'test'
+  ...
+# Subtest: D1.2/§4: ArtifactReader يقبل artifact سليم البنية ويعيد نسخة منقّحة
+ok 11 - D1.2/§4: ArtifactReader يقبل artifact سليم البنية ويعيد نسخة منقّحة
+  ---
+  duration_ms: 1.873173
+  type: 'test'
+  ...
+# Subtest: D1.2/§8: البنية الناقصة تُرفض بلا رمي (AR-E01..AR-E05)
+ok 12 - D1.2/§8: البنية الناقصة تُرفض بلا رمي (AR-E01..AR-E05)
+  ---
+  duration_ms: 0.586325
+  type: 'test'
+  ...
+# Subtest: D1.2/§8 (AR-E06): حقل الحكم الذاتي داخل artifact مرفوض مبدئيًا
+ok 13 - D1.2/§8 (AR-E06): حقل الحكم الذاتي داخل artifact مرفوض مبدئيًا
+  ---
+  duration_ms: 0.203197
+  type: 'test'
+  ...
+# Subtest: D1.2/§10.9: استثناء أثناء القراءة يتحول إلى رفض معلَّل (AR-E00) لا انتشار
+ok 14 - D1.2/§10.9: استثناء أثناء القراءة يتحول إلى رفض معلَّل (AR-E00) لا انتشار
+  ---
+  duration_ms: 0.192783
+  type: 'test'
+  ...
+# Subtest: D1.2/§7: القارئ مستقل هيكليًا — لا يستورد كواشف ولا بوابات ولا جسرًا
+ok 15 - D1.2/§7: القارئ مستقل هيكليًا — لا يستورد كواشف ولا بوابات ولا جسرًا
+  ---
+  duration_ms: 0.35788
+  type: 'test'
+  ...
+# Subtest: D1.2/§5.1 (A03): GATE_2 تفشل بمجرد locator نصي بلا artifact
+ok 16 - D1.2/§5.1 (A03): GATE_2 تفشل بمجرد locator نصي بلا artifact
+  ---
+  duration_ms: 0.447751
+  type: 'test'
+  ...
+# Subtest: D1.2/§5.1: GATE_2 تمر عبر artifact صالح — والبوابات السبع محسوبة ومعلنة
+ok 17 - D1.2/§5.1: GATE_2 تمر عبر artifact صالح — والبوابات السبع محسوبة ومعلنة
+  ---
+  duration_ms: 0.256598
+  type: 'test'
+  ...
+# Subtest: D1.2/§6.1: رفض صريح بلا توقيع عند غياب artifact (A01/A04)
+ok 18 - D1.2/§6.1: رفض صريح بلا توقيع عند غياب artifact (A01/A04)
+  ---
+  duration_ms: 1.294075
+  type: 'test'
+  ...
+# Subtest: D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7/7)
+ok 19 - D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7/7)
+  ---
+  duration_ms: 0.585347
+  type: 'test'
+  ...
+# Subtest: D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gateCheck مزوَّر لا ينفع
+ok 20 - D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gateCheck مزوَّر لا ينفع
+  ---
+  duration_ms: 0.62826
+  type: 'test'
+  ...
+# Subtest: D1.2/§6.2: إيصال كامل عند استيفاء الشروط — الحقول من تحقق فعلي
+ok 21 - D1.2/§6.2: إيصال كامل عند استيفاء الشروط — الحقول من تحقق فعلي
+  ---
+  duration_ms: 5.898195
+  type: 'test'
+  ...
+# Subtest: D1.2/§10.9: استثناء داخل certifyFinding يتحول إلى رفض معلَّل لا توقيع احتياطي
+ok 22 - D1.2/§10.9: استثناء داخل certifyFinding يتحول إلى رفض معلَّل لا توقيع احتياطي
+  ---
+  duration_ms: 0.535403
+  type: 'test'
+  ...
+# Subtest: D1.2/A10: signFinding يخضع لنفس الصرامة — لا ختم بوابات على payloads عامة
+ok 23 - D1.2/A10: signFinding يخضع لنفس الصرامة — لا ختم بوابات على payloads عامة
+  ---
+  duration_ms: 0.336983
+  type: 'test'
+  ...
+# Subtest: D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest/findingId، ومفاتيح مرتبة
+ok 24 - D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest/findingId، ومفاتيح مرتبة
+  ---
+  duration_ms: 1.946296
+  type: 'test'
+  ...
+# Subtest: D1.2/§6.3 (A08): الربط — verifyReceipt يعيد حساب الحمولة ويرفض المستبدلة
+ok 25 - D1.2/§6.3 (A08): الربط — verifyReceipt يعيد حساب الحمولة ويرفض المستبدلة
+  ---
+  duration_ms: 2.711607
+  type: 'test'
+  ...
+# Subtest: D1.2/DI-02: VulnEngine.scanSurface يرفق artifacts بنتائجه (provenance)
+ok 26 - D1.2/DI-02: VulnEngine.scanSurface يرفق artifacts بنتائجه (provenance)
+  ---
+  duration_ms: 2.34677
+  type: 'test'
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.590124

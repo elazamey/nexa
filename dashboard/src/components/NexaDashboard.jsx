@@ -11,6 +11,7 @@ import OmegaPanel from './OmegaPanel.jsx';
 import AgentCanvasEmulator from './AgentCanvasEmulator.jsx';
 import BugHunterPanel from './BugHunterPanel.jsx';
 import GrandSynthesisPanel from './GrandSynthesisPanel.jsx';
+import MeshArchitecturePanel from './MeshArchitecturePanel.jsx';
 
 const CounterCard = ({ title, value, unit, icon: Icon, color, bgGlow, pulse = false, subValue }) => (
   <div className="relative overflow-hidden bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-4 flex flex-col justify-between group hover:border-slate-700 transition-all duration-300">
@@ -769,6 +770,13 @@ export default function NexaDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* 2026 AI Agent Operating System Mesh Architecture Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div className="lg:col-span-12">
+            <MeshArchitecturePanel />
           </div>
         </div>
 

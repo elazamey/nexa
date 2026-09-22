@@ -46,6 +46,14 @@
     "hunt:jwt": "node tools/bughunter.mjs jwt",
     "hunt:web3": "node tools/bughunter.mjs web3",
     "hunt:llm": "node tools/bughunter.mjs llm-redteam",
+    "mesh": "node tools/nexa-mesh.mjs",
+    "mesh:runtimes": "node tools/nexa-mesh.mjs runtimes",
+    "mesh:route": "node tools/nexa-mesh.mjs route",
+    "mesh:memory": "node tools/nexa-mesh.mjs memory",
+    "mesh:computer": "node tools/nexa-mesh.mjs computer",
+    "mesh:improve": "node tools/nexa-mesh.mjs improve",
+    "mesh:verify": "node tools/nexa-mesh.mjs verify-ledger",
+    "mesh:demo": "node tools/nexa-mesh.mjs full-demo",
     "synthesis": "node tools/celia-grand-synthesis.mjs"
   },
   "keywords": [

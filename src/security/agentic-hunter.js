@@ -1,19 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  ReconAgent,
+  VulnEngine,
+  SevenGateValidator,
+  ChainBuilder,
+  SecretsHunter,
+  JwtScanner,
+  LlmRedTeam,
+  Web3Auditor,
+  ReportWriter,
+  NexaEvidenceBridge,
+  HuntMemory,
+  AutopilotEngine
+} from './hunter/index.js';
 
 /**
- * Agentic Bug Hunter - NEXA Core Security Inspector
- * يفحص الكود المصدري بحثاً عن الثغرات المنطقية، تسريب الذاكرة، وخرق الثوابت.
+ * AgenticBugHunter - NEXA Core Security Inspector & Autonomous Hunting Engine
+ * Integrates static code analysis, dynamic surface mapping, 7-Question Gate validation,
+ * exploit chaining, and Ed25519 cryptographic certification.
  */
 export class AgenticBugHunter {
   constructor(targetDir = 'packages') {
     this.targetDir = path.resolve(targetDir);
     this.findings = [];
+    this.secretsHunter = new SecretsHunter();
+    this.validator = new SevenGateValidator();
+    this.memory = new HuntMemory();
+    this.evidenceBridge = new NexaEvidenceBridge();
   }
 
   // مسح الشجرة البرمجية بالكامل
   async scan() {
-    console.log(`🤖 [Agentic Bug Hunter] Starting scan in: ${this.targetDir}`);
+    console.log(`🤖 [Agentic Bug Hunter] Starting security inspection in: ${this.targetDir}`);
     const files = this._getFilesRecursive(this.targetDir);
     
     for (const file of files) {
@@ -49,6 +68,12 @@ export class AgenticBugHunter {
     const relativePath = path.relative(process.cwd(), filePath);
     const lines = content.split('\n');
 
+    // Scan for secrets via SecretsHunter
+    const secretFindings = this.secretsHunter.scanContent(content, relativePath);
+    for (const sf of secretFindings) {
+      this.findings.push(sf);
+    }
+
     lines.forEach((line, index) => {
       const lineNum = index + 1;
 
@@ -74,18 +99,7 @@ export class AgenticBugHunter {
         });
       }
 
-      // 3. فحص تسريب البيانات أو الـ Hardcoded Secrets
-      if (/(api_key|secret|password|private_key)\s*=\s*['"`][A-Za-z0-9_\-\.]{16,}['"`]/i.test(line) && !line.includes('z6Mk') && !line.includes('sample') && !line.includes('mock')) {
-        this.findings.push({
-          severity: 'CRITICAL',
-          type: 'HARDCODED_SECRET',
-          file: relativePath,
-          line: lineNum,
-          description: 'اكتشاف مفتاح سرّي أو كلمة مرور مدمجة في الكود المصدري.'
-        });
-      }
-
-      // 4. فحص استدعاءات الذاكرة والموارد المفتوحة (Resource Leaks)
+      // 3. فحص استدعاءات الذاكرة والموارد المفتوحة (Resource Leaks)
       if (line.includes('fs.openSync') || line.includes('createReadStream')) {
         if (!content.includes('.close') && !content.includes('.destroy')) {
           this.findings.push({
@@ -101,6 +115,15 @@ export class AgenticBugHunter {
   }
 
   _generateReport() {
+    // Validate findings with the 7-Gate Validator
+    const triage = this.validator.filterValidFindings(this.findings);
+
+    // Cryptographically certify validated findings
+    const certifiedFindings = triage.validated.map(f => ({
+      ...f,
+      receipt: this.evidenceBridge.certifyFinding(f, this.targetDir)
+    }));
+
     const summary = {
       timestamp: new Date().toISOString(),
       targetDir: this.targetDir,
@@ -110,7 +133,8 @@ export class AgenticBugHunter {
       high: this.findings.filter(f => f.severity === 'HIGH').length,
       medium: this.findings.filter(f => f.severity === 'MEDIUM').length,
       low: this.findings.filter(f => f.severity === 'LOW').length,
-      details: this.findings
+      gateValidation: triage.stats,
+      details: certifiedFindings
     };
 
     // حفظ التقرير في مجلد لوحة التحكم
@@ -124,7 +148,7 @@ export class AgenticBugHunter {
       JSON.stringify(summary, null, 2)
     );
 
-    console.log(`✅ [Agentic Bug Hunter] Scan complete. Found ${summary.totalIssues} issue(s). Report saved to dashboard/data/bug-report.json`);
+    console.log(`✅ [Agentic Bug Hunter] Scan complete. Found ${summary.totalIssues} issue(s). Validated: ${triage.stats.passed}. Saved to dashboard/data/bug-report.json`);
     return summary;
   }
 }
@@ -135,7 +159,22 @@ if (process.argv[1] && (process.argv[1].endsWith('agentic-hunter.js') || process
   const hunter = new AgenticBugHunter(target);
   hunter.scan().then(report => {
     if (report.critical > 0) {
-      process.exitCode = 1; // إفشال البناء في حالة وجود ثغرات حرجة
+      process.exitCode = 1;
     }
   });
 }
+
+export {
+  ReconAgent,
+  VulnEngine,
+  SevenGateValidator,
+  ChainBuilder,
+  SecretsHunter,
+  JwtScanner,
+  LlmRedTeam,
+  Web3Auditor,
+  ReportWriter,
+  NexaEvidenceBridge,
+  HuntMemory,
+  AutopilotEngine
+};

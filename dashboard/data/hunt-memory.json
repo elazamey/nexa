@@ -1,0 +1,272 @@
+{
+  "version": "1.0.0",
+  "sessions": [
+    {
+      "id": "session_1790064728077",
+      "timestamp": "2026-09-22T08:12:08.077Z",
+      "target": "test.com",
+      "surfaceScore": 100,
+      "totalDiscovered": 2,
+      "passedGate": 2,
+      "chainsFormed": 0,
+      "reportsGenerated": 2
+    },
+    {
+      "id": "session_1790064745039",
+      "timestamp": "2026-09-22T08:12:25.039Z",
+      "target": "testdomain.com",
+      "surfaceScore": 100,
+      "totalDiscovered": 2,
+      "passedGate": 2,
+      "chainsFormed": 0,
+      "reportsGenerated": 2
+    },
+    {
+      "id": "session_1790064747153",
+      "timestamp": "2026-09-22T08:12:27.153Z",
+      "target": "testdomain.com",
+      "surfaceScore": 100,
+      "totalDiscovered": 2,
+      "passedGate": 2,
+      "chainsFormed": 0,
+      "reportsGenerated": 2
+    },
+    {
+      "id": "session_1790064828618",
+      "timestamp": "2026-09-22T08:13:48.618Z",
+      "target": "testdomain.com",
+      "surfaceScore": 100,
+      "totalDiscovered": 2,
+      "passedGate": 2,
+      "chainsFormed": 0,
+      "reportsGenerated": 2
+    }
+  ],
+  "knownVulnerabilities": {},
+  "targetSurfaceCache": {
+    "test.com": {
+      "cachedAt": "2026-09-22T08:12:08.074Z",
+      "surface": {
+        "target": "test.com",
+        "timestamp": "2026-09-22T08:12:08.074Z",
+        "subdomains": [
+          "api.test.com",
+          "auth.test.com",
+          "admin.test.com",
+          "dev.test.com",
+          "staging.test.com",
+          "internal.test.com",
+          "graphql.test.com",
+          "v1.test.com",
+          "v2.test.com"
+        ],
+        "endpoints": [
+          {
+            "path": "/api/v1/user/profile",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "MEDIUM"
+          },
+          {
+            "path": "/api/v1/admin/users",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/api/v1/billing/invoices",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/graphql",
+            "method": "POST",
+            "authRequired": false,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/oauth/token",
+            "method": "POST",
+            "authRequired": false,
+            "risk": "CRITICAL"
+          },
+          {
+            "path": "/debug/vars",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "MEDIUM"
+          },
+          {
+            "path": "/.env",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "CRITICAL"
+          },
+          {
+            "path": "/api/v1/internal/health",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "LOW"
+          },
+          {
+            "path": "/api/v1/export?format=csv",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "type": "integer",
+            "sink": "IDOR / SQLi"
+          },
+          {
+            "name": "user_id",
+            "type": "uuid",
+            "sink": "IDOR / BOLA"
+          },
+          {
+            "name": "redirect_url",
+            "type": "url",
+            "sink": "Open Redirect / SSRF"
+          },
+          {
+            "name": "callback",
+            "type": "string",
+            "sink": "JSONP / DOM XSS"
+          },
+          {
+            "name": "query",
+            "type": "string",
+            "sink": "SQLi / NoSQLi"
+          },
+          {
+            "name": "template",
+            "type": "string",
+            "sink": "SSTI"
+          },
+          {
+            "name": "file",
+            "type": "filepath",
+            "sink": "LFI / Path Traversal"
+          }
+        ],
+        "surfaceScore": 100
+      }
+    },
+    "testdomain.com": {
+      "cachedAt": "2026-09-22T08:13:48.617Z",
+      "surface": {
+        "target": "testdomain.com",
+        "timestamp": "2026-09-22T08:13:48.617Z",
+        "subdomains": [
+          "api.testdomain.com",
+          "auth.testdomain.com",
+          "admin.testdomain.com",
+          "dev.testdomain.com",
+          "staging.testdomain.com",
+          "internal.testdomain.com",
+          "graphql.testdomain.com",
+          "v1.testdomain.com",
+          "v2.testdomain.com"
+        ],
+        "endpoints": [
+          {
+            "path": "/api/v1/user/profile",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "MEDIUM"
+          },
+          {
+            "path": "/api/v1/admin/users",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/api/v1/billing/invoices",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/graphql",
+            "method": "POST",
+            "authRequired": false,
+            "risk": "HIGH"
+          },
+          {
+            "path": "/oauth/token",
+            "method": "POST",
+            "authRequired": false,
+            "risk": "CRITICAL"
+          },
+          {
+            "path": "/debug/vars",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "MEDIUM"
+          },
+          {
+            "path": "/.env",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "CRITICAL"
+          },
+          {
+            "path": "/api/v1/internal/health",
+            "method": "GET",
+            "authRequired": false,
+            "risk": "LOW"
+          },
+          {
+            "path": "/api/v1/export?format=csv",
+            "method": "GET",
+            "authRequired": true,
+            "risk": "HIGH"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "type": "integer",
+            "sink": "IDOR / SQLi"
+          },
+          {
+            "name": "user_id",
+            "type": "uuid",
+            "sink": "IDOR / BOLA"
+          },
+          {
+            "name": "redirect_url",
+            "type": "url",
+            "sink": "Open Redirect / SSRF"
+          },
+          {
+            "name": "callback",
+            "type": "string",
+            "sink": "JSONP / DOM XSS"
+          },
+          {
+            "name": "query",
+            "type": "string",
+            "sink": "SQLi / NoSQLi"
+          },
+          {
+            "name": "template",
+            "type": "string",
+            "sink": "SSTI"
+          },
+          {
+            "name": "file",
+            "type": "filepath",
+            "sink": "LFI / Path Traversal"
+          }
+        ],
+        "surfaceScore": 100
+      }
+    }
+  }
+}

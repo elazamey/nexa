@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-22T08:07:03.631Z",
+  "timestamp": "2026-09-22T08:13:44.525Z",
   "targetDir": "/home/user/nexa/packages",
   "totalFilesScanned": 245,
   "totalIssues": 15,
@@ -7,111 +7,387 @@
   "high": 0,
   "medium": 15,
   "low": 0,
+  "gateValidation": {
+    "total": 15,
+    "passed": 15,
+    "rejected": 0,
+    "passRate": "100%"
+  },
   "details": [
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/dsl/src/binary-tokenizer.js",
       "line": 9,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824522",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "bbe9143cf77d553bbf6070dbf10d63aaa7087ca1498631835eabfaeada88999b",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "0d214a756e0890bdc6c5bc35f065259f372503156e3d41f9206f3f39dd829211d5dd5dd5d429ae9a4e4cc2a9319a8a7e0b4365e1cdbaae01a09b0c71c274ec07",
+        "certifiedAt": "2026-09-22T08:13:44.523Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/dsl/src/index.js",
       "line": 60,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824523",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "d35e800fbfb1c950dcafc62942400f08d497e249c2537caf6f7ab8380f6044a7",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "ba8c57e4bc2005d5775f3265d39556f358b90e100b07cad690926889d4d77022785625b401a170aaed1388f37873c05058f36d00dc96acc4b2379f067641ad0b",
+        "certifiedAt": "2026-09-22T08:13:44.523Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/infinite/src/celia-infinite-kernel.js",
       "line": 61,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "d35e800fbfb1c950dcafc62942400f08d497e249c2537caf6f7ab8380f6044a7",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "ba8c57e4bc2005d5775f3265d39556f358b90e100b07cad690926889d4d77022785625b401a170aaed1388f37873c05058f36d00dc96acc4b2379f067641ad0b",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/infinite/src/jit-kernel.js",
       "line": 137,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/infinite/src/neural-symbolic-engine.js",
       "line": 29,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/infinite/src/swarm-pheromone.js",
       "line": 99,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/memory/src/cell.js",
       "line": 33,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/memory/src/cell.js",
       "line": 72,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/memory/src/cell.js",
       "line": 78,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824524",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "31368d68de8f6d4d4bd18fc638d9cad6518ed3fc01ff1ecb10de5dfeb6ca5fd8",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "4a7771128982e14d0d89b8620e36638082a4225a5e66ac0f23a53538543ebe0ab7ae2eac9c9dc28856fc6ac7b5e1e834db20530a3a98592f5a26b615a0719c04",
+        "certifiedAt": "2026-09-22T08:13:44.524Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/memory/src/cell.js",
       "line": 89,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/memory/src/lifecycle.js",
       "line": 223,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/omega/src/celia-omega-kernel.js",
       "line": 49,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/singularity/src/celia-singularity-kernel.js",
       "line": 78,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/ultimate/src/celia-kernel-engine.js",
       "line": 72,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     },
     {
       "severity": "MEDIUM",
       "type": "UNHANDLED_ASYNC_ERROR",
       "file": "packages/cells/celia/ultimate/src/z3-verifier.js",
       "line": 20,
-      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية)."
+      "description": "دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).",
+      "gateCheck": {
+        "findingTitle": "UNHANDLED_ASYNC_ERROR",
+        "isValid": true,
+        "score": "7/7",
+        "status": "APPROVED_FOR_REPORT",
+        "failedGates": [],
+        "verdict": "Finding passed all 7 validation gates. Ready for submission."
+      },
+      "receipt": {
+        "findingId": "NEXA-HUNT-1790064824525",
+        "target": "/home/user/nexa/packages",
+        "findingDigest": "f2c4cb481431c1a2a0164e790da5d42304b43b39ef2bbe90ce1c7a8500a545f9",
+        "certifierPublicKey": "302a300506032b657003210041d93c0d054f94e9e7d26422005dd24406b4aae72cf7aa885da89b3bd31443f6",
+        "signature": "9c0ecc26312041b6c9a8ec6511399dc3c58c5354e38484d87588ed8cad773022f7d018759d795f4b447a0708335766a1b5750d939509cc8141cfef2995e8af0f",
+        "certifiedAt": "2026-09-22T08:13:44.525Z",
+        "gateScore": "7/7_PASSED",
+        "verified": true
+      }
     }
   ]
 }

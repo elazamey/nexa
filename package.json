@@ -38,6 +38,14 @@
     "demo:celia": "node tools/celia-demo.mjs",
     "celia:vectors": "node tools/permission-probe.mjs --security",
     "hunt:bugs": "node src/security/agentic-hunter.js packages",
+    "bughunter": "node tools/bughunter.mjs",
+    "hunt:recon": "node tools/bughunter.mjs recon",
+    "hunt:autopilot": "node tools/bughunter.mjs autopilot",
+    "hunt:validate": "node tools/bughunter.mjs validate",
+    "hunt:report": "node tools/bughunter.mjs report",
+    "hunt:jwt": "node tools/bughunter.mjs jwt",
+    "hunt:web3": "node tools/bughunter.mjs web3",
+    "hunt:llm": "node tools/bughunter.mjs llm-redteam",
     "synthesis": "node tools/celia-grand-synthesis.mjs"
   },
   "keywords": [

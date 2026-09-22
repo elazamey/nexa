@@ -2,9 +2,21 @@
  * Bounded COMMIT executor for the HTTP boundary. Captures and verifies all bytes
  * before mutation; never calls legacy commit(), which re-reads mutable staging.
  * H2: compensating rollback for synchronous apply errors under exclusive-root
- * ownership. Not atomic visibility, crash recovery or external-writer protection.
+ * ownership. H3: external-writer protection at the write point — each target is
+ * re-verified immediately before AND after a zero-byte reserved write (performed
+ * through fs.writeFileSync, the serialization point any writer scheduled at the
+ * moment of the write passes through), so a writer that mutates the target at the
+ * write point is seen before the approved bytes land; the commit then denies and
+ * preserves the external state instead of clobbering it. The reserved write moves
+ * no bytes and changes no mtime/ctime, so a denial or kill leaves zero trace.
+ * Not crash recovery; under the exclusive-root contract the residual window is the
+ * sub-instruction gap between the final check and the fd write.
  */
-import { chmodSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync, closeSync, constants, fchmodSync, fstatSync, ftruncateSync,
+  lstatSync, mkdirSync, openSync, readFileSync, readdirSync, realpathSync,
+  rmdirSync, unlinkSync, writeFileSync, writeSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { canonicalBytes } from '../packages/ast/index.js';
 import { sha256Multihash } from '../packages/crypto/index.js';
@@ -17,6 +29,8 @@ import { createCommitConsumptionStore } from './celia-commit-consumption-store.m
 const recoveryRequiredRoots = new Set();
 const MAX_FILES = 128;
 const MAX_BYTES = 8 * 1024 * 1024;
+// The zero-byte payload of the write-point reservation write (H3).
+const EMPTY_BYTES = new Uint8Array(0);
 const digest = value => sha256Multihash(canonicalBytes(value));
 export const workspaceCommitRoot = root => sha256Multihash(Buffer.from(`CELIA/commit/root/v1\0${resolve(root)}`, 'utf8'));
 
@@ -162,6 +176,61 @@ function restore(base, attempted, created) {
   return failures;
 }
 
+/**
+ * Re-verify a target at the moment of the write, not at approval time.
+ * Existing: regular, hardlink-unique, bounded and byte-identical to the
+ * captured base. New: still absent, or the zero-byte entry our own exclusive
+ * create produced in this operation. Any deviation is a base change (403),
+ * not an I/O fault: the on-disk state belongs to someone else now.
+ */
+function verifyBaseAtWrite(base, file) {
+  const target = join(base, file.path);
+  let stat;
+  try { stat = lstatSync(target); } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    stat = null;
+  }
+  if (file.base.exists) {
+    if (stat === null || stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1 || stat.size > MAX_BYTES) {
+      denyCommit('COMMIT_BASE_CHANGED');
+    }
+    if (!readFileSync(target).equals(file.previous)) denyCommit('COMMIT_BASE_CHANGED');
+  } else if (stat !== null && (stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1 || stat.size !== 0)) {
+    // Absent is the expected base; anything present must be the zero-byte
+    // entry this operation just created exclusively.
+    denyCommit('COMMIT_BASE_CHANGED');
+  }
+  return stat;
+}
+
+/**
+ * Apply the approved bytes to an already-verified target through a validated
+ * fd: the opened inode must still be the one the fresh stat saw (a
+ * rename-replace between check and open is a base change), then write-all,
+ * truncate and re-establish the captured permission bits (write/truncate may
+ * clear set-user-ID/set-group-ID).
+ */
+function writeFileBytes(target, file, freshStat) {
+  const fd = openSync(target, constants.O_RDWR | constants.O_NOFOLLOW);
+  try {
+    const opened = fstatSync(fd);
+    if (opened.dev !== freshStat.dev || opened.ino !== freshStat.ino) denyCommit('COMMIT_BASE_CHANGED');
+    let offset = 0;
+    while (offset < file.content.length) {
+      const written = writeSync(fd, file.content, offset, file.content.length - offset);
+      if (written <= 0) throw new Error('COMMIT_SHORT_WRITE');
+      offset += written;
+    }
+    ftruncateSync(fd, file.content.length);
+    if (file.base.exists) {
+      const mode = fstatSync(fd).mode & 0o7777;
+      if (mode !== file.base.mode) fchmodSync(fd, file.base.mode);
+    }
+  } finally {
+    closeSync(fd);
+  }
+}
+
 /** Local, read-only preparation for an operator; never mints or approves grants. */
 export function inspectWorkspaceCommit(input) {
   return captureOrDeny(input).descriptor;
@@ -187,25 +256,47 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     const changed = captured.files.filter(file => file.hash !== file.base.hash);
     if (changed.length === 0) denyCommit('COMMIT_NO_CHANGES');
     authorization.consume();
-    // No awaits/re-reading staging between verification and application. This
-    // excludes interleaving HTTP requests, NOT concurrent external OS writers.
-    const attempted = [];
+    // No awaits anywhere: HTTP requests cannot interleave a synchronous apply.
+    // H3 per-target sequence: verify base -> zero-byte reserved write (the write
+    // point, through fs.writeFileSync) -> re-verify -> byte apply. The reserved
+    // write moves no bytes, so an external writer that acts at exactly the write
+    // point survives it; the post-check then sees the foreign bytes BEFORE the
+    // approved content lands and the commit denies (403) preserving them.
+    const applied = [];
     const created = [];
+    let inFlight = null;
+    let inFlightTouched = false;
     try {
       for (const file of changed) {
+        inFlight = file;
+        inFlightTouched = false;
         const target = join(base, file.path);
         ensureParents(base, target, created);
-        attempted.push(file); // A throwing write may already have truncated/written.
-        try {
-          writeFileSync(target, file.content, { flag: file.base.exists ? 'w' : 'wx', mode: 0o600 });
-        } catch (error) {
-          // Exclusive creation failed: do not delete a pre-existing competitor's file.
-          if (!file.base.exists && error.code === 'EEXIST') attempted.pop();
-          throw error;
+        verifyBaseAtWrite(base, file);
+        if (file.base.exists) {
+          // r+ must find the existing target; zero bytes clobber nothing.
+          inFlightTouched = true;
+          writeFileSync(target, EMPTY_BYTES, { flag: 'r+' });
+        } else {
+          // wx must still be able to create it; from success the entry is ours.
+          writeFileSync(target, EMPTY_BYTES, { flag: 'wx', mode: 0o600 });
+          inFlightTouched = true;
         }
+        writeFileBytes(target, file, verifyBaseAtWrite(base, file));
+        applied.push(file);
       }
+      inFlight = null;
     } catch (error) {
-      const failures = restore(base, attempted, created);
+      // A base-change denial on the in-flight EXISTING target must not restore
+      // that target: its on-disk bytes are the external writer's and stay.
+      // A new target we created is rolled back to its expected absence.
+      const baseChanged = error instanceof WorkspaceCommitError && error.code === 'COMMIT_BASE_CHANGED';
+      const restoreList = [...applied];
+      if (inFlight !== null && inFlightTouched && !restoreList.includes(inFlight)
+          && !(baseChanged && inFlight.base.exists)) {
+        restoreList.push(inFlight);
+      }
+      const failures = restore(base, restoreList, created);
       if (failures.length) {
         recoveryRequiredRoots.add(base);
         const unavailable = new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');

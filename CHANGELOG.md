@@ -3,6 +3,51 @@
 All notable changes to NEXA are recorded here. The format follows Keep a Changelog,
 and the project uses semantic versioning once it leaves `0.x`.
 
+## [Unreleased] — 2026-09-22 — H3 external-writer protection at the COMMIT write point
+
+### Changed
+
+* **COMMIT executor write-point verification** (`tools/celia-workspace-commit-port.mjs`) —
+  each target is now applied as: verify base at the moment of the write → zero-byte
+  reserved write (the write point, through `fs.writeFileSync`; `r+` for existing
+  targets, atomic `wx` for new ones) → re-verify → byte apply through a validated fd
+  (inode identity re-checked, captured permission bits re-established). An external
+  writer that mutates a target at exactly the write point is observed before the
+  approved bytes land: the commit is denied with `COMMIT_BASE_CHANGED` (403), the
+  external state of that target is preserved, and no other target is applied. The
+  reserved write moves no bytes and changes no mtime/ctime, so a denial — or a kill —
+  at that point leaves zero filesystem trace. Rollback rules: a base-change denial
+  never restores the in-flight existing target (foreign bytes are not ours to revert),
+  a new target we created rolls back to its expected absence, and I/O failures keep
+  the previous compensating-rollback semantics.
+
+### Fixed
+
+* **Node 20 CI compatibility** (`tests/celia-system.test.js`, `tests/celia-library.test.js`) —
+  both CLI helpers spawned the advisory/library CLIs with the stable `--permission`
+  flag, which exists only on Node ≥22; on Node 20/21 the permission model is enabled
+  with `--experimental-permission` (no 20.x release ever shipped `--permission`). On
+  the CI matrix's Node 20 leg, `node --permission` died instantly with
+  `bad option` (exit 9), so the suite was red on Node 20 while the identical suite
+  passed on Node 22. The helpers now select the flag for the running Node version —
+  the same split `tools/permission-probe.mjs` applies to the CI proof step. No
+  security assertion changed: the CLIs still run under the permission model, which
+  still must deny filesystem writes and child processes. The probe's header comment
+  (which described `--permission` as available from "Node ≥20.8") is corrected to
+  match the official release history.
+
+### Verified
+
+* `npm run verify` → posture **ALL SIX GATES CLOSED** → **501/501 tests**
+  (previously 500/501; the H3 hardening test now passes) → security audit → three
+  demos → adversarial suite blocked → gate report.
+* Hardening boundaries all green in real child OS processes: H1 (consumed authority
+  survives restart/ABA), H2 (a failed multi-file commit leaves no half-applied root),
+  H3 (a stale COMMIT preserves an external edit made after hash verification).
+* Production single-service preview verified: `dashboard/dist` build served by
+  `tools/celia-dashboard-server.mjs` (API + SSE + SPA fallback) on 0.0.0.0,
+  matching the `render.yaml` blueprint.
+
 ## [0.4.1] — 2026-09-18 — G0 closure record
 
 The G0 gate is closed. Its design was reviewed line by line (four mandatory amendments, adopted

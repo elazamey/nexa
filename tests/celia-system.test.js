@@ -34,8 +34,14 @@ function temporary(t) {
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   return directory;
 }
+// Node renamed the permission-model flag across versions: --experimental-permission
+// (Node 20/21) became the stable --permission in Node 22. CI exercises both lines, so
+// pick the flag the current runtime understands — the same split
+// tools/permission-probe.mjs applies for the CI proof step (it probes at runtime).
+const PERMISSION_FLAG = Number(process.versions.node.split('.')[0]) >= 22 ? '--permission' : '--experimental-permission';
+
 function cli(args, { cwd = ROOT, permission = false } = {}) {
-  const flags = permission ? ['--permission', `--allow-fs-read=${ROOT}`, `--allow-fs-read=${cwd}`] : [];
+  const flags = permission ? [PERMISSION_FLAG, `--allow-fs-read=${ROOT}`, `--allow-fs-read=${cwd}`] : [];
   const child = spawnSync(process.execPath, [...flags, CLI, ...args], { cwd, env, encoding: 'utf8', timeout: 20000, maxBuffer: 6 * 1024 * 1024 });
   assert.ifError(child.error);
   return child;

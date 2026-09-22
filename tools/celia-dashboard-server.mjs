@@ -2722,5 +2722,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
   console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 314/314, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
+  console.log(`   Gates: 6 CLOSED, Tests: 501/501, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
 });

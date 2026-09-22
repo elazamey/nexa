@@ -35,6 +35,9 @@
     "learning": "node tools/celia-learning.mjs",
     "celia:system": "node tools/celia-system.mjs",
     "dashboard:dev": "cd dashboard && npm install && npm run dev",
+    "phase": "node tools/phase.mjs",
+    "verify:quick": "node tools/verify-quick.mjs",
+    "cover": "node tools/cover.mjs",
     "demo:celia": "node tools/celia-demo.mjs",
     "celia:vectors": "node tools/permission-probe.mjs --security"
   },

@@ -497,13 +497,14 @@ not the one it can assert:
 > rollback under exclusive-root ownership; H3 via write-point re-verification
 > (zero-byte reserved write, then a post-check before the approved bytes are applied).
 > Latest `verify`: **501 PASS / 0 FAIL of 501**, with the six gates CLOSED.
-> The metrics block below remains the historical all-green baseline, not current acceptance.
+> The metrics block below is enforced by `npm run metrics` (docs must match measured
+> reality) and tracks the current suite.
 > COMMIT now also requires a pre-provisioned, external persistent `CELIA_COMMIT_STATE_DIR`.
 > See [H1 evidence, storage contract and limits](docs/celia-workspace-commit-h1-persistence.ar.md)
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 353
+- Total tests: 501
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

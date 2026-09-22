@@ -94,7 +94,7 @@ See [H1 evidence and storage assumptions](docs/celia-workspace-commit-h1-persist
 and [the original H1/H2/H3 RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 353
+- Total tests: 501
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

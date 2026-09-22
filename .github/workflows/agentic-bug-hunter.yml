@@ -25,7 +25,7 @@ jobs:
         node src/security/agentic-hunter.js packages
 
     - name: Upload Scan Report Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: agentic-bug-report
         path: dashboard/data/bug-report.json

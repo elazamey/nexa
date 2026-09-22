@@ -60,6 +60,16 @@
       "passedGate": 2,
       "chainsFormed": 0,
       "reportsGenerated": 2
+    },
+    {
+      "id": "session_1790066504685",
+      "timestamp": "2026-09-22T08:41:44.685Z",
+      "target": "testdomain.com",
+      "surfaceScore": 100,
+      "totalDiscovered": 2,
+      "passedGate": 2,
+      "chainsFormed": 0,
+      "reportsGenerated": 2
     }
   ],
   "knownVulnerabilities": {},
@@ -177,10 +187,10 @@
       }
     },
     "testdomain.com": {
-      "cachedAt": "2026-09-22T08:25:40.973Z",
+      "cachedAt": "2026-09-22T08:41:44.684Z",
       "surface": {
         "target": "testdomain.com",
-        "timestamp": "2026-09-22T08:25:40.973Z",
+        "timestamp": "2026-09-22T08:41:44.684Z",
         "subdomains": [
           "api.testdomain.com",
           "auth.testdomain.com",

@@ -41,6 +41,7 @@ import { createVectorSupabasePort } from './celia-vector-port.mjs';
 import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/governed-engine.js';
 import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
 import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
+import { createPerimeter, HEALTH_ROUTE, SESSION_ROUTE, unauthorizedPayload } from './celia-perimeter-auth.mjs';
 import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
 import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
@@ -88,6 +89,17 @@ const MIME = {
   '.woff2': 'font/woff2',
   '.map': 'application/json'
 };
+
+// === D1.10 / P0-B layer 1 — HTTP perimeter identity (authN, never authZ) ======
+// NEXA_API_KEY is an OPERATOR/CLI credential. The browser SPA authenticates with
+// a session cookie instead, so the key can never appear in a bundle, a Vite env
+// var, an HTML response or a URL. Missing key ⇒ the wall is down (documented
+// local/dev/test behaviour); production without a key refuses to start (layer 3).
+// Nothing here grants a capability: every gate is still enforced in-kernel.
+const perimeter = createPerimeter({
+  env: process.env,
+  onAudit: (entry) => emitDagEvent(entry.type, entry),
+});
 
 // Trusted operator configuration, never derived from request headers/body.
 // Missing configuration denies every workspace write; invalid config stops startup.
@@ -685,7 +697,12 @@ const server = createServer(async (req, res) => {
   // CORS for Vite dev server
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Content-Type only until D1.10: header-token clients now need to present a
+  // credential on the same route set, so the preflight must allow those two
+  // headers. Origin policy is deliberately untouched (SPA is same-origin behind
+  // the Vite/Render proxy; '*' + Credentials is rejected by browsers anyway, so
+  // no cross-origin document can ride a session cookie).
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Nexa-Api-Key');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -695,6 +712,51 @@ const server = createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Liveness probe for the platform (Render health check) — answers with no
+  // secret, no state read and no policy touch. Must stay ahead of the wall:
+  // a failing health probe is what gets a service recycled, and a 401 on the
+  // health path reads as "the app is down" to the orchestrator.
+  if (url.pathname === HEALTH_ROUTE) {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, service: 'nexa-dashboard', authRequired: perimeter.required }));
+    return;
+  }
+
+  // --- D1.10 layer 1: identity. Order is contractual: session route → wall →
+  // CSRF → (layer 2 rate limit) → routes. Authenticated ≠ authorized: passing
+  // this point only names the caller; every gate below still decides on its own.
+  if (url.pathname === SESSION_ROUTE) {
+    await perimeter.handleSession(req, res, url);
+    return;
+  }
+  // The wall covers the API surface only. The SPA shell (HTML/JS/CSS) has to
+  // load before a session exists — otherwise the login form could never render
+  // — and static files carry no state and no data.
+  if (url.pathname.startsWith('/api/')) {
+    const identity = perimeter.authenticate(req, url);
+    if (!identity.ok) {
+      res.writeHead(identity.status, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'WWW-Authenticate': 'Bearer realm="nexa-perimeter"',
+      });
+      res.end(JSON.stringify(unauthorizedPayload()));
+      return;
+    }
+    if (!perimeter.csrfOk(req, identity.context)) {
+      res.writeHead(403, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({
+        ok: false,
+        code: 'NEXA_E_CSRF',
+        error: 'session-authenticated state change requires the x-nexa-csrf header',
+      }));
+      return;
+    }
+    // Request context for downstream boundaries (rate limit, audit). Read-only:
+    // no route may treat its presence as an authorization decision.
+    req.nexaIdentity = identity.context;
+  }
 
   // === SSE Endpoint for DAG Stream (v0.4) ===
   if (url.pathname === '/api/v1/dag-stream') {

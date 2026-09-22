@@ -41,7 +41,163 @@ const getStateStyle = (state) => {
   }
 };
 
-export default function NexaDashboard() {
+// === D1.10 perimeter: browser identity is a session cookie, never a secret ===
+// NEXA_API_KEY is an operator/CLI credential read from the server environment.
+// Anything that reaches page JavaScript is public by definition, so this bundle
+// holds no key, reads no Vite env credential and persists nothing: the operator
+// types the key ONCE, the server answers with an HttpOnly session cookie, and
+// the dashboard (polling + SSE) does not mount until that session exists.
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+let nexaCsrfToken = null;
+let nexaCompanionInstalled = false;
+
+function installCsrfCompanion() {
+  // Double-submit companion, installed once for every same-origin /api/ mutation
+  // so no call site can forget it. The token is not a secret — the defense is
+  // that a cross-site document can neither read it nor attach a custom header to
+  // a credentialed request that this origin would accept. HttpOnly alone is not
+  // a CSRF control; this is the missing half.
+  if (nexaCompanionInstalled || typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  nexaCompanionInstalled = true;
+  const native = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    const raw = typeof input === 'string' ? input : (input && input.url) || '';
+    let sameOrigin = false;
+    let path = raw;
+    try {
+      const parsed = new URL(raw, window.location.href);
+      sameOrigin = parsed.origin === window.location.origin;
+      path = parsed.pathname;
+    } catch { /* unparseable: leave the request untouched */ }
+    const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+    if (!nexaCsrfToken || !sameOrigin || !path.startsWith('/api/') || !STATE_CHANGING_METHODS.has(method)) {
+      return native(input, init);
+    }
+    const base = (init && init.headers) || (typeof input === 'object' && input.headers) || undefined;
+    const headers = new Headers(base);
+    if (!headers.has('x-nexa-csrf')) headers.set('x-nexa-csrf', nexaCsrfToken);
+    return native(input, { ...init, headers, credentials: 'same-origin' });
+  };
+}
+
+export default function NexaPerimeterGate() {
+  const [session, setSession] = useState(null); // null = probing
+  const [unreachable, setUnreachable] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  const probe = () => fetch('/api/v1/session', { headers: { Accept: 'application/json' } })
+    .then((r) => r.json())
+    .then((data) => {
+      nexaCsrfToken = typeof data?.csrfToken === 'string' ? data.csrfToken : null;
+      setUnreachable(false);
+      setSession(data);
+    })
+    .catch(() => {
+      setUnreachable(true); // never mount blind: the wall state is unknown
+    });
+
+  useEffect(() => {
+    installCsrfCompanion();
+    let cancelled = false;
+    let attempts = 0;
+    const tick = () => {
+      if (cancelled) return;
+      attempts += 1;
+      probe();
+      if (attempts < 3) setTimeout(tick, 1500);
+    };
+    tick();
+    return () => { cancelled = true; };
+  }, []);
+
+  const login = async (event) => {
+    event?.preventDefault?.();
+    const value = apiKey.trim();
+    if (!value || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // One exchange, then the browser holds only an opaque session id. The
+        // value is never stored: not in localStorage, not in a cookie we write.
+        body: JSON.stringify({ apiKey: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || `perimeter rejected the credential (${res.status})`);
+        setApiKey('');
+        return;
+      }
+      nexaCsrfToken = typeof data?.csrfToken === 'string' ? data.csrfToken : null;
+      setApiKey('');
+      await probe();
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setBusy(false);
+      inputRef.current?.focus?.();
+    }
+  };
+
+  const shell = (children) => (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        {children}
+      </div>
+    </div>
+  );
+
+  if (session === null) {
+    return shell(
+      <div className="text-slate-400 text-xs font-mono uppercase tracking-widest animate-pulse">
+        {unreachable ? 'Perimeter unreachable — retrying…' : 'Checking session…'}
+      </div>
+    );
+  }
+
+  if (session.required && !session.authenticated) {
+    return shell(
+      <form onSubmit={login} className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <span className="text-slate-200 text-sm font-semibold">NEXA operator sign-in</span>
+        </div>
+        <p className="text-slate-500 text-[11px] leading-relaxed">
+          This deployment requires a perimeter credential for every <code className="text-slate-400">/api/*</code> route.
+          The key is exchanged once for an HttpOnly, SameSite=Strict session cookie — it never enters this bundle.
+          Perimeter identity is not authorization: approvals and gates are still enforced by the kernel.
+        </p>
+        <input
+          ref={inputRef}
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="NEXA operator key"
+          className="bg-slate-950 border border-slate-700 focus:border-emerald-500/60 outline-none rounded-lg px-3 py-2 text-slate-200 text-xs font-mono"
+        />
+        {error && <p className="text-red-400 text-[11px] font-mono break-words">{error}</p>}
+        <button
+          type="submit"
+          disabled={busy || !apiKey.trim()}
+          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold uppercase tracking-widest px-3 py-2 disabled:opacity-40 transition-colors"
+        >
+          {busy ? 'Signing in…' : 'Start session'}
+        </button>
+      </form>
+    );
+  }
+
+  return <NexaDashboard />;
+}
+
+function NexaDashboard() {
   const [metrics, setMetrics] = useState({
     status: 'LIVE',
     parallelNodes: 0,

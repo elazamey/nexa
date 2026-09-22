@@ -336,29 +336,63 @@ with nothing written. This is safe (no partial effect) and detectable: a
 is visible to reconciliation later. Losing a grant is strictly preferable to
 sharing one.
 
-### 8bis.3 The dead lock after SIGKILL
+### 8bis.3 The dead lock after SIGKILL — a five-state machine
 
-`O_EXCL` creates a file; a killed process does not remove it. The lock file
-therefore carries `{ pid, startTime, acquiredAt, ttlMs }` and staleness needs
-ALL of:
+`O_EXCL` creates a file; a killed process does not remove it. The first sketch
+of this section had three states (`free → held → stale-detected → freed`) and
+was wrong in the same way the false `RESTORE_COMPLETED` was wrong:
+**`held → stale-detected` is a verdict, not an observation.** PID + startTime +
+TTL is an inference. Real cases where that inference is false:
 
-- the PID is dead, **or** the PID is alive but its `startTime` differs (the PID
-  was reused), **or**
-- the TTL has expired.
+- The holder is **alive but frozen** — cgroup freeze, a hung mount, a long GC
+  pause. The TTL expires, the lock is declared dead, it is broken, and two
+  writers now share the root. This is the exact hazard the lock exists to
+  prevent, caused by the lock's own recovery path.
+- **PID reuse.** Rare on 64-bit Linux, not impossible. A reused PID makes a live
+  holder look like a dead one.
+- **Container or foreign platform.** `/proc/<pid>` may be absent, or may refer
+  to a different PID namespace entirely.
 
-PID alone is insufficient (PID reuse); TTL alone is insufficient (a `SIGKILL`
-between renewals, or a hung holder). The combination is the decision.
+So an expired TTL is an **alarm**, never a verdict. Only the total absence of
+the holder process proves abandonment. The machine has five states and forbids
+the shortcut:
 
-**A stale lock is never broken silently.** Breaking it first writes a
-`lock-stale-recovery` intent naming the dead holder, then removes the lock,
-then proceeds. Without that step two processes can detect the same dead lock in
-the same instant, both break it, and both continue — the exact failure the lock
-exists to prevent. The break itself must be atomic: the recovery intent is
-created with `O_EXCL`, so only one process can own the break.
+| From | To | Condition | Test |
+|---|---|---|---|
+| `free` | `held` | `O_EXCL` create succeeds | basic contention |
+| `held` | `abandoned` | holder PID absent **and** startTime check available | SIGKILL-holder recovery |
+| `held` | `contested` | TTL expired, or metadata unreadable/ambiguous | **frozen ≠ dead** |
+| `contested` | `abandoned` | a further check proves the PID is absent | late-detected death |
+| `contested` | `awaiting-operator` | cannot be decided mechanically | frozen holder, non-Linux |
+| `abandoned` | `freeing` | a `lock-stale-recovery` intent is created first | recovery trace |
+| `awaiting-operator` | `freeing` | explicit human intervention only | operator override |
+| `freeing` | `freed` | lock removed after the recovery intent is durable | atomic break |
 
-Rejected as out of scope: `flock`/`fcntl` advisory locks (not portable across
-the declared ext4/xfs/apfs set with the same semantics under NFS-less
-assumptions we have not tested), lease renewal daemons, and any watcher process.
+**Forbidden transitions, enforced as assertions:**
+
+- `held → freeing` directly. There is no path from "looks dead" to "broken".
+- `contested → freeing` directly. A contested lock is never broken mechanically.
+- `abandoned → freeing` without a recovery intent. The break is never silent:
+  the intent is created with `O_EXCL`, so exactly one process owns the break.
+  Without it, two processes can detect the same dead lock in the same instant,
+  both break it, and both proceed.
+
+This preserves the conservative posture of `planRecovery`: recover only from
+**proven** states, block everything else.
+
+#### Declared limit: dead-lock detection is Linux-only
+
+`abandoned` depends on reading `/proc/<pid>` and its start time. That is a
+Linux facility. On macOS, or inside a container with a restricted PID view,
+there is no reliable check available to us.
+
+> **On any platform where the holder's liveness cannot be proven, an expired
+> lock is `awaiting-operator`. It is never `abandoned`.**
+
+This is a real cost: a crash on macOS needs a human to clear the lock. The
+alternative — a PID check that cannot actually see the process, returning
+"absent" because it lacks visibility — is a small ZKP: it verifies successfully
+and means nothing. See `docs/principles.md` P1.
 
 ### 8bis.4 What "competing" means, precisely
 
@@ -384,10 +418,11 @@ wait. Waiting would add latency and a new failure mode with no security value.
 |---|---|
 | H — no-child assumed `RESTORE_COMPLETED` | 7: disk-decided verdict (already executed, kills 2) |
 | I — no root lock, only the consumption lock | 8: the basic contention test |
-| J — lock acquired after `inspectIntent` | 8: the ordering / window test |
-| K — stale lock broken with no recovery intent | 8: SIGKILL-holder recovery |
-| L — the stale break is not atomic | 8: two simultaneous breakers |
-| M — staleness by file existence only, no PID check | 8: dead-lock recovery |
+| I2 — lock acquired after `inspectIntent` | 8: the ordering / window test |
+| J — TTL expiry transitions straight to `freeing` | 8: **frozen ≠ dead** (the most important row) |
+| K — the stale break is not atomic | 8: two processes breaking in the same instant |
+| L — `abandoned` without a full PID + startTime check | 8: PID reuse |
+| M — no recovery intent before `freeing` | 8: the recovery trace |
 
 Expected NOT to kill package 8: mutation C (atomic write discipline) and
 mutation B (consume ordering) — they belong to other contracts, and forcing

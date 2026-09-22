@@ -16,6 +16,7 @@
     "test": "node --test",
     "audit": "node --test tests/security.test.js",
     "posture": "node tools/check-posture.mjs",
+    "check:sync": "node tools/check-branch-sync.mjs",
     "proof:permission": "node --permission --allow-fs-read=. tools/permission-proof.mjs",
     "proof:permission:legacy": "node --experimental-permission --allow-fs-read=. tools/permission-proof.mjs",
     "proof:permission:probe": "node tools/permission-probe.mjs --json",

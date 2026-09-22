@@ -11,6 +11,7 @@ import { sha256Multihash } from '../packages/crypto/index.js';
 import { createWorkspaceCommitAuthorizer, denyCommit, WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 
 import { createCommitConsumptionStore } from './celia-commit-consumption-store.mjs';
+import { createIntentLog, inspectIntent } from './celia-commit-intent-log.mjs';
 
 // A failed rollback blocks every committer for this root in this process.
 // This latch is NOT durable quarantine; restart recovery remains a separate gate.
@@ -259,9 +260,25 @@ export function inspectWorkspaceCommit(input) {
   return captureOrDeny(input).descriptor;
 }
 
-export function createWorkspaceCommitter({ root, workspacePort, config = {}, stateDirectory = process.env.CELIA_COMMIT_STATE_DIR }) {
+export function createWorkspaceCommitter({ root, workspacePort, config = {}, stateDirectory = process.env.CELIA_COMMIT_STATE_DIR, intentHooks }) {
   const base = resolve(root);
   const store = createCommitConsumptionStore({ directory: stateDirectory, targetRoot: workspaceCommitRoot(base), root: base });
+  // P03: write-ahead intent. Digests only; it can prove a root is unconfirmed,
+  // it can never roll a commit forward. See docs/design/p03-intent-log.md.
+  const intentLog = createIntentLog({
+    directory: stateDirectory, root: base, targetRoot: workspaceCommitRoot(base), hooks: intentHooks,
+    // Recovery compares on-disk truth against recorded digests; a missing file
+    // is a real state, not an error, and is reported as null.
+    digestOf(relative) {
+      const target = join(base, relative);
+      try { regularFile(target); }
+      catch (error) {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+      }
+      return sha256Multihash(readFileSync(target));
+    },
+  });
   const authorize = createWorkspaceCommitAuthorizer(config, { consumeDurably: envelope => store.consume(envelope) });
   return function commit(input) {
     // No filesystem read/write before identity, capability and policy succeed.
@@ -278,7 +295,21 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     if (captured.descriptor.expectedBaseHash !== input.expectedBaseHash) denyCommit('COMMIT_BASE_MISMATCH');
     const changed = captured.files.filter(file => file.hash !== file.base.hash);
     if (changed.length === 0) denyCommit('COMMIT_NO_CHANGES');
+    // Durable isolation is checked AFTER authorization is consumed, never
+    // before: a spent grant must still be refused with 403 on an unconfirmed
+    // root, so crash state can never mask a replay as a mere 503.
     authorization.consume();
+    // Write-ahead: durable BEFORE the first repository byte. An unconfirmed
+    // root refuses here, so a crashed transaction is never silently resumed.
+    const transaction = intentLog.open({
+      workspaceId: input.workspaceId,
+      changeSetHash: input.changeSetHash,
+      expectedBaseHash: input.expectedBaseHash,
+      authorizationRef: authorization.authorizationRef,
+      ops: changed.map(file => ({
+        path: file.path, fromDigest: file.base.hash, toDigest: file.hash, mode: file.base.mode,
+      })),
+    });
     // No awaits/re-reading staging between verification and application. This
     // excludes interleaving HTTP requests, NOT concurrent external OS writers.
     const attempted = [];
@@ -312,8 +343,12 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
           if (!file.base.exists && error.code === 'EEXIST') attempted.pop();
           throw error;
         }
+        transaction.advance('applying', file.path); // durable record of what is now on disk
       }
     } catch (error) {
+      // A rollback is itself a transaction: record that we entered it, so a
+      // crash DURING recovery is still visible as an unconfirmed root.
+      transaction.advance('restoring');
       if (error instanceof WorkspaceCommitError && error.code === 'COMMIT_CONCURRENT_MODIFICATION') {
         // The stale target set must not be half-applied either: roll back the
         // targets this operation already wrote, then refuse the whole commit.
@@ -324,6 +359,7 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
           unavailable.cause = { applyCode: error.code, rollbackFailures: failures };
           throw unavailable;
         }
+        transaction.recovered(); // proven rollback closes the transaction
         throw error; // 403; authorization stays consumed.
       }
       const failures = restore(base, attempted, created);
@@ -333,6 +369,7 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
         unavailable.cause = { applyCode: error.code ?? error.message, rollbackFailures: failures };
         throw unavailable;
       }
+      transaction.recovered();
       // Preserve the original I/O error, and never refund consumed authorization.
       throw error;
     }
@@ -340,9 +377,11 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     // cleanly every write syscall returned.
     const mismatches = verifyPostState(base, changed);
     if (mismatches.length) {
+      transaction.advance('restoring');
       const failures = restore(base, changed, created);
       // The rollback is itself an unproven success until it is re-read.
       const unproven = failures.length ? failures : verifyRestored(base, changed);
+      if (!unproven.length) transaction.recovered();
       // Latch only when the root's state could not be proven back to base. A
       // proven rollback leaves a consistent root, so later authorized work is
       // refused on its own merits rather than by a blanket 503.
@@ -352,6 +391,9 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
       unavailable.cause = { mismatches, rollbackFailures: failures, unprovenRestores: unproven };
       throw unavailable;
     }
+
+    // Only now, after the effect is proven, does the transaction close.
+    transaction.commit();
 
     return {
       ok: true, postState: { verified: changed.length, method: 'READ_BACK_SHA256_EQUAL_BYTES' },

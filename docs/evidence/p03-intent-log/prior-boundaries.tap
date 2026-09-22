@@ -1,0 +1,260 @@
+TAP version 13
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-nsV2yZ/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-x20Y5D/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-2HfrTC/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-wya3hp/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-hYzoFa/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-jL6kyV/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-V4brhK/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-iTkAYr/root/.nexa/staging/ws_h3_fixture evidence=none
+# Subtest: H3: a competing edit to the first target is preserved and no other target is applied
+ok 1 - H3: a competing edit to the first target is preserved and no other target is applied
+  ---
+  duration_ms: 42.044173
+  type: 'test'
+  ...
+# Subtest: H3: a competing edit to a LATER target rolls back the already-applied earlier target
+ok 2 - H3: a competing edit to a LATER target rolls back the already-applied earlier target
+  ---
+  duration_ms: 24.619085
+  type: 'test'
+  ...
+# Subtest: H3: deletion of a verified target during the window refuses and leaves no resurrected file
+ok 3 - H3: deletion of a verified target during the window refuses and leaves no resurrected file
+  ---
+  duration_ms: 21.933397
+  type: 'test'
+  ...
+# Subtest: H3: a same-size competing edit is caught by bytes, not by length or mtime
+ok 4 - H3: a same-size competing edit is caught by bytes, not by length or mtime
+  ---
+  duration_ms: 20.777853
+  type: 'test'
+  ...
+# Subtest: H3: a competing mode change on verified bytes is refused
+ok 5 - H3: a competing mode change on verified bytes is refused
+  ---
+  duration_ms: 21.019531
+  type: 'test'
+  ...
+# Subtest: H3: positive control — an uncontended commit still applies every target
+ok 6 - H3: positive control — an uncontended commit still applies every target
+  ---
+  duration_ms: 21.988725
+  type: 'test'
+  ...
+# Subtest: H3: the probe preserves the original mode on an uncontended existing target
+ok 7 - H3: the probe preserves the original mode on an uncontended existing target
+  ---
+  duration_ms: 19.903769
+  type: 'test'
+  ...
+# Subtest: H3: a refused commit does not refund the consumed authorization
+ok 8 - H3: a refused commit does not refund the consumed authorization
+  ---
+  duration_ms: 23.549394
+  type: 'test'
+  ...
+# Consumed-on-refusal is intentional: the window was entered under real authority.
+# Subtest: COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+ok 9 - COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+  ---
+  duration_ms: 268.059047
+  type: 'test'
+  ...
+# {"boundary":"H1","firstPid":28826,"restartedPid":28835,"sameProcess":"DENY","afterRestart":"DENY","contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+ok 10 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 184.264066
+  type: 'test'
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"},{"kind":"write-applied","file":"a.txt"}],"contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+ok 11 - COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+  ---
+  duration_ms: 216.454368
+  type: 'test'
+  ...
+# {"boundary":"H3","commitPid":28853,"outcome":"DENY","trace":[{"kind":"external-writer","file":"a.txt","pid":28862,"before":"base A\\n","after":"external writer value\\n"}],"contents":{"a.txt":"external writer value\\n","b.txt":"base B\\n"}}
+# Subtest: H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+ok 12 - H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+  ---
+  duration_ms: 348.174338
+  type: 'test'
+  ...
+# {"oldPid":28876,"restartedPid":28885,"oldAuthorization":"DENY","reSignedSpentGrant":"DENY","freshGrantSameState":"ALLOW","durableConsumptions":2}
+# Subtest: H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+ok 13 - H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+  ---
+  duration_ms: 310.496338
+  type: 'test'
+  ...
+# Subtest: H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+ok 14 - H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+  ---
+  duration_ms: 405.521004
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+ok 15 - H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 296.09125
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+ok 16 - H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 258.326872
+  type: 'test'
+  ...
+# Subtest: H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+ok 17 - H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 266.474367
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing initialization is never treated as a fresh empty ledger
+ok 18 - H1 persistence: missing initialization is never treated as a fresh empty ledger
+  ---
+  duration_ms: 267.950115
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing journal is never treated as a fresh empty ledger
+ok 19 - H1 persistence: missing journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 322.406152
+  type: 'test'
+  ...
+# Subtest: H1 persistence: torn record is never treated as a fresh empty ledger
+ok 20 - H1 persistence: torn record is never treated as a fresh empty ledger
+  ---
+  duration_ms: 270.53955
+  type: 'test'
+  ...
+# Subtest: H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+ok 21 - H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+  ---
+  duration_ms: 263.204342
+  type: 'test'
+  ...
+# Subtest: H1 persistence: corrupted head is never treated as a fresh empty ledger
+ok 22 - H1 persistence: corrupted head is never treated as a fresh empty ledger
+  ---
+  duration_ms: 268.95135
+  type: 'test'
+  ...
+# Subtest: H1 persistence: non-private directory is never treated as a fresh empty ledger
+ok 23 - H1 persistence: non-private directory is never treated as a fresh empty ledger
+  ---
+  duration_ms: 278.388533
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unwritable journal is never treated as a fresh empty ledger
+ok 24 - H1 persistence: unwritable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 288.195445
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unreadable journal is never treated as a fresh empty ledger
+ok 25 - H1 persistence: unreadable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 293.76571
+  type: 'test'
+  ...
+# Subtest: H1 persistence: symlink journal is never treated as a fresh empty ledger
+ok 26 - H1 persistence: symlink journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 288.78336
+  type: 'test'
+  ...
+# Subtest: H1 persistence: wrong root binding is never treated as a fresh empty ledger
+ok 27 - H1 persistence: wrong root binding is never treated as a fresh empty ledger
+  ---
+  duration_ms: 292.941139
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+ok 28 - H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+  ---
+  duration_ms: 174.930095
+  type: 'test'
+  ...
+# Subtest: H1 persistence: provisioning refuses reset of an existing consumed store
+ok 29 - H1 persistence: provisioning refuses reset of an existing consumed store
+  ---
+  duration_ms: 160.898451
+  type: 'test'
+  ...
+# Subtest: H1 persistence: absent state-directory configuration has no in-memory fallback
+ok 30 - H1 persistence: absent state-directory configuration has no in-memory fallback
+  ---
+  duration_ms: 167.371066
+  type: 'test'
+  ...
+# Subtest: H1 persistence: anonymous denial does not mutate the consumption store
+ok 31 - H1 persistence: anonymous denial does not mutate the consumption store
+  ---
+  duration_ms: 237.938022
+  type: 'test'
+  ...
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-dndH4l/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-1jnH90/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-d8abKG/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-JI1doT/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-7T9zWx/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-pJb7y9/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-PqjC1Y/root/.nexa/staging/ws_poststate_fixture evidence=none
+# Subtest: RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+ok 32 - RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+  ---
+  duration_ms: 55.334955
+  type: 'test'
+  ...
+# {"verified":2,"method":"READ_BACK_SHA256_EQUAL_BYTES"}
+# Subtest: RED2: a target whose bytes differ after a successful write must not report success
+ok 33 - RED2: a target whose bytes differ after a successful write must not report success
+  ---
+  duration_ms: 43.794148
+  type: 'test'
+  ...
+# Subtest: RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+ok 34 - RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+  ---
+  duration_ms: 28.694891
+  type: 'test'
+  ...
+# RECOVERY_UNVERIFIED is distinct from EFFECT_UNVERIFIED: the restore itself was not proven.
+# Subtest: post-state: a new file removed during rollback is proven gone, not assumed gone
+ok 35 - post-state: a new file removed during rollback is proven gone, not assumed gone
+  ---
+  duration_ms: 25.496101
+  type: 'test'
+  ...
+# Subtest: post-state: the verification reads real bytes, not the in-memory buffer
+ok 36 - post-state: the verification reads real bytes, not the in-memory buffer
+  ---
+  duration_ms: 20.690704
+  type: 'test'
+  ...
+# Subtest: post-state: positive control — an uncontended commit still succeeds and reports its proof
+ok 37 - post-state: positive control — an uncontended commit still succeeds and reports its proof
+  ---
+  duration_ms: 25.503312
+  type: 'test'
+  ...
+# Subtest: post-state: verification does not refund the consumed authorization
+ok 38 - post-state: verification does not refund the consumed authorization
+  ---
+  duration_ms: 26.681492
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6888.842689

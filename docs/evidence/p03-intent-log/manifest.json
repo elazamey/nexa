@@ -1,0 +1,51 @@
+{
+  "package": "P03_INTENT_LOG_PHASE1",
+  "date": "2026-09-21",
+  "branch": "arena/01a0c63f-nexa",
+  "node": "v22.22.3",
+  "scopeImplemented": [
+    "test1 intent-before-first-write",
+    "test2 SIGKILL after opened",
+    "test3 SIGKILL mid-apply",
+    "conservative recovery decision"
+  ],
+  "scopeNotImplemented": [
+    "test4 before fsync",
+    "test5 after fsync before rename",
+    "test6 after rename before intent update",
+    "test7 crash during restore",
+    "test8 competing transactions",
+    "test9 signed recovery evidence"
+  ],
+  "changedFiles": {
+    "tools/celia-commit-intent-log.mjs": "6793a26a080bf2e258fe3025fdd4999b2b291f90e5a3cc82895f8fb9acf35c5b",
+    "tools/celia-workspace-commit-port.mjs": "f1a1bd30ed83ea83a3b690f4bb600acfd2a89dd51f12fc3e895b03e12c5043b9",
+    "tests/celia-commit-crash-recovery.test.js": "215ae885ead152535c599043316141b3755d35931bfe7aaf5b674249f4e99565",
+    "tests/fixtures/celia-commit-crash-child.mjs": "12f403ef42adebadd9ef08528c236c6a34789b1faa94c62a4790fdb42bb1c1c1",
+    "docs/design/p03-intent-log.md": "4d670bfa2ada7f9a67a751575ec4721cf8e7c41d820aa6320426ecea06c14074"
+  },
+  "results": {
+    "p03": "4/4",
+    "priorBoundaries": "38/38",
+    "fullVerify": "520 PASS / 0 FAIL",
+    "gates": "6 CLOSED",
+    "attacks": "31/31"
+  },
+  "sigkill": {
+    "real": true,
+    "method": "named cut points announced on stderr, parent sends SIGKILL",
+    "runsPerCutPoint": 3
+  },
+  "mutationCheck": {
+    "description": "startup intent read disabled -> tests 2 and 3 fail; test 1 and the pure decision stay green",
+    "evidence": "mutation-red.tap"
+  },
+  "regressionFound": "existing H1 persistence test caught decision-order bug: intent check ran before consumption, turning a spent-grant 403 into a 503",
+  "notClaimed": [
+    "P03 closed",
+    "power-loss durability",
+    "independent recovery",
+    "rolling a commit forward",
+    "non-POSIX filesystems"
+  ]
+}

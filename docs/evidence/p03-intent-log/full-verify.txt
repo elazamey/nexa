@@ -1,0 +1,3757 @@
+
+> nexa@0.1.0 verify
+> npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report
+
+
+> nexa@0.1.0 posture
+> node tools/check-posture.mjs
+
+posture check OK: 6 gates CLOSED, 14 gated namespaces, 14 gated actions, 8 Ω gate stages, 12 attack categories, 6 immutable kernel modules, 86 Ω error codes, 7 membrane steps, 6 cell states
+NEXA_METRIC closed_gates=6
+NEXA_METRIC gated_namespaces=14
+NEXA_METRIC gated_actions=14
+NEXA_METRIC omega_gate_stages=8
+NEXA_METRIC attack_categories=12
+NEXA_METRIC kernel_modules=6
+NEXA_METRIC omega_error_codes=86
+NEXA_METRIC membrane_steps=7
+NEXA_METRIC cell_states=6
+
+> nexa@0.1.0 test
+> node --test
+
+TAP version 13
+# Subtest: V0: a gated write is requested, approved once, consumed — and the chain verifies
+ok 1 - V0: a gated write is requested, approved once, consumed — and the chain verifies
+  ---
+  duration_ms: 8.679475
+  type: 'test'
+  ...
+# Subtest: V1: a once-approval cannot be consumed a second time
+ok 2 - V1: a once-approval cannot be consumed a second time
+  ---
+  duration_ms: 1.848521
+  type: 'test'
+  ...
+# Subtest: V2: the approved target and the granted action are both enforced at consume time
+ok 3 - V2: the approved target and the granted action are both enforced at consume time
+  ---
+  duration_ms: 1.850076
+  type: 'test'
+  ...
+# Subtest: V3: expired approval requests cannot be approved; expired grants cannot be consumed
+ok 4 - V3: expired approval requests cannot be approved; expired grants cannot be consumed
+  ---
+  duration_ms: 1.575066
+  type: 'test'
+  ...
+# Subtest: V4: policy-root resources are not approvable — at request time and at consume time
+ok 5 - V4: policy-root resources are not approvable — at request time and at consume time
+  ---
+  duration_ms: 1.555286
+  type: 'test'
+  ...
+# Subtest: V5: AUTO_DEPLOY / AUTO_PUSH gates refuse the approval channel entirely
+ok 6 - V5: AUTO_DEPLOY / AUTO_PUSH gates refuse the approval channel entirely
+  ---
+  duration_ms: 1.088178
+  type: 'test'
+  ...
+# Subtest: V6: tampering with any approval record breaks verification at import time
+ok 7 - V6: tampering with any approval record breaks verification at import time
+  ---
+  duration_ms: 3.577495
+  type: 'test'
+  ...
+# Subtest: V7: an untrusted approver is refused; the request stays open for the trusted one
+ok 8 - V7: an untrusted approver is refused; the request stays open for the trusted one
+  ---
+  duration_ms: 1.145313
+  type: 'test'
+  ...
+# Subtest: V8: a mission-approval is reusable inside its mission and dead outside it
+ok 9 - V8: a mission-approval is reusable inside its mission and dead outside it
+  ---
+  duration_ms: 1.431767
+  type: 'test'
+  ...
+# Subtest: canonical vectors: accepted cases produce the pinned bytes
+ok 10 - canonical vectors: accepted cases produce the pinned bytes
+  ---
+  duration_ms: 1.817801
+  type: 'test'
+  ...
+# Subtest: canonical vectors: rejected cases raise the pinned code
+ok 11 - canonical vectors: rejected cases raise the pinned code
+  ---
+  duration_ms: 1.058726
+  type: 'test'
+  ...
+# Subtest: keys are sorted by code unit, not by locale
+ok 12 - keys are sorted by code unit, not by locale
+  ---
+  duration_ms: 0.247816
+  type: 'test'
+  ...
+# Subtest: canonicalization is idempotent and stable across re-parsing
+ok 13 - canonicalization is idempotent and stable across re-parsing
+  ---
+  duration_ms: 0.320528
+  type: 'test'
+  ...
+# Subtest: canonicalization output is UTF-8 encoded
+ok 14 - canonicalization output is UTF-8 encoded
+  ---
+  duration_ms: 0.958086
+  type: 'test'
+  ...
+# Subtest: parseCanonical accepts canonical text and rejects everything else
+ok 15 - parseCanonical accepts canonical text and rejects everything else
+  ---
+  duration_ms: 0.466773
+  type: 'test'
+  ...
+# Subtest: nesting beyond 64 levels is refused instead of overflowing
+ok 16 - nesting beyond 64 levels is refused instead of overflowing
+  ---
+  duration_ms: 0.989752
+  type: 'test'
+  ...
+# Subtest: NexaError refuses unknown codes
+ok 17 - NexaError refuses unknown codes
+  ---
+  duration_ms: 0.48171
+  type: 'test'
+  ...
+# Subtest: capability vectors: pinned tokens still verify with the pinned grants
+ok 18 - capability vectors: pinned tokens still verify with the pinned grants
+  ---
+  duration_ms: 8.682061
+  type: 'test'
+  ...
+# Subtest: a root capability is signed by its issuer and names a holder
+ok 19 - a root capability is signed by its issuer and names a holder
+  ---
+  duration_ms: 19.847681
+  type: 'test'
+  ...
+# Subtest: minting requires a private key and refuses nonsense scopes
+ok 20 - minting requires a private key and refuses nonsense scopes
+  ---
+  duration_ms: 7.710965
+  type: 'test'
+  ...
+# Subtest: caveat bounds are enforced at mint time
+ok 21 - caveat bounds are enforced at mint time
+  ---
+  duration_ms: 6.504303
+  type: 'test'
+  ...
+# Subtest: constraints are typed and normalized deterministically
+ok 22 - constraints are typed and normalized deterministically
+  ---
+  duration_ms: 8.240453
+  type: 'test'
+  ...
+# Subtest: subset helpers describe the authority lattice
+ok 23 - subset helpers describe the authority lattice
+  ---
+  duration_ms: 0.434415
+  type: 'test'
+  ...
+# Subtest: attenuation refuses every way of widening authority
+ok 24 - attenuation refuses every way of widening authority
+  ---
+  duration_ms: 8.005877
+  type: 'test'
+  ...
+# Subtest: only the holder or the issuer may delegate, and depth is honoured
+ok 25 - only the holder or the issuer may delegate, and depth is honoured
+  ---
+  duration_ms: 6.646167
+  type: 'test'
+  ...
+# Subtest: delegate_to restricts who may receive authority
+ok 26 - delegate_to restricts who may receive authority
+  ---
+  duration_ms: 6.182107
+  type: 'test'
+  ...
+# Subtest: verification re-checks signatures, linkage and subset rules from the wire
+ok 27 - verification re-checks signatures, linkage and subset rules from the wire
+  ---
+  duration_ms: 11.347038
+  type: 'test'
+  ...
+# Subtest: presenter binding: a token only works for the key id it names
+ok 28 - presenter binding: a token only works for the key id it names
+  ---
+  duration_ms: 6.279107
+  type: 'test'
+  ...
+# Subtest: freshness, scope and budget are enforced on every link
+ok 29 - freshness, scope and budget are enforced on every link
+  ---
+  duration_ms: 15.907152
+  type: 'test'
+  ...
+# Subtest: revocation is signed, attributable and chain-wide
+ok 30 - revocation is signed, attributable and chain-wide
+  ---
+  duration_ms: 14.165291
+  type: 'test'
+  ...
+# Subtest: a chain deeper than its root allows is refused at verify time
+ok 31 - a chain deeper than its root allows is refused at verify time
+  ---
+  duration_ms: 6.073007
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-JhMQ0g/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-SWyOpZ/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/1: the intent is durable before the first repository byte is written
+ok 32 - P03/1: the intent is durable before the first repository byte is written
+  ---
+  duration_ms: 201.766119
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-pVXunL/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-2zVeD0/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-sCl118/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/2: SIGKILL right after the intent is opened leaves a detectable incomplete transaction
+ok 33 - P03/2: SIGKILL right after the intent is opened leaves a detectable incomplete transaction
+  ---
+  duration_ms: 505.520228
+  type: 'test'
+  ...
+# {"attempt":1,"state":"opened","cuts":3}
+# {"attempt":2,"state":"opened","cuts":3}
+# {"attempt":3,"state":"opened","cuts":3}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-DPp514/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-x6CNUF/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/3: SIGKILL mid-apply records which targets were already applied
+ok 34 - P03/3: SIGKILL mid-apply records which targets were already applied
+  ---
+  duration_ms: 510.96801
+  type: 'test'
+  ...
+# {"attempt":1,"state":"opened","applied":[],"observed":["a.txt"]}
+# {"attempt":2,"state":"opened","applied":[],"observed":["a.txt"]}
+# {"attempt":3,"state":"opened","applied":[],"observed":["a.txt"]}
+# Subtest: P03/recovery decision: only a provably untouched root is cleared automatically
+ok 35 - P03/recovery decision: only a provably untouched root is cleared automatically
+  ---
+  duration_ms: 0.912885
+  type: 'test'
+  ...
+# Recovery never rolls forward: the log holds digests, not payloads.
+# Subtest: learning: collecting starts empty; training refuses to invent missing evidence
+ok 36 - learning: collecting starts empty; training refuses to invent missing evidence
+  ---
+  duration_ms: 2.561594
+  type: 'test'
+  ...
+# Subtest: learning: strict bounded pre-outcome schema rejects arbitrary fields, NaN and oversized features
+ok 37 - learning: strict bounded pre-outcome schema rejects arbitrary fields, NaN and oversized features
+  ---
+  duration_ms: 3.18398
+  type: 'test'
+  ...
+# Subtest: learning: malformed, incomplete and duplicated TAP summaries are not evidence of success
+ok 38 - learning: malformed, incomplete and duplicated TAP summaries are not evidence of success
+  ---
+  duration_ms: 1.328673
+  type: 'test'
+  ...
+# Subtest: learning: reward cannot hide failures, skipped tests, missing tests, exit failure or human rejection
+ok 39 - learning: reward cannot hide failures, skipped tests, missing tests, exit failure or human rejection
+  ---
+  duration_ms: 1.309742
+  type: 'test'
+  ...
+# Subtest: learning: duplicated attempts and forged labels do not increase data readiness
+ok 40 - learning: duplicated attempts and forged labels do not increase data readiness
+  ---
+  duration_ms: 0.784536
+  type: 'test'
+  ...
+# Subtest: learning: task groups never cross train/validation/test, and class coverage is required
+ok 41 - learning: task groups never cross train/validation/test, and class coverage is required
+  ---
+  duration_ms: 44.777179
+  type: 'test'
+  ...
+# Subtest: learning ml: all weight and bias derivatives agree with finite differences
+ok 42 - learning ml: all weight and bias derivatives agree with finite differences
+  ---
+  duration_ms: 1.750374
+  type: 'test'
+  ...
+# Subtest: learning ml: real gradient updates improve held-out loss on explicitly synthetic fixtures
+ok 43 - learning ml: real gradient updates improve held-out loss on explicitly synthetic fixtures
+  ---
+  duration_ms: 127.85422
+  type: 'test'
+  ...
+# Subtest: learning dl: all weight and bias derivatives agree with finite differences
+ok 44 - learning dl: all weight and bias derivatives agree with finite differences
+  ---
+  duration_ms: 18.488107
+  type: 'test'
+  ...
+# Subtest: learning dl: real gradient updates improve held-out loss on explicitly synthetic fixtures
+ok 45 - learning dl: real gradient updates improve held-out loss on explicitly synthetic fixtures
+  ---
+  duration_ms: 978.786056
+  type: 'test'
+  ...
+# Subtest: learning: candidate integrity, architecture and finite weights are checked before inference
+ok 46 - learning: candidate integrity, architecture and finite weights are checked before inference
+  ---
+  duration_ms: 0.974211
+  type: 'test'
+  ...
+# Subtest: learning collector: actual Node test run persists across CLI processes and waits for human review
+ok 47 - learning collector: actual Node test run persists across CLI processes and waits for human review
+  ---
+  duration_ms: 456.889959
+  type: 'test'
+  ...
+# Subtest: learning collector: no automatic initialization, no root-local store, no symlinked subdirectory
+ok 48 - learning collector: no automatic initialization, no root-local store, no symlinked subdirectory
+  ---
+  duration_ms: 2.885084
+  type: 'test'
+  ...
+# Subtest: learning collector: registration order and immutable plan binding are enforced
+ok 49 - learning collector: registration order and immutable plan binding are enforced
+  ---
+  duration_ms: 3.86139
+  type: 'test'
+  ...
+# Subtest: learning CLI: invalid arguments never invoke an action
+ok 50 - learning CLI: invalid arguments never invoke an action
+  ---
+  duration_ms: 43.822566
+  type: 'test'
+  ...
+# Subtest: learning research: fixed source, encoded query, timeout, no redirect, metadata only
+ok 51 - learning research: fixed source, encoded query, timeout, no redirect, metadata only
+  ---
+  duration_ms: 28.585962
+  type: 'test'
+  ...
+# Subtest: learning research: query injection, external entities, unsafe paper URLs and huge responses fail closed
+ok 52 - learning research: query injection, external entities, unsafe paper URLs and huge responses fail closed
+  ---
+  duration_ms: 2.985636
+  type: 'test'
+  ...
+# Subtest: learning: new reviewed feedback changes a candidate without mutating the previous weights
+ok 53 - learning: new reviewed feedback changes a candidate without mutating the previous weights
+  ---
+  duration_ms: 257.703884
+  type: 'test'
+  ...
+# Subtest: library: ten source-versioned references and ten guidance-only cards with valid relationships
+ok 54 - library: ten source-versioned references and ten guidance-only cards with valid relationships
+  ---
+  duration_ms: 2.537691
+  type: 'test'
+  ...
+# Subtest: library: returned data cannot mutate the internal catalog or its hash
+ok 55 - library: returned data cannot mutate the internal catalog or its hash
+  ---
+  duration_ms: 2.18796
+  type: 'test'
+  ...
+# Subtest: library: missing evidence gives guidance and abstention advice, not fictitious execution
+ok 56 - library: missing evidence gives guidance and abstention advice, not fictitious execution
+  ---
+  duration_ms: 1.737846
+  type: 'test'
+  ...
+# Subtest: library: failed, skipped, wrong-count or nonzero-exit reports select independent critique
+ok 57 - library: failed, skipped, wrong-count or nonzero-exit reports select independent critique
+  ---
+  duration_ms: 6.195309
+  type: 'test'
+  ...
+# Subtest: library: declared security/dependency/test changes select only bounded advisory cards
+ok 58 - library: declared security/dependency/test changes select only bounded advisory cards
+  ---
+  duration_ms: 0.86611
+  type: 'test'
+  ...
+# Subtest: library: model/data context changes guidance but cannot confer approval or calibrated scores
+ok 59 - library: model/data context changes guidance but cannot confer approval or calibrated scores
+  ---
+  duration_ms: 0.485148
+  type: 'test'
+  ...
+# Subtest: library: unknown papers or unreviewed versions remain unresolved, never silently fetched/substituted
+ok 60 - library: unknown papers or unreviewed versions remain unresolved, never silently fetched/substituted
+  ---
+  duration_ms: 0.621233
+  type: 'test'
+  ...
+# Subtest: library: strict requests/context/identifiers reject commands, URLs and invalid report bindings
+ok 61 - library: strict requests/context/identifiers reject commands, URLs and invalid report bindings
+  ---
+  duration_ms: 0.948704
+  type: 'test'
+  ...
+# Subtest: library: deterministic selection ignores goal instructions and does not mutate inputs
+ok 62 - library: deterministic selection ignores goal instructions and does not mutate inputs
+  ---
+  duration_ms: 1.042898
+  type: 'test'
+  ...
+# Subtest: library: actual advisory report includes guidance under the existing seal without adding kernel calls
+ok 63 - library: actual advisory report includes guidance under the existing seal without adding kernel calls
+  ---
+  duration_ms: 117.550967
+  type: 'test'
+  ...
+# Subtest: library: skill cards do not promote any of the 200 runtime capabilities or remove known blockers
+ok 64 - library: skill cards do not promote any of the 200 runtime capabilities or remove known blockers
+  ---
+  duration_ms: 1.061896
+  type: 'test'
+  ...
+# Subtest: library CLI: offline commands work with no filesystem-write or child-process permission; invalid actions refuse
+ok 65 - library CLI: offline commands work with no filesystem-write or child-process permission; invalid actions refuse
+  ---
+  duration_ms: 920.0999
+  type: 'test'
+  ...
+# Subtest: library: maximum candidate batch stays bounded and shares reference/cards rather than executing them
+ok 66 - library: maximum candidate batch stays bounded and shares reference/cards rather than executing them
+  ---
+  duration_ms: 71.421415
+  type: 'test'
+  ...
+# Subtest: system: catalog is the exact ordered 200-entry audit inventory, not 200 working features
+ok 67 - system: catalog is the exact ordered 200-entry audit inventory, not 200 working features
+  ---
+  duration_ms: 5.206237
+  type: 'test'
+  ...
+# Subtest: system: empty and disconnected learning are different; no invented plan, test pass or model
+ok 68 - system: empty and disconnected learning are different; no invented plan, test pass or model
+  ---
+  duration_ms: 100.247613
+  type: 'test'
+  ...
+# Subtest: system: actual fixed Ω workflow supplies five policy/capability-gated local calls and reflection
+ok 69 - system: actual fixed Ω workflow supplies five policy/capability-gated local calls and reflection
+  ---
+  duration_ms: 67.363827
+  type: 'test'
+  ...
+# Subtest: system: reports are independently graded; failures/missing reports cannot become successful execution
+ok 70 - system: reports are independently graded; failures/missing reports cannot become successful execution
+  ---
+  duration_ms: 25.075246
+  type: 'test'
+  ...
+# Subtest: system: skip/todo/cancel/count mismatch/nonzero exit each prevent a met-checks verdict
+ok 71 - system: skip/todo/cancel/count mismatch/nonzero exit each prevent a met-checks verdict
+  ---
+  duration_ms: 134.791886
+  type: 'test'
+  ...
+# Subtest: system: passing imported checks never suppress declared security, test or dependency review risks
+ok 72 - system: passing imported checks never suppress declared security, test or dependency review risks
+  ---
+  duration_ms: 24.417963
+  type: 'test'
+  ...
+# Subtest: system: strict schemas and bounds reject unknown authority/commands/invalid shapes
+ok 73 - system: strict schemas and bounds reject unknown authority/commands/invalid shapes
+  ---
+  duration_ms: 14.612599
+  type: 'test'
+  ...
+# Subtest: system: task/base/suite/count and exact-plan report bindings cannot cross candidates
+ok 74 - system: task/base/suite/count and exact-plan report bindings cannot cross candidates
+  ---
+  duration_ms: 1.392777
+  type: 'test'
+  ...
+# Subtest: system: malformed, ambiguous or incomplete TAP is refused rather than replaced with mock success
+ok 75 - system: malformed, ambiguous or incomplete TAP is refused rather than replaced with mock success
+  ---
+  duration_ms: 1.362386
+  type: 'test'
+  ...
+# Subtest: system: reordering plan object keys preserves canonical binding; mutations change it
+ok 76 - system: reordering plan object keys preserves canonical binding; mutations change it
+  ---
+  duration_ms: 0.826094
+  type: 'test'
+  ...
+# Subtest: system: valid report verification requires an independently expected signer
+ok 77 - system: valid report verification requires an independently expected signer
+  ---
+  duration_ms: 81.682978
+  type: 'test'
+  ...
+# Subtest: system: payload, input hash, chains, seal, truncation and appended evidence are integrity checked
+ok 78 - system: payload, input hash, chains, seal, truncation and appended evidence are integrity checked
+  ---
+  duration_ms: 55.102163
+  type: 'test'
+  ...
+# Subtest: system: keys and working memory are per-run; request remains unchanged and no private keys/raw text are exported
+ok 79 - system: keys and working memory are per-run; request remains unchanged and no private keys/raw text are exported
+  ---
+  duration_ms: 80.24164
+  type: 'test'
+  ...
+# Subtest: system: embedded instructions remain data and neither invoke providers nor change the workflow
+ok 80 - system: embedded instructions remain data and neither invoke providers nor change the workflow
+  ---
+  duration_ms: 20.775592
+  type: 'test'
+  ...
+# Subtest: system: explicit real training computations on SYNTHETIC fixtures integrate scores, never approvals
+ok 81 - system: explicit real training computations on SYNTHETIC fixtures integrate scores, never approvals
+  ---
+  duration_ms: 1082.647524
+  type: 'test'
+  ...
+# Subtest: system: invalid observations cannot be laundered into readiness
+ok 82 - system: invalid observations cannot be laundered into readiness
+  ---
+  duration_ms: 0.954889
+  type: 'test'
+  ...
+# Subtest: system CLI: end-to-end imports actually executed passing AND failing tests, with OS writes/child processes denied
+ok 83 - system CLI: end-to-end imports actually executed passing AND failing tests, with OS writes/child processes denied
+  ---
+  duration_ms: 734.410376
+  type: 'test'
+  ...
+# Subtest: system CLI: empty collection stays unchanged; no training, activation, init or implicit creation
+ok 84 - system CLI: empty collection stays unchanged; no training, activation, init or implicit creation
+  ---
+  duration_ms: 1215.030984
+  type: 'test'
+  ...
+# Subtest: system CLI: existing real collector data is read, unreviewed rows are excluded and no automatic reviews occur
+ok 85 - system CLI: existing real collector data is read, unreviewed rows are excluded and no automatic reviews occur
+  ---
+  duration_ms: 410.117623
+  type: 'test'
+  ...
+# Subtest: system CLI: malformed JSON, symbolic links, oversized inputs and unknown flags fail closed
+ok 86 - system CLI: malformed JSON, symbolic links, oversized inputs and unknown flags fail closed
+  ---
+  duration_ms: 1060.659339
+  type: 'test'
+  ...
+# Subtest: system CLI: fingerprint, catalog and status are accessible from the single entry point
+ok 87 - system CLI: fingerprint, catalog and status are accessible from the single entry point
+  ---
+  duration_ms: 382.139594
+  type: 'test'
+  ...
+# Subtest: commit auth: exact approved bytes and base yield only the intended root mutations
+ok 88 - commit auth: exact approved bytes and base yield only the intended root mutations
+  ---
+  duration_ms: 505.074009
+  type: 'test'
+  ...
+# Subtest: commit auth: anonymous is 401 and signed identity without capability is 403
+ok 89 - commit auth: anonymous is 401 and signed identity without capability is 403
+  ---
+  duration_ms: 372.814934
+  type: 'test'
+  ...
+# Subtest: commit auth: WRITE capability in a signed COMMIT request is not sufficient
+ok 90 - commit auth: WRITE capability in a signed COMMIT request is not sufficient
+  ---
+  duration_ms: 334.483976
+  type: 'test'
+  ...
+# Subtest: commit auth: genuine COMMIT grant for A cannot authorize workspace B
+ok 91 - commit auth: genuine COMMIT grant for A cannot authorize workspace B
+  ---
+  duration_ms: 459.850271
+  type: 'test'
+  ...
+# Subtest: commit auth: expired capability in a fresh signed envelope is denied
+ok 92 - commit auth: expired capability in a fresh signed envelope is denied
+  ---
+  duration_ms: 370.02793
+  type: 'test'
+  ...
+# Subtest: commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+ok 93 - commit auth: replay and a new envelope reusing a spent COMMIT grant are denied
+  ---
+  duration_ms: 352.838711
+  type: 'test'
+  ...
+# Subtest: commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+ok 94 - commit auth: staging modified via authorized WRITE after approval invalidates COMMIT
+  ---
+  duration_ms: 302.60152
+  type: 'test'
+  ...
+# Subtest: commit auth: re-signing a new staging hash cannot change the grant constraints
+ok 95 - commit auth: re-signing a new staging hash cannot change the grant constraints
+  ---
+  duration_ms: 308.419293
+  type: 'test'
+  ...
+# Subtest: commit auth: added or removed staging files invalidate the full manifest
+ok 96 - commit auth: added or removed staging files invalidate the full manifest
+  ---
+  duration_ms: 332.864457
+  type: 'test'
+  ...
+# Subtest: commit auth: changed base content or base permissions invalidates approval
+ok 97 - commit auth: changed base content or base permissions invalidates approval
+  ---
+  duration_ms: 342.972277
+  type: 'test'
+  ...
+# Subtest: commit auth: expected absent target that appears before commit invalidates the base
+ok 98 - commit auth: expected absent target that appears before commit invalidates the base
+  ---
+  duration_ms: 296.643311
+  type: 'test'
+  ...
+# Subtest: commit auth: a grant and intent for another root cannot target this server
+ok 99 - commit auth: a grant and intent for another root cannot target this server
+  ---
+  duration_ms: 397.866985
+  type: 'test'
+  ...
+# Subtest: commit auth: valid signature and grant cannot bypass empty or denying policy
+ok 100 - commit auth: valid signature and grant cannot bypass empty or denying policy
+  ---
+  duration_ms: 380.670318
+  type: 'test'
+  ...
+# Subtest: commit auth: untrusted issuer and an empty issuer list fail closed
+ok 101 - commit auth: untrusted issuer and an empty issuer list fail closed
+  ---
+  duration_ms: 312.59045
+  type: 'test'
+  ...
+# Subtest: commit auth: holder, audience, signature and operation are independently checked
+ok 102 - commit auth: holder, audience, signature and operation are independently checked
+  ---
+  duration_ms: 415.412494
+  type: 'test'
+  ...
+# Subtest: commit auth: wrong resource, missing state constraints and wider budgets are denied
+ok 103 - commit auth: wrong resource, missing state constraints and wider budgets are denied
+  ---
+  duration_ms: 370.725059
+  type: 'test'
+  ...
+# Subtest: commit auth: root target symlinks are rejected before any file is applied
+ok 104 - commit auth: root target symlinks are rejected before any file is applied
+  ---
+  duration_ms: 285.384149
+  type: 'test'
+  ...
+# Subtest: commit auth: staging symlinks are rejected before any file is applied
+ok 105 - commit auth: staging symlinks are rejected before any file is applied
+  ---
+  duration_ms: 312.391459
+  type: 'test'
+  ...
+# Subtest: commit auth: concurrent requests cannot apply the same single-use authorization twice
+ok 106 - commit auth: concurrent requests cannot apply the same single-use authorization twice
+  ---
+  duration_ms: 286.318209
+  type: 'test'
+  ...
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-CWzMtW/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-yA4MoT/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-K8dOaL/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-3GTOW9/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-FGO26u/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-Asz1mf/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-fX6f53/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-tYplYh/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: failure at target 1 restores only attempted changes
+ok 107 - H2 recovery: failure at target 1 restores only attempted changes
+  ---
+  duration_ms: 42.230988
+  type: 'test'
+  ...
+# {"faultAt":"a.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 2 restores only attempted changes
+ok 108 - H2 recovery: failure at target 2 restores only attempted changes
+  ---
+  duration_ms: 23.99576
+  type: 'test'
+  ...
+# {"faultAt":"b.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 3 restores only attempted changes
+ok 109 - H2 recovery: failure at target 3 restores only attempted changes
+  ---
+  duration_ms: 28.06911
+  type: 'test'
+  ...
+# {"faultAt":"c.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: partially written failing target is restored, not just successful previous writes
+ok 110 - H2 recovery: partially written failing target is restored, not just successful previous writes
+  ---
+  duration_ms: 25.227372
+  type: 'test'
+  ...
+# Subtest: H2 recovery: removes new files and only its own empty directories after apply failure
+ok 111 - H2 recovery: removes new files and only its own empty directories after apply failure
+  ---
+  duration_ms: 30.790033
+  type: 'test'
+  ...
+# Subtest: H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+ok 112 - H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+  ---
+  duration_ms: 26.920403
+  type: 'test'
+  ...
+# Subtest: H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+ok 113 - H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+  ---
+  duration_ms: 26.682538
+  type: 'test'
+  ...
+# Recovery latch is process-local, not durable restart quarantine. P03 remains required.
+# Subtest: H2 recovery: positive authorized control writes real existing and nested new files
+ok 114 - H2 recovery: positive authorized control writes real existing and nested new files
+  ---
+  duration_ms: 23.270858
+  type: 'test'
+  ...
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-n1NK8R/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+ok 115 - H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+  ---
+  duration_ms: 274.359221
+  type: 'test'
+  ...
+# {"oldPid":29981,"newPid":29990,"rollback":true,"oldGrant":"DENY","freshGrantSameChanges":"ALLOW"}
+# Subtest: H2 recovery: restores original permission bits when the operating system clears them on write
+ok 116 - H2 recovery: restores original permission bits when the operating system clears them on write
+  ---
+  duration_ms: 24.442798
+  type: 'test'
+  ...
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-PPuBxD/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-MuoBgJ/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-VdlMUP/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-wGR7Ee/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-sF6dDX/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-Jgj6Ld/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-bNxwzu/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-NGmEXy/root/.nexa/staging/ws_h3_fixture evidence=none
+# Subtest: H3: a competing edit to the first target is preserved and no other target is applied
+ok 117 - H3: a competing edit to the first target is preserved and no other target is applied
+  ---
+  duration_ms: 42.698418
+  type: 'test'
+  ...
+# Subtest: H3: a competing edit to a LATER target rolls back the already-applied earlier target
+ok 118 - H3: a competing edit to a LATER target rolls back the already-applied earlier target
+  ---
+  duration_ms: 26.929781
+  type: 'test'
+  ...
+# Subtest: H3: deletion of a verified target during the window refuses and leaves no resurrected file
+ok 119 - H3: deletion of a verified target during the window refuses and leaves no resurrected file
+  ---
+  duration_ms: 24.798165
+  type: 'test'
+  ...
+# Subtest: H3: a same-size competing edit is caught by bytes, not by length or mtime
+ok 120 - H3: a same-size competing edit is caught by bytes, not by length or mtime
+  ---
+  duration_ms: 22.322708
+  type: 'test'
+  ...
+# Subtest: H3: a competing mode change on verified bytes is refused
+ok 121 - H3: a competing mode change on verified bytes is refused
+  ---
+  duration_ms: 22.422626
+  type: 'test'
+  ...
+# Subtest: H3: positive control — an uncontended commit still applies every target
+ok 122 - H3: positive control — an uncontended commit still applies every target
+  ---
+  duration_ms: 25.563597
+  type: 'test'
+  ...
+# Subtest: H3: the probe preserves the original mode on an uncontended existing target
+ok 123 - H3: the probe preserves the original mode on an uncontended existing target
+  ---
+  duration_ms: 21.783618
+  type: 'test'
+  ...
+# Subtest: H3: a refused commit does not refund the consumed authorization
+ok 124 - H3: a refused commit does not refund the consumed authorization
+  ---
+  duration_ms: 26.94374
+  type: 'test'
+  ...
+# Consumed-on-refusal is intentional: the window was entered under real authority.
+# Subtest: COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+ok 125 - COMMIT H1: a consumed authorization stays denied after restart even when the approved base returns
+  ---
+  duration_ms: 313.489744
+  type: 'test'
+  ...
+# {"boundary":"H1","firstPid":30031,"restartedPid":30040,"sameProcess":"DENY","afterRestart":"DENY","contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H2: disk failure on the second file cannot leave a half-applied root
+ok 126 - COMMIT H2: disk failure on the second file cannot leave a half-applied root
+  ---
+  duration_ms: 229.908866
+  type: 'test'
+  ...
+# {"boundary":"H2","outcome":"ERROR","code":"ENOSPC","trace":[{"kind":"write-applied","file":"a.txt"},{"kind":"fault","file":"b.txt","code":"ENOSPC"},{"kind":"write-applied","file":"a.txt"}],"contents":{"a.txt":"base A\\n","b.txt":"base B\\n"}}
+# Subtest: COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+ok 127 - COMMIT H3: an external writer after hash verification must not be overwritten by stale commit bytes
+  ---
+  duration_ms: 204.661565
+  type: 'test'
+  ...
+# {"boundary":"H3","commitPid":30058,"outcome":"DENY","trace":[{"kind":"external-writer","file":"a.txt","pid":30067,"before":"base A\\n","after":"external writer value\\n"}],"contents":{"a.txt":"external writer value\\n","b.txt":"base B\\n"}}
+# Subtest: workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+ok 128 - workspace commit HTTP: anonymous commit cannot promote authorized staged writes
+  ---
+  duration_ms: 397.28326
+  type: 'test'
+  ...
+# {"status":401,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mubwxgkk","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+ok 129 - workspace commit HTTP: a fresh signed WRITE grant is not COMMIT permission
+  ---
+  duration_ms: 339.173293
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mubwxguw","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+ok 130 - workspace commit HTTP: user A WRITE grant cannot commit user B staged workspace
+  ---
+  duration_ms: 294.707486
+  type: 'test'
+  ...
+# {"status":403,"filesystemChanges":[],"stagingChanges":[{"workspaceId":"ws_commit-red-a_mubwxh2w","changedEntries":[],"metadataUnchanged":true},{"workspaceId":"ws_commit-red-b_mubwxh3t","changedEntries":[],"metadataUnchanged":true}]}
+# Subtest: H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+ok 131 - H1 persistence: disk consumption survives ABA/restart; old grant denied, fresh grant same changeSet allowed
+  ---
+  duration_ms: 317.997822
+  type: 'test'
+  ...
+# {"oldPid":30124,"restartedPid":30133,"oldAuthorization":"DENY","reSignedSpentGrant":"DENY","freshGrantSameState":"ALLOW","durableConsumptions":2}
+# Subtest: H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+ok 132 - H1 persistence: SIGKILL after durable consume but before first root effect cannot revive authority
+  ---
+  duration_ms: 283.569472
+  type: 'test'
+  ...
+# Subtest: H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+ok 133 - H1 persistence: shared ancestor budgets persist, without banning an unspent sibling grant
+  ---
+  duration_ms: 384.793275
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+ok 134 - H1 persistence: journal-write-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 278.776454
+  type: 'test'
+  ...
+# Subtest: H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+ok 135 - H1 persistence: journal-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 254.98954
+  type: 'test'
+  ...
+# Subtest: H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+ok 136 - H1 persistence: head-fsync-error fails closed before root effects and stays closed after restart
+  ---
+  duration_ms: 246.664737
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing initialization is never treated as a fresh empty ledger
+ok 137 - H1 persistence: missing initialization is never treated as a fresh empty ledger
+  ---
+  duration_ms: 248.847194
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing journal is never treated as a fresh empty ledger
+ok 138 - H1 persistence: missing journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 294.084962
+  type: 'test'
+  ...
+# Subtest: H1 persistence: torn record is never treated as a fresh empty ledger
+ok 139 - H1 persistence: torn record is never treated as a fresh empty ledger
+  ---
+  duration_ms: 281.455683
+  type: 'test'
+  ...
+# Subtest: H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+ok 140 - H1 persistence: whole-record journal truncation is never treated as a fresh empty ledger
+  ---
+  duration_ms: 265.009659
+  type: 'test'
+  ...
+# Subtest: H1 persistence: corrupted head is never treated as a fresh empty ledger
+ok 141 - H1 persistence: corrupted head is never treated as a fresh empty ledger
+  ---
+  duration_ms: 260.123728
+  type: 'test'
+  ...
+# Subtest: H1 persistence: non-private directory is never treated as a fresh empty ledger
+ok 142 - H1 persistence: non-private directory is never treated as a fresh empty ledger
+  ---
+  duration_ms: 279.291772
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unwritable journal is never treated as a fresh empty ledger
+ok 143 - H1 persistence: unwritable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 259.819209
+  type: 'test'
+  ...
+# Subtest: H1 persistence: unreadable journal is never treated as a fresh empty ledger
+ok 144 - H1 persistence: unreadable journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 273.898319
+  type: 'test'
+  ...
+# Subtest: H1 persistence: symlink journal is never treated as a fresh empty ledger
+ok 145 - H1 persistence: symlink journal is never treated as a fresh empty ledger
+  ---
+  duration_ms: 261.964652
+  type: 'test'
+  ...
+# Subtest: H1 persistence: wrong root binding is never treated as a fresh empty ledger
+ok 146 - H1 persistence: wrong root binding is never treated as a fresh empty ledger
+  ---
+  duration_ms: 270.865195
+  type: 'test'
+  ...
+# Subtest: H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+ok 147 - H1 persistence: missing store on the FIRST authorized request denies rather than silently initializing
+  ---
+  duration_ms: 165.989358
+  type: 'test'
+  ...
+# Subtest: H1 persistence: provisioning refuses reset of an existing consumed store
+ok 148 - H1 persistence: provisioning refuses reset of an existing consumed store
+  ---
+  duration_ms: 156.288485
+  type: 'test'
+  ...
+# Subtest: H1 persistence: absent state-directory configuration has no in-memory fallback
+ok 149 - H1 persistence: absent state-directory configuration has no in-memory fallback
+  ---
+  duration_ms: 167.883392
+  type: 'test'
+  ...
+# Subtest: H1 persistence: anonymous denial does not mutate the consumption store
+ok 150 - H1 persistence: anonymous denial does not mutate the consumption store
+  ---
+  duration_ms: 189.911328
+  type: 'test'
+  ...
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-bTC3sb/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-e8wvXi/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-WYng99/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-9CylgJ/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-lau9JP/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-wUwmkU/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-6xj6ul/root/.nexa/staging/ws_poststate_fixture evidence=none
+# Subtest: RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+ok 151 - RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+  ---
+  duration_ms: 46.279219
+  type: 'test'
+  ...
+# {"verified":2,"method":"READ_BACK_SHA256_EQUAL_BYTES"}
+# Subtest: RED2: a target whose bytes differ after a successful write must not report success
+ok 152 - RED2: a target whose bytes differ after a successful write must not report success
+  ---
+  duration_ms: 31.203556
+  type: 'test'
+  ...
+# Subtest: RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+ok 153 - RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+  ---
+  duration_ms: 30.835132
+  type: 'test'
+  ...
+# RECOVERY_UNVERIFIED is distinct from EFFECT_UNVERIFIED: the restore itself was not proven.
+# Subtest: post-state: a new file removed during rollback is proven gone, not assumed gone
+ok 154 - post-state: a new file removed during rollback is proven gone, not assumed gone
+  ---
+  duration_ms: 29.951743
+  type: 'test'
+  ...
+# Subtest: post-state: the verification reads real bytes, not the in-memory buffer
+ok 155 - post-state: the verification reads real bytes, not the in-memory buffer
+  ---
+  duration_ms: 25.180882
+  type: 'test'
+  ...
+# Subtest: post-state: positive control — an uncontended commit still succeeds and reports its proof
+ok 156 - post-state: positive control — an uncontended commit still succeeds and reports its proof
+  ---
+  duration_ms: 24.621369
+  type: 'test'
+  ...
+# Subtest: post-state: verification does not refund the consumed authorization
+ok 157 - post-state: verification does not refund the consumed authorization
+  ---
+  duration_ms: 32.083556
+  type: 'test'
+  ...
+# Subtest: workspace HTTP: unauthenticated write is denied without filesystem changes
+ok 158 - workspace HTTP: unauthenticated write is denied without filesystem changes
+  ---
+  duration_ms: 332.561318
+  type: 'test'
+  ...
+# Anonymous write returned HTTP 401; changed paths: []
+# Subtest: workspace write auth: anonymous requests preserve filesystem and metadata
+ok 159 - workspace write auth: anonymous requests preserve filesystem and metadata
+  ---
+  duration_ms: 395.753243
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a signed identity without a capability is insufficient
+ok 160 - workspace write auth: a signed identity without a capability is insufficient
+  ---
+  duration_ms: 291.408754
+  type: 'test'
+  ...
+# Subtest: workspace write auth: no server configuration means default deny even with a signed grant
+ok 161 - workspace write auth: no server configuration means default deny even with a signed grant
+  ---
+  duration_ms: 255.056101
+  type: 'test'
+  ...
+# Subtest: workspace write auth: a valid capability cannot bypass an empty policy
+ok 162 - workspace write auth: a valid capability cannot bypass an empty policy
+  ---
+  duration_ms: 265.850494
+  type: 'test'
+  ...
+# Subtest: workspace write auth: unsigned, forged or stale identity proofs cannot write
+ok 163 - workspace write auth: unsigned, forged or stale identity proofs cannot write
+  ---
+  duration_ms: 340.978749
+  type: 'test'
+  ...
+# Subtest: workspace write auth: untrusted issuers and forged capabilities are denied
+ok 164 - workspace write auth: untrusted issuers and forged capabilities are denied
+  ---
+  duration_ms: 303.462489
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an empty trusted issuer list denies otherwise valid grants
+ok 165 - workspace write auth: an empty trusted issuer list denies otherwise valid grants
+  ---
+  duration_ms: 251.6547
+  type: 'test'
+  ...
+# Subtest: workspace write auth: capability holder and audience are bound to the request
+ok 166 - workspace write auth: capability holder and audience are bound to the request
+  ---
+  duration_ms: 298.5809
+  type: 'test'
+  ...
+# Subtest: workspace write auth: exact workspace, path and content are signature-bound
+ok 167 - workspace write auth: exact workspace, path and content are signature-bound
+  ---
+  duration_ms: 315.838628
+  type: 'test'
+  ...
+# Subtest: workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+ok 168 - workspace write auth: wrong scope, wrong action and expired capabilities cannot write
+  ---
+  duration_ms: 334.493059
+  type: 'test'
+  ...
+# Subtest: workspace write auth: ambiguous paths and unenforced constraints fail closed
+ok 169 - workspace write auth: ambiguous paths and unenforced constraints fail closed
+  ---
+  duration_ms: 429.558558
+  type: 'test'
+  ...
+# Subtest: workspace write auth: an issuer-approved caller excluded by policy is denied
+ok 170 - workspace write auth: an issuer-approved caller excluded by policy is denied
+  ---
+  duration_ms: 259.084649
+  type: 'test'
+  ...
+# Subtest: workspace write auth: authorized HTTP calls really overwrite and create staging files only
+ok 171 - workspace write auth: authorized HTTP calls really overwrite and create staging files only
+  ---
+  duration_ms: 285.964948
+  type: 'test'
+  ...
+# Subtest: workspace write auth: replaying a successful signed write has no second filesystem effect
+ok 172 - workspace write auth: replaying a successful signed write has no second filesystem effect
+  ---
+  duration_ms: 281.171873
+  type: 'test'
+  ...
+# Subtest: workspace write auth: concurrent calls cannot spend a one-use grant twice
+ok 173 - workspace write auth: concurrent calls cannot spend a one-use grant twice
+  ---
+  duration_ms: 280.852897
+  type: 'test'
+  ...
+# Subtest: workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+ok 174 - workspace write auth: oversized unauthenticated requests leave files and metadata unchanged
+  ---
+  duration_ms: 255.936271
+  type: 'test'
+  ...
+# Subtest: Ω/C1: a message without a capability is refused at the membrane, and recorded
+ok 175 - Ω/C1: a message without a capability is refused at the membrane, and recorded
+  ---
+  duration_ms: 23.815624
+  type: 'test'
+  ...
+# Subtest: Ω/C2: a route the contract never declared is refused, and nothing is minted
+ok 176 - Ω/C2: a route the contract never declared is refused, and nothing is minted
+  ---
+  duration_ms: 14.247704
+  type: 'test'
+  ...
+# Subtest: Ω/C3: a capability minted for one cell cannot be presented by another
+ok 177 - Ω/C3: a capability minted for one cell cannot be presented by another
+  ---
+  duration_ms: 11.020755
+  type: 'test'
+  ...
+# Subtest: Ω/C4: a capability is single-use: presenting it twice is a replay
+ok 178 - Ω/C4: a capability is single-use: presenting it twice is a replay
+  ---
+  duration_ms: 5.987344
+  type: 'test'
+  ...
+# Subtest: Ω/C5: a tampered capability is refused by signature, not by luck
+ok 179 - Ω/C5: a tampered capability is refused by signature, not by luck
+  ---
+  duration_ms: 5.958421
+  type: 'test'
+  ...
+# Subtest: Ω/C6: a token from an unrecognised authority is refused (fail closed)
+ok 180 - Ω/C6: a token from an unrecognised authority is refused (fail closed)
+  ---
+  duration_ms: 7.382011
+  type: 'test'
+  ...
+# Subtest: Ω/C7: a payload key the receptor never accepted is refused before any work happens
+ok 181 - Ω/C7: a payload key the receptor never accepted is refused before any work happens
+  ---
+  duration_ms: 2.50607
+  type: 'test'
+  ...
+# Subtest: Ω/C8: a receptor that requires an audience refuses a message without it
+ok 182 - Ω/C8: a receptor that requires an audience refuses a message without it
+  ---
+  duration_ms: 7.218785
+  type: 'test'
+  ...
+# Subtest: Ω/C9: the cell budget is a ceiling, not a suggestion
+ok 183 - Ω/C9: the cell budget is a ceiling, not a suggestion
+  ---
+  duration_ms: 6.919906
+  type: 'test'
+  ...
+# Subtest: Ω/C10: a receptor that throws an unmodelled error is a refusal, not a crash
+ok 184 - Ω/C10: a receptor that throws an unmodelled error is a refusal, not a crash
+  ---
+  duration_ms: 2.577189
+  type: 'test'
+  ...
+# Subtest: Ω/C11: an isolated cell serves nothing but life support, and recovery must pass a check
+ok 185 - Ω/C11: an isolated cell serves nothing but life support, and recovery must pass a check
+  ---
+  duration_ms: 7.458372
+  type: 'test'
+  ...
+# Subtest: Ω/C11b: retired is terminal
+ok 186 - Ω/C11b: retired is terminal
+  ---
+  duration_ms: 6.102186
+  type: 'test'
+  ...
+# Subtest: Ω/C12: the nucleus is immutable, and a kernel nucleus is not a cell at all
+ok 187 - Ω/C12: the nucleus is immutable, and a kernel nucleus is not a cell at all
+  ---
+  duration_ms: 11.734122
+  type: 'test'
+  ...
+# Subtest: Ω/C13: a cell cannot mint — it can only propose, and the proposal is inert
+ok 188 - Ω/C13: a cell cannot mint — it can only propose, and the proposal is inert
+  ---
+  duration_ms: 16.277742
+  type: 'test'
+  ...
+# Subtest: Ω/C14: homeostasis isolates what keeps failing, and only a verified recovery revives it
+ok 189 - Ω/C14: homeostasis isolates what keeps failing, and only a verified recovery revives it
+  ---
+  duration_ms: 7.383871
+  type: 'test'
+  ...
+# Subtest: Ω/C15: a tissue with no entry points cannot pretend to be a cell
+ok 190 - Ω/C15: a tissue with no entry points cannot pretend to be a cell
+  ---
+  duration_ms: 1.387558
+  type: 'test'
+  ...
+# Subtest: Ω/C15b: a tissue with an entry point is a cell, and its call re-crosses a membrane
+ok 191 - Ω/C15b: a tissue with an entry point is a cell, and its call re-crosses a membrane
+  ---
+  duration_ms: 5.064497
+  type: 'test'
+  ...
+# Subtest: Ω/C16: every membrane decision is evidence, and the chain verifies
+ok 192 - Ω/C16: every membrane decision is evidence, and the chain verifies
+  ---
+  duration_ms: 26.093423
+  type: 'test'
+  ...
+# Subtest: Ω/C16b: a denied crossing is evidence too
+ok 193 - Ω/C16b: a denied crossing is evidence too
+  ---
+  duration_ms: 5.41608
+  type: 'test'
+  ...
+# Subtest: Ω/C17: division gives a child only what the parent had; anything else is amplification
+ok 194 - Ω/C17: division gives a child only what the parent had; anything else is amplification
+  ---
+  duration_ms: 5.015715
+  type: 'test'
+  ...
+# Subtest: Ω/C18: fusion never overwrites, and a conflict goes straight to quarantine
+ok 195 - Ω/C18: fusion never overwrites, and a conflict goes straight to quarantine
+  ---
+  duration_ms: 5.042785
+  type: 'test'
+  ...
+# Subtest: Ω/C18b: quarantine is terminal — a candidate can be superseded, never released
+ok 196 - Ω/C18b: quarantine is terminal — a candidate can be superseded, never released
+  ---
+  duration_ms: 0.361811
+  type: 'test'
+  ...
+# Subtest: Ω/C19: the organism reports what is true, not what is comfortable
+ok 197 - Ω/C19: the organism reports what is true, not what is comfortable
+  ---
+  duration_ms: 4.665285
+  type: 'test'
+  ...
+# Subtest: Ω/C21: the topology is sealed — a route added after traffic is refused
+ok 198 - Ω/C21: the topology is sealed — a route added after traffic is refused
+  ---
+  duration_ms: 5.199927
+  type: 'test'
+  ...
+# Subtest: Ω/C22: a cell refusal is observable evidence for the learning layer
+ok 199 - Ω/C22: a cell refusal is observable evidence for the learning layer
+  ---
+  duration_ms: 15.027851
+  type: 'test'
+  ...
+# Subtest: Ω/C20: the sample organism is deterministic — same names, same keys, same digest
+ok 200 - Ω/C20: the sample organism is deterministic — same names, same keys, same digest
+  ---
+  duration_ms: 8.830051
+  type: 'test'
+  ...
+# [grok-planner] blocked mintCapability attempt from LLM output
+# [grok-planner] blocked potential secret egress in step
+# [grok-planner] sanitized 3 -> 1 steps
+# [grok-planner] blocked potential secret egress in step
+# [grok-planner] sanitized 1 -> 0 steps
+# Subtest: V0: a budgeted creative call flows through the full NEXA pipeline
+ok 201 - V0: a budgeted creative call flows through the full NEXA pipeline
+  ---
+  duration_ms: 32.982202
+  type: 'test'
+  ...
+# Subtest: V1: planner sanitizes creative mint attempts and vault handles in steps
+ok 202 - V1: planner sanitizes creative mint attempts and vault handles in steps
+  ---
+  duration_ms: 1.263013
+  type: 'test'
+  ...
+# Subtest: V2: tools/call without a capability is a default-deny carrying a verifiable receipt
+ok 203 - V2: tools/call without a capability is a default-deny carrying a verifiable receipt
+  ---
+  duration_ms: 7.071879
+  type: 'test'
+  ...
+# Subtest: V3a: the protocol ledger enforces the capability use budget on the envelope path
+ok 204 - V3a: the protocol ledger enforces the capability use budget on the envelope path
+  ---
+  duration_ms: 26.771329
+  type: 'test'
+  ...
+# Subtest: V3b: the port enforces the same budget on the direct API path
+ok 205 - V3b: the port enforces the same budget on the direct API path
+  ---
+  duration_ms: 4.098997
+  type: 'test'
+  ...
+# Subtest: V4: channel scope is enforced at the capability boundary
+ok 206 - V4: channel scope is enforced at the capability boundary
+  ---
+  duration_ms: 3.94553
+  type: 'test'
+  ...
+# Subtest: V5: no ad-publish path survives — gates, attenuation, and the port all refuse
+ok 207 - V5: no ad-publish path survives — gates, attenuation, and the port all refuse
+  ---
+  duration_ms: 3.112132
+  type: 'test'
+  ...
+# Subtest: V6: injection text in creative inputs is data — deterministic, side-effect free
+ok 208 - V6: injection text in creative inputs is data — deterministic, side-effect free
+  ---
+  duration_ms: 3.204556
+  type: 'test'
+  ...
+# Subtest: V7: vault:// handles are refused at both the planner and the port
+ok 209 - V7: vault:// handles are refused at both the planner and the port
+  ---
+  duration_ms: 3.10728
+  type: 'test'
+  ...
+# Subtest: V8: the creative surface is exactly the declared, ungated, registered set
+ok 210 - V8: the creative surface is exactly the declared, ungated, registered set
+  ---
+  duration_ms: 2.975363
+  type: 'test'
+  ...
+# Subtest: keys vectors: seeded key pairs reproduce the pinned key ids
+ok 211 - keys vectors: seeded key pairs reproduce the pinned key ids
+  ---
+  duration_ms: 4.115293
+  type: 'test'
+  ...
+# Subtest: keys vectors: signatures verify and are byte-identical to the pinned values
+ok 212 - keys vectors: signatures verify and are byte-identical to the pinned values
+  ---
+  duration_ms: 3.014116
+  type: 'test'
+  ...
+# Subtest: a key id is self-certifying: the public key is recoverable from it
+ok 213 - a key id is self-certifying: the public key is recoverable from it
+  ---
+  duration_ms: 1.541526
+  type: 'test'
+  ...
+# Subtest: a signature does not verify under a different key
+ok 214 - a signature does not verify under a different key
+  ---
+  duration_ms: 1.182961
+  type: 'test'
+  ...
+# Subtest: malformed signatures are rejected without throwing
+ok 215 - malformed signatures are rejected without throwing
+  ---
+  duration_ms: 0.563772
+  type: 'test'
+  ...
+# Subtest: base58btc round-trips, including leading zeros
+ok 216 - base58btc round-trips, including leading zeros
+  ---
+  duration_ms: 0.572207
+  type: 'test'
+  ...
+# Subtest: base64url round-trips and rejects foreign alphabets
+ok 217 - base64url round-trips and rejects foreign alphabets
+  ---
+  duration_ms: 0.177217
+  type: 'test'
+  ...
+# Subtest: random ids and nonces have the expected shape and do not repeat
+ok 218 - random ids and nonces have the expected shape and do not repeat
+  ---
+  duration_ms: 1.927947
+  type: 'test'
+  ...
+# Subtest: instant helpers are strict about the RFC 3339 UTC shape
+ok 219 - instant helpers are strict about the RFC 3339 UTC shape
+  ---
+  duration_ms: 0.998574
+  type: 'test'
+  ...
+# Subtest: an allowlisted call with a valid capability is ALLOWed, spent and receipted
+ok 220 - an allowlisted call with a valid capability is ALLOWed, spent and receipted
+  ---
+  duration_ms: 32.90164
+  type: 'test'
+  ...
+# Subtest: the decision pipeline refuses in the documented order
+ok 221 - the decision pipeline refuses in the documented order
+  ---
+  duration_ms: 20.680179
+  type: 'test'
+  ...
+# Subtest: untrusted senders are refused and never reach policy or a handler
+ok 222 - untrusted senders are refused and never reach policy or a handler
+  ---
+  duration_ms: 6.205298
+  type: 'test'
+  ...
+# Subtest: an unknown peer cannot even reach the trust layer
+ok 223 - an unknown peer cannot even reach the trust layer
+  ---
+  duration_ms: 6.374565
+  type: 'test'
+  ...
+# Subtest: replay, expiry and misaddressed envelopes never touch the endpoint state
+ok 224 - replay, expiry and misaddressed envelopes never touch the endpoint state
+  ---
+  duration_ms: 13.221584
+  type: 'test'
+  ...
+# Subtest: a dry run decides without consuming authority or invoking the handler
+ok 225 - a dry run decides without consuming authority or invoking the handler
+  ---
+  duration_ms: 9.827518
+  type: 'test'
+  ...
+# Subtest: capability constraints bound the arguments
+ok 226 - capability constraints bound the arguments
+  ---
+  duration_ms: 6.824332
+  type: 'test'
+  ...
+# Subtest: a delegated capability consumes the whole chain budget
+ok 227 - a delegated capability consumes the whole chain budget
+  ---
+  duration_ms: 14.503841
+  type: 'test'
+  ...
+# Subtest: HELLO answers with the identity document but pins nothing
+ok 228 - HELLO answers with the identity document but pins nothing
+  ---
+  duration_ms: 5.264606
+  type: 'test'
+  ...
+# Subtest: describe() reports posture without leaking private material
+ok 229 - describe() reports posture without leaking private material
+  ---
+  duration_ms: 7.75155
+  type: 'test'
+  ...
+# Subtest: an endpoint without a signing identity is refused
+ok 230 - an endpoint without a signing identity is refused
+  ---
+  duration_ms: 4.015397
+  type: 'test'
+  ...
+# Subtest: a signed envelope with a malformed resource or action is denied, not thrown
+ok 231 - a signed envelope with a malformed resource or action is denied, not thrown
+  ---
+  duration_ms: 16.127024
+  type: 'test'
+  ...
+# Subtest: a handler that returns non-canonical data is a recorded failure
+ok 232 - a handler that returns non-canonical data is a recorded failure
+  ---
+  duration_ms: 6.556
+  type: 'test'
+  ...
+# Subtest: a fresh log starts at genesis and chains each record to the previous hash
+ok 233 - a fresh log starts at genesis and chains each record to the previous hash
+  ---
+  duration_ms: 25.067831
+  type: 'test'
+  ...
+# Subtest: editing, deleting, reordering or re-signing records is detected
+ok 234 - editing, deleting, reordering or re-signing records is detected
+  ---
+  duration_ms: 9.776369
+  type: 'test'
+  ...
+# Subtest: the log is append-only: entries() hands out copies
+ok 235 - the log is append-only: entries() hands out copies
+  ---
+  duration_ms: 5.15676
+  type: 'test'
+  ...
+# Subtest: record kinds and decisions are a closed set
+ok 236 - record kinds and decisions are a closed set
+  ---
+  duration_ms: 7.677991
+  type: 'test'
+  ...
+# Subtest: receipts are signed, portable and bound to their record
+ok 237 - receipts are signed, portable and bound to their record
+  ---
+  duration_ms: 8.117946
+  type: 'test'
+  ...
+# Subtest: the endpoint produces a verifiable receipt for every decision
+ok 238 - the endpoint produces a verifiable receipt for every decision
+  ---
+  duration_ms: 16.825387
+  type: 'test'
+  ...
+# Subtest: a receipt cannot be forged by another actor
+ok 239 - a receipt cannot be forged by another actor
+  ---
+  duration_ms: 5.377472
+  type: 'test'
+  ...
+# Subtest: examples/hello-nexa.mjs runs the documented flow end to end
+ok 240 - examples/hello-nexa.mjs runs the documented flow end to end
+  ---
+  duration_ms: 28.868658
+  type: 'test'
+  ...
+# Subtest: the example is deterministic: same seeds, same key ids
+ok 241 - the example is deterministic: same seeds, same key ids
+  ---
+  duration_ms: 24.098772
+  type: 'test'
+  ...
+# Subtest: google/attacks: the suite is eight attacks in its own category
+ok 242 - google/attacks: the suite is eight attacks in its own category
+  ---
+  duration_ms: 1.568599
+  type: 'test'
+  ...
+# Subtest: attack: a lookalike signing key — a real key nobody publishes, wearing a kid that is trusted
+ok 243 - attack: a lookalike signing key — a real key nobody publishes, wearing a kid that is trusted
+  ---
+  duration_ms: 0.26662
+  type: 'test'
+  ...
+# Subtest: attack: an issuer that reads like Google’s is refused at the issuer, not at the signature
+ok 244 - attack: an issuer that reads like Google’s is refused at the issuer, not at the signature
+  ---
+  duration_ms: 0.180111
+  type: 'test'
+  ...
+# Subtest: attack: a genuine token minted for another client is refused at the audience
+ok 245 - attack: a genuine token minted for another client is refused at the audience
+  ---
+  duration_ms: 0.117902
+  type: 'test'
+  ...
+# Subtest: attack: a token addressed to two parties is refused at azp, however valid its audience
+ok 246 - attack: a token addressed to two parties is refused at azp, however valid its audience
+  ---
+  duration_ms: 0.11865
+  type: 'test'
+  ...
+# Subtest: attack: alg confusion — HS256 keyed on the RSA modulus never reaches the verifier
+ok 247 - attack: alg confusion — HS256 keyed on the RSA modulus never reaches the verifier
+  ---
+  duration_ms: 0.1436
+  type: 'test'
+  ...
+# Subtest: attack: a token captured from one session is refused by another session, and burns nothing
+ok 248 - attack: a token captured from one session is refused by another session, and burns nothing
+  ---
+  duration_ms: 0.124888
+  type: 'test'
+  ...
+# Subtest: attack: a captured token replayed into its own session logs in exactly once
+ok 249 - attack: a captured token replayed into its own session logs in exactly once
+  ---
+  duration_ms: 0.128552
+  type: 'test'
+  ...
+# Subtest: attack: somebody else’s verified email does not make them the owner
+ok 250 - attack: somebody else’s verified email does not make them the owner
+  ---
+  duration_ms: 0.357925
+  type: 'test'
+  ...
+# Subtest: google/attacks: the eight attacks are eight different questions, not one question eight times
+ok 251 - google/attacks: the eight attacks are eight different questions, not one question eight times
+  ---
+  duration_ms: 0.497079
+  type: 'test'
+  ...
+# Subtest: google/binding: a binding is created by the operator key and carries a signature
+ok 252 - google/binding: a binding is created by the operator key and carries a signature
+  ---
+  duration_ms: 13.179052
+  type: 'test'
+  ...
+# Subtest: google/binding: a binding made by a stranger is signed and still refused
+ok 253 - google/binding: a binding made by a stranger is signed and still refused
+  ---
+  duration_ms: 3.63446
+  type: 'test'
+  ...
+# Subtest: google/binding: a binding whose role was edited after signing is refused by the signature
+ok 254 - google/binding: a binding whose role was edited after signing is refused by the signature
+  ---
+  duration_ms: 3.980562
+  type: 'test'
+  ...
+# Subtest: google/binding: a binding is keyed by the subject hash, and an email is not a key
+ok 255 - google/binding: a binding is keyed by the subject hash, and an email is not a key
+  ---
+  duration_ms: 3.486232
+  type: 'test'
+  ...
+# Subtest: google/binding: a binding names a NEXA key id, and a malformed one is refused
+ok 256 - google/binding: a binding names a NEXA key id, and a malformed one is refused
+  ---
+  duration_ms: 2.814616
+  type: 'test'
+  ...
+# Subtest: google/binding: one subject, one live binding — a second is refused with its own code
+ok 257 - google/binding: one subject, one live binding — a second is refused with its own code
+  ---
+  duration_ms: 3.146745
+  type: 'test'
+  ...
+# Subtest: google/binding: an expired binding is refused, not honoured with a warning
+ok 258 - google/binding: an expired binding is refused, not honoured with a warning
+  ---
+  duration_ms: 3.571878
+  type: 'test'
+  ...
+# Subtest: google/binding: delegation is refused — authority does not arrive second-hand
+ok 259 - google/binding: delegation is refused — authority does not arrive second-hand
+  ---
+  duration_ms: 2.542007
+  type: 'test'
+  ...
+# Subtest: google/binding: a login cannot create a binding — the two paths do not touch
+ok 260 - google/binding: a login cannot create a binding — the two paths do not touch
+  ---
+  duration_ms: 14.497446
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass must be a recovery state and nothing else
+ok 261 - google/binding: break-glass must be a recovery state and nothing else
+  ---
+  duration_ms: 3.449191
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass without a reason is refused — an unauditable recovery is not recovery
+ok 262 - google/binding: break-glass without a reason is refused — an unauditable recovery is not recovery
+  ---
+  duration_ms: 2.787674
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass lives at most 24 hours, and an hour longer is unbounded
+ok 263 - google/binding: break-glass lives at most 24 hours, and an hour longer is unbounded
+  ---
+  duration_ms: 3.31764
+  type: 'test'
+  ...
+# Subtest: google/binding: a break-glass record with no expiry is refused as a shape, not as a policy
+ok 264 - google/binding: a break-glass record with no expiry is refused as a shape, not as a policy
+  ---
+  duration_ms: 4.186054
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass does not chain
+ok 265 - google/binding: break-glass does not chain
+  ---
+  duration_ms: 3.062132
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass may not be delegated, even by the operator
+ok 266 - google/binding: break-glass may not be delegated, even by the operator
+  ---
+  duration_ms: 2.506442
+  type: 'test'
+  ...
+# Subtest: google/binding: break-glass may not touch the kernel — not with a recovery state
+ok 267 - google/binding: break-glass may not touch the kernel — not with a recovery state
+  ---
+  duration_ms: 3.729427
+  type: 'test'
+  ...
+# Subtest: google/binding: a recovery state reaches identity verification and nothing above class A
+ok 268 - google/binding: a recovery state reaches identity verification and nothing above class A
+  ---
+  duration_ms: 2.990093
+  type: 'test'
+  ...
+# Subtest: google/binding: the recovery state is evidenced before it is active, and says it is one
+ok 269 - google/binding: the recovery state is evidenced before it is active, and says it is one
+  ---
+  duration_ms: 3.061114
+  type: 'test'
+  ...
+# Subtest: google/binding: a legitimate binding ends the recovery state immediately, not when its clock runs out
+ok 270 - google/binding: a legitimate binding ends the recovery state immediately, not when its clock runs out
+  ---
+  duration_ms: 3.811498
+  type: 'test'
+  ...
+# Subtest: google/binding: revocation destroys vault material before it revokes capabilities
+ok 271 - google/binding: revocation destroys vault material before it revokes capabilities
+  ---
+  duration_ms: 5.24968
+  type: 'test'
+  ...
+# Subtest: google/binding: revocation is immediate — the binding stops being active at once
+ok 272 - google/binding: revocation is immediate — the binding stops being active at once
+  ---
+  duration_ms: 3.462129
+  type: 'test'
+  ...
+# Subtest: google/binding: revocation requires the operator key and a reason
+ok 273 - google/binding: revocation requires the operator key and a reason
+  ---
+  duration_ms: 4.224399
+  type: 'test'
+  ...
+# Subtest: google/capability: every operation has a class from the ladder, and the ladder is A–D
+ok 274 - google/capability: every operation has a class from the ladder, and the ladder is A–D
+  ---
+  duration_ms: 1.586719
+  type: 'test'
+  ...
+# Subtest: google/capability: no operation exists without a documented question and a scope row
+ok 275 - google/capability: no operation exists without a documented question and a scope row
+  ---
+  duration_ms: 0.378196
+  type: 'test'
+  ...
+# Subtest: google/capability: gmail.send is class D and a mailbox read is not — the class comes from the operation
+ok 276 - google/capability: gmail.send is class D and a mailbox read is not — the class comes from the operation
+  ---
+  duration_ms: 0.199361
+  type: 'test'
+  ...
+# Subtest: google/capability: the ceiling refuses an operation above it, before anything is minted
+ok 277 - google/capability: the ceiling refuses an operation above it, before anything is minted
+  ---
+  duration_ms: 0.575165
+  type: 'test'
+  ...
+# Subtest: google/capability: roles inform the ceiling and never raise it
+ok 278 - google/capability: roles inform the ceiling and never raise it
+  ---
+  duration_ms: 0.342831
+  type: 'test'
+  ...
+# Subtest: google/capability: a class-D operation cannot be minted without an approval — by the authority itself
+ok 279 - google/capability: a class-D operation cannot be minted without an approval — by the authority itself
+  ---
+  duration_ms: 6.547803
+  type: 'test'
+  ...
+# Subtest: google/capability: the capability subject is the service cell, never the owner
+ok 280 - google/capability: the capability subject is the service cell, never the owner
+  ---
+  duration_ms: 2.994348
+  type: 'test'
+  ...
+# Subtest: google/capability: a capability presented by another cell is refused with the audience code
+ok 281 - google/capability: a capability presented by another cell is refused with the audience code
+  ---
+  duration_ms: 5.07538
+  type: 'test'
+  ...
+# Subtest: google/capability: a call port refuses a capability minted by someone else
+ok 282 - google/capability: a call port refuses a capability minted by someone else
+  ---
+  duration_ms: 3.965811
+  type: 'test'
+  ...
+# Subtest: google/capability: an approval carries the ten binding fields, unconsumed and single-use
+ok 283 - google/capability: an approval carries the ten binding fields, unconsumed and single-use
+  ---
+  duration_ms: 2.554167
+  type: 'test'
+  ...
+# Subtest: google/capability: approval for X is not approval for another X
+ok 284 - google/capability: approval for X is not approval for another X
+  ---
+  duration_ms: 2.124338
+  type: 'test'
+  ...
+# Subtest: google/capability: an approval is single-use — a replay is named as a replay
+ok 285 - google/capability: an approval is single-use — a replay is named as a replay
+  ---
+  duration_ms: 1.695345
+  type: 'test'
+  ...
+# Subtest: google/capability: one exact operation has one live approval
+ok 286 - google/capability: one exact operation has one live approval
+  ---
+  duration_ms: 1.66232
+  type: 'test'
+  ...
+# Subtest: google/capability: the gate passes a capability refusal through without rewriting its code
+ok 287 - google/capability: the gate passes a capability refusal through without rewriting its code
+  ---
+  duration_ms: 2.996556
+  type: 'test'
+  ...
+# Subtest: google/capability: a class-D call without an approval is refused, even with a valid capability
+ok 288 - google/capability: a class-D call without an approval is refused, even with a valid capability
+  ---
+  duration_ms: 2.456615
+  type: 'test'
+  ...
+# Subtest: google/capability: a class-D call with both halves is authorized, and both are recorded
+ok 289 - google/capability: a class-D call with both halves is authorized, and both are recorded
+  ---
+  duration_ms: 2.354168
+  type: 'test'
+  ...
+# Subtest: google/capability: a class-A call needs no approval, and a scope it may not request is refused
+ok 290 - google/capability: a class-A call needs no approval, and a scope it may not request is refused
+  ---
+  duration_ms: 2.479986
+  type: 'test'
+  ...
+# Subtest: google/capability: scope admission enforces the three rules
+ok 291 - google/capability: scope admission enforces the three rules
+  ---
+  duration_ms: 0.329568
+  type: 'test'
+  ...
+# Subtest: google/capability: a scope from a later phase is refused until that phase is open
+ok 292 - google/capability: a scope from a later phase is refused until that phase is open
+  ---
+  duration_ms: 0.245735
+  type: 'test'
+  ...
+# Subtest: google/capability: the narrowest rung wins — a per-file scope is chosen over the whole account
+ok 293 - google/capability: the narrowest rung wins — a per-file scope is chosen over the whole account
+  ---
+  duration_ms: 0.317265
+  type: 'test'
+  ...
+# Subtest: google/capability: a scope and a Google classification are orthogonal facts, and both are recorded
+ok 294 - google/capability: a scope and a Google classification are orthogonal facts, and both are recorded
+  ---
+  duration_ms: 0.115048
+  type: 'test'
+  ...
+# Subtest: google/capability: the grant templates name the service cell and the exact action
+ok 295 - google/capability: the grant templates name the service cell and the exact action
+  ---
+  duration_ms: 0.2345
+  type: 'test'
+  ...
+# Subtest: google/capability: the identity cell holds no authority of its own — the gateway verifies, the host mints
+ok 296 - google/capability: the identity cell holds no authority of its own — the gateway verifies, the host mints
+  ---
+  duration_ms: 5.852233
+  type: 'test'
+  ...
+# Subtest: google/vault: a handle is a descriptor, and it carries no material
+ok 297 - google/vault: a handle is a descriptor, and it carries no material
+  ---
+  duration_ms: 2.024839
+  type: 'test'
+  ...
+# Subtest: google/vault: material is resolved only for the cell the handle was issued to
+ok 298 - google/vault: material is resolved only for the cell the handle was issued to
+  ---
+  duration_ms: 0.718602
+  type: 'test'
+  ...
+# Subtest: google/vault: material is refreshed inside the margin, and the old material is replaced
+ok 299 - google/vault: material is refreshed inside the margin, and the old material is replaced
+  ---
+  duration_ms: 0.444565
+  type: 'test'
+  ...
+# Subtest: google/vault: without a refresh port, expired material is refused — fail-closed, not stale
+ok 300 - google/vault: without a refresh port, expired material is refused — fail-closed, not stale
+  ---
+  duration_ms: 0.299451
+  type: 'test'
+  ...
+# Subtest: google/vault: a failed refresh destroys the material and records the expectation of re-consent
+ok 301 - google/vault: a failed refresh destroys the material and records the expectation of re-consent
+  ---
+  duration_ms: 0.387581
+  type: 'test'
+  ...
+# Subtest: google/vault: a second refresh for the same service is refused while one is in flight
+ok 302 - google/vault: a second refresh for the same service is refused while one is in flight
+  ---
+  duration_ms: 0.406617
+  type: 'test'
+  ...
+# Subtest: google/vault: revocation deletes every service for a subject, and nothing for another
+ok 303 - google/vault: revocation deletes every service for a subject, and nothing for another
+  ---
+  duration_ms: 0.465344
+  type: 'test'
+  ...
+# Subtest: google/vault: the journal records the lifecycle and never the material
+ok 304 - google/vault: the journal records the lifecycle and never the material
+  ---
+  duration_ms: 0.242589
+  type: 'test'
+  ...
+# Subtest: google/limiter: one call in flight per service, and a refusal is recorded as a QUOTA record
+ok 305 - google/limiter: one call in flight per service, and a refusal is recorded as a QUOTA record
+  ---
+  duration_ms: 0.696301
+  type: 'test'
+  ...
+# Subtest: google/limiter: a window has a ceiling, and reaching it is a refusal with a QUOTA record
+ok 306 - google/limiter: a window has a ceiling, and reaching it is a refusal with a QUOTA record
+  ---
+  duration_ms: 0.567845
+  type: 'test'
+  ...
+# Subtest: google/limiter: a 429 backs the service off, with exponential growth and a ceiling
+ok 307 - google/limiter: a 429 backs the service off, with exponential growth and a ceiling
+  ---
+  duration_ms: 0.864823
+  type: 'test'
+  ...
+# Subtest: google/limiter: while a service backs off, calls to it are refused and the wait is named
+ok 308 - google/limiter: while a service backs off, calls to it are refused and the wait is named
+  ---
+  duration_ms: 0.240928
+  type: 'test'
+  ...
+# Subtest: google/limiter: a provider Retry-After is honoured and jitter is injected, not invented
+ok 309 - google/limiter: a provider Retry-After is honoured and jitter is injected, not invented
+  ---
+  duration_ms: 0.196001
+  type: 'test'
+  ...
+# Subtest: google/limiter: the limiter never outruns its own ceiling, however many calls are asked for
+ok 310 - google/limiter: the limiter never outruns its own ceiling, however many calls are asked for
+  ---
+  duration_ms: 0.291746
+  type: 'test'
+  ...
+# Subtest: google/egress: credential-shaped material is refused a destination
+ok 311 - google/egress: credential-shaped material is refused a destination
+  ---
+  duration_ms: 0.593833
+  type: 'test'
+  ...
+# Subtest: google/egress: a known secret is found even when it looks like nothing
+ok 312 - google/egress: a known secret is found even when it looks like nothing
+  ---
+  duration_ms: 0.204772
+  type: 'test'
+  ...
+# Subtest: google/egress: a clean payload passes, and the digest that reaches evidence is canonical
+ok 313 - google/egress: a clean payload passes, and the digest that reaches evidence is canonical
+  ---
+  duration_ms: 1.194558
+  type: 'test'
+  ...
+# Subtest: google/egress: the scan reports where the material was, not what it was
+ok 314 - google/egress: the scan reports where the material was, not what it was
+  ---
+  duration_ms: 0.220239
+  type: 'test'
+  ...
+# Subtest: google/identity: a token from the pinned source yields a principal and nothing else
+ok 315 - google/identity: a token from the pinned source yields a principal and nothing else
+  ---
+  duration_ms: 20.279841
+  type: 'test'
+  ...
+# Subtest: google/identity: the verification order is the documented one, and the last step is email
+ok 316 - google/identity: the verification order is the documented one, and the last step is email
+  ---
+  duration_ms: 8.013427
+  type: 'test'
+  ...
+# Subtest: google/identity: the raw token, the raw subject and the raw email never reach evidence
+ok 317 - google/identity: the raw token, the raw subject and the raw email never reach evidence
+  ---
+  duration_ms: 14.263942
+  type: 'test'
+  ...
+# Subtest: google/identity: the identity key is the domain-separated digest of sub, and is recomputable
+ok 318 - google/identity: the identity key is the domain-separated digest of sub, and is recomputable
+  ---
+  duration_ms: 5.955705
+  type: 'test'
+  ...
+# Subtest: google/identity: email is display metadata — the same subject with another email is the same identity
+ok 319 - google/identity: email is display metadata — the same subject with another email is the same identity
+  ---
+  duration_ms: 8.071859
+  type: 'test'
+  ...
+# Subtest: google/identity: an unverified email is not displayed, and the login still succeeds
+ok 320 - google/identity: an unverified email is not displayed, and the login still succeeds
+  ---
+  duration_ms: 5.1604
+  type: 'test'
+  ...
+# Subtest: google/identity: the issuer must match exactly — a lookalike suffix is refused at the issuer
+ok 321 - google/identity: the issuer must match exactly — a lookalike suffix is refused at the issuer
+  ---
+  duration_ms: 5.178894
+  type: 'test'
+  ...
+# Subtest: google/identity: the issuer must match exactly — a lookalike prefix is refused at the issuer
+ok 322 - google/identity: the issuer must match exactly — a lookalike prefix is refused at the issuer
+  ---
+  duration_ms: 7.701475
+  type: 'test'
+  ...
+# Subtest: google/identity: a token minted for another audience is refused at the audience
+ok 323 - google/identity: a token minted for another audience is refused at the audience
+  ---
+  duration_ms: 5.241195
+  type: 'test'
+  ...
+# Subtest: google/identity: a multi-audience token must name us in azp
+ok 324 - google/identity: a multi-audience token must name us in azp
+  ---
+  duration_ms: 7.162878
+  type: 'test'
+  ...
+# Subtest: google/identity: a token signed by a key outside the pinned source is refused at the signature
+ok 325 - google/identity: a token signed by a key outside the pinned source is refused at the signature
+  ---
+  duration_ms: 4.473289
+  type: 'test'
+  ...
+# Subtest: google/identity: a corrupted signature is refused at the signature
+ok 326 - google/identity: a corrupted signature is refused at the signature
+  ---
+  duration_ms: 4.52842
+  type: 'test'
+  ...
+# Subtest: google/identity: alg none is refused at the shape, before any signature is considered
+ok 327 - google/identity: alg none is refused at the shape, before any signature is considered
+  ---
+  duration_ms: 3.409112
+  type: 'test'
+  ...
+# Subtest: google/identity: the window is enforced on both ends
+ok 328 - google/identity: the window is enforced on both ends
+  ---
+  duration_ms: 12.219787
+  type: 'test'
+  ...
+# Subtest: google/identity: the challenge is single-use — the same token cannot log in twice
+ok 329 - google/identity: the challenge is single-use — the same token cannot log in twice
+  ---
+  duration_ms: 8.726843
+  type: 'test'
+  ...
+# Subtest: google/identity: a challenge this session never issued is refused
+ok 330 - google/identity: a challenge this session never issued is refused
+  ---
+  duration_ms: 5.585284
+  type: 'test'
+  ...
+# Subtest: google/identity: a token minted for another challenge is refused, and this session keeps its challenge
+ok 331 - google/identity: a token minted for another challenge is refused, and this session keeps its challenge
+  ---
+  duration_ms: 9.406083
+  type: 'test'
+  ...
+# Subtest: google/identity: a token with no challenge at all is refused
+ok 332 - google/identity: a token with no challenge at all is refused
+  ---
+  duration_ms: 6.429127
+  type: 'test'
+  ...
+# Subtest: google/identity: missing claims are refusals, never defaults
+ok 333 - google/identity: missing claims are refusals, never defaults
+  ---
+  duration_ms: 14.627237
+  type: 'test'
+  ...
+# Subtest: google/identity: the earlier step decides — a forged token with two faults fails on the first
+ok 334 - google/identity: the earlier step decides — a forged token with two faults fails on the first
+  ---
+  duration_ms: 6.374779
+  type: 'test'
+  ...
+# Subtest: google/identity: a structurally malformed token is refused at the shape
+ok 335 - google/identity: a structurally malformed token is refused at the shape
+  ---
+  duration_ms: 10.340948
+  type: 'test'
+  ...
+# Subtest: google/identity: an oversized payload never reaches the cell — the membrane refuses it first
+ok 336 - google/identity: an oversized payload never reaches the cell — the membrane refuses it first
+  ---
+  duration_ms: 5.471932
+  type: 'test'
+  ...
+# Subtest: google/identity: the verifier also has its own ceiling, and it is not a promise the membrane keeps for it
+ok 337 - google/identity: the verifier also has its own ceiling, and it is not a promise the membrane keeps for it
+  ---
+  duration_ms: 0.478508
+  type: 'test'
+  ...
+# Subtest: google/identity: the key source refreshes once for an unknown kid and then refuses
+ok 338 - google/identity: the key source refreshes once for an unknown kid and then refuses
+  ---
+  duration_ms: 0.400317
+  type: 'test'
+  ...
+# Subtest: google/identity: the login itself refuses an unknown kid, with no key source to refresh from
+ok 339 - google/identity: the login itself refuses an unknown kid, with no key source to refresh from
+  ---
+  duration_ms: 3.631145
+  type: 'test'
+  ...
+# Subtest: google/identity: each login crosses the membrane, and the crossing is evidenced
+ok 340 - google/identity: each login crosses the membrane, and the crossing is evidenced
+  ---
+  duration_ms: 5.15833
+  type: 'test'
+  ...
+# Subtest: google/identity: a route the tissue does not declare is refused at the policy step
+ok 341 - google/identity: a route the tissue does not declare is refused at the policy step
+  ---
+  duration_ms: 3.367457
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-1: Google proves identity, NEXA decides authority — a verified principal carries no capability, and the gate refuses without one
+ok 342 - google/invariants GI-1: Google proves identity, NEXA decides authority — a verified principal carries no capability, and the gate refuses without one
+  ---
+  duration_ms: 22.513634
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-2: sub is the identity anchor and email is display metadata — a changed email changes nothing
+ok 343 - google/invariants GI-2: sub is the identity anchor and email is display metadata — a changed email changes nothing
+  ---
+  duration_ms: 14.042443
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-3: stored identity = sha256("NEXA/google1 subject\\0" || sub) — recomputable, pinned, and the raw sub never appears
+ok 344 - google/invariants GI-3: stored identity = sha256("NEXA/google1 subject\\0" || sub) — recomputable, pinned, and the raw sub never appears
+  ---
+  duration_ms: 14.64049
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-4: owner identity ≠ capability subject — and a login never creates a binding
+ok 345 - google/invariants GI-4: owner identity ≠ capability subject — and a login never creates a binding
+  ---
+  duration_ms: 6.615717
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-5: the class is a property of the triple, and max_class is a kernel invariant — above the ceiling, authorization fails and nothing is minted
+ok 346 - google/invariants GI-5: the class is a property of the triple, and max_class is a kernel invariant — above the ceiling, authorization fails and nothing is minted
+  ---
+  duration_ms: 1.218051
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-6: class D is the whole stack — capability, policy, owner approval, evidence before write, approval consumed with the call
+ok 347 - google/invariants GI-6: class D is the whole stack — capability, policy, owner approval, evidence before write, approval consumed with the call
+  ---
+  duration_ms: 5.323274
+  type: 'test'
+  ...
+# Subtest: google/invariants GI-7: break-glass is a time-bounded recovery state and never Authority
+ok 348 - google/invariants GI-7: break-glass is a time-bounded recovery state and never Authority
+  ---
+  duration_ms: 4.38501
+  type: 'test'
+  ...
+# Subtest: U0: recorded usage aggregates into an honest per-mission summary
+ok 349 - U0: recorded usage aggregates into an honest per-mission summary
+  ---
+  duration_ms: 1.8245
+  type: 'test'
+  ...
+# Subtest: U1: failed executions are recorded and counted, entries stay inspectable
+ok 350 - U1: failed executions are recorded and counted, entries stay inspectable
+  ---
+  duration_ms: 0.311555
+  type: 'test'
+  ...
+# Subtest: U2: an unknown mission summarizes to zeros instead of throwing
+ok 351 - U2: an unknown mission summarizes to zeros instead of throwing
+  ---
+  duration_ms: 0.770253
+  type: 'test'
+  ...
+# Subtest: U3: malformed usage records are refused with NEXA_E_SCHEMA
+ok 352 - U3: malformed usage records are refused with NEXA_E_SCHEMA
+  ---
+  duration_ms: 0.523651
+  type: 'test'
+  ...
+# Subtest: U4: identical usage produces identical summaries
+ok 353 - U4: identical usage produces identical summaries
+  ---
+  duration_ms: 0.486539
+  type: 'test'
+  ...
+# Subtest: A0: the ledger lists every request with scope, decision and expiry
+ok 354 - A0: the ledger lists every request with scope, decision and expiry
+  ---
+  duration_ms: 5.876381
+  type: 'test'
+  ...
+# Subtest: A1: the request view follows consume and expiry
+ok 355 - A1: the request view follows consume and expiry
+  ---
+  duration_ms: 1.869172
+  type: 'test'
+  ...
+# Subtest: A2: stats counters stay consistent with the request view
+ok 356 - A2: stats counters stay consistent with the request view
+  ---
+  duration_ms: 1.569852
+  type: 'test'
+  ...
+# Subtest: identity vectors: the pinned document still verifies
+ok 357 - identity vectors: the pinned document still verifies
+  ---
+  duration_ms: 4.383002
+  type: 'test'
+  ...
+# Subtest: an identity document is self-signed and tamper-evident
+ok 358 - an identity document is self-signed and tamper-evident
+  ---
+  duration_ms: 1.87506
+  type: 'test'
+  ...
+# Subtest: an identity cannot vouch for another key
+ok 359 - an identity cannot vouch for another key
+  ---
+  duration_ms: 1.633839
+  type: 'test'
+  ...
+# Subtest: published key material must re-derive its own key id
+ok 360 - published key material must re-derive its own key id
+  ---
+  duration_ms: 1.10534
+  type: 'test'
+  ...
+# Subtest: an identity document must be signed by the identity it describes
+ok 361 - an identity document must be signed by the identity it describes
+  ---
+  duration_ms: 1.954277
+  type: 'test'
+  ...
+# Subtest: trust store: pin-or-reject, never implicit TOFU
+ok 362 - trust store: pin-or-reject, never implicit TOFU
+  ---
+  duration_ms: 5.35506
+  type: 'test'
+  ...
+# Subtest: revoking an identity keeps it untrusted even if re-presented
+ok 363 - revoking an identity keeps it untrusted even if re-presented
+  ---
+  duration_ms: 2.230658
+  type: 'test'
+  ...
+# Subtest: fingerprints are stable, document-wide, and prefixed
+ok 364 - fingerprints are stable, document-wide, and prefixed
+  ---
+  duration_ms: 4.199393
+  type: 'test'
+  ...
+# Subtest: NexaError instances carry a code and serialize cleanly
+ok 365 - NexaError instances carry a code and serialize cleanly
+  ---
+  duration_ms: 1.085992
+  type: 'test'
+  ...
+# Subtest: tool names round-trip between resource and MCP surfaces
+ok 366 - tool names round-trip between resource and MCP surfaces
+  ---
+  duration_ms: 1.408253
+  type: 'test'
+  ...
+# Subtest: the bridge refuses to expose resources behind a closed gate
+ok 367 - the bridge refuses to expose resources behind a closed gate
+  ---
+  duration_ms: 22.121105
+  type: 'test'
+  ...
+# Subtest: initialize, tools/list and nexa/posture describe the gated surface
+ok 368 - initialize, tools/list and nexa/posture describe the gated surface
+  ---
+  duration_ms: 7.124654
+  type: 'test'
+  ...
+# Subtest: tools/call runs the full NEXA pipeline and returns the receipt
+ok 369 - tools/call runs the full NEXA pipeline and returns the receipt
+  ---
+  duration_ms: 15.130416
+  type: 'test'
+  ...
+# Subtest: a missing capability is denied with a machine-readable code and a receipt
+ok 370 - a missing capability is denied with a machine-readable code and a receipt
+  ---
+  duration_ms: 8.505104
+  type: 'test'
+  ...
+# Subtest: a capability granted to someone else cannot be spent by the caller
+ok 371 - a capability granted to someone else cannot be spent by the caller
+  ---
+  duration_ms: 8.53712
+  type: 'test'
+  ...
+# Subtest: JSON-RPC framing faults are reported as protocol errors, never as NEXA decisions
+ok 372 - JSON-RPC framing faults are reported as protocol errors, never as NEXA decisions
+  ---
+  duration_ms: 5.791705
+  type: 'test'
+  ...
+# Subtest: gated tool names are refused before any decision is recorded
+ok 373 - gated tool names are refused before any decision is recorded
+  ---
+  duration_ms: 3.823407
+  type: 'test'
+  ...
+# Subtest: evidence can be pulled over JSON-RPC and stays verifiable
+ok 374 - evidence can be pulled over JSON-RPC and stays verifiable
+  ---
+  duration_ms: 8.795295
+  type: 'test'
+  ...
+# Subtest: V0: planned → authorized → executed → verified, replay reproduces state and head
+ok 375 - V0: planned → authorized → executed → verified, replay reproduces state and head
+  ---
+  duration_ms: 14.340184
+  type: 'test'
+  ...
+# Subtest: V1: transitions outside PLANNED → AUTHORIZED → EXECUTED → VERIFIED are refused
+ok 376 - V1: transitions outside PLANNED → AUTHORIZED → EXECUTED → VERIFIED are refused
+  ---
+  duration_ms: 1.757564
+  type: 'test'
+  ...
+# Subtest: V2: protected steps bind exactly one approval; swaps and strays are refused
+ok 377 - V2: protected steps bind exactly one approval; swaps and strays are refused
+  ---
+  duration_ms: 4.609188
+  type: 'test'
+  ...
+# Subtest: V3: no completion without all-verified; failure is terminal
+ok 378 - V3: no completion without all-verified; failure is terminal
+  ---
+  duration_ms: 3.683116
+  type: 'test'
+  ...
+# Subtest: V4: editing any event is detected as NEXA_E_MISSION_TAMPERED
+ok 379 - V4: editing any event is detected as NEXA_E_MISSION_TAMPERED
+  ---
+  duration_ms: 2.725312
+  type: 'test'
+  ...
+# Subtest: V5: deleted or truncated events are detected; honest prefixes restore
+ok 380 - V5: deleted or truncated events are detected; honest prefixes restore
+  ---
+  duration_ms: 1.799361
+  type: 'test'
+  ...
+# Subtest: V6: identical inputs produce identical chains; reducer equals live state
+ok 381 - V6: identical inputs produce identical chains; reducer equals live state
+  ---
+  duration_ms: 2.762525
+  type: 'test'
+  ...
+# Subtest: V7: unknown steps are MISSING; malformed and forged logs are refused
+ok 382 - V7: unknown steps are MISSING; malformed and forged logs are refused
+  ---
+  duration_ms: 1.928892
+  type: 'test'
+  ...
+# Subtest: Ω/C1: every example has the verdict it advertises
+ok 383 - Ω/C1: every example has the verdict it advertises
+  ---
+  duration_ms: 18.459706
+  type: 'test'
+  ...
+# Subtest: Ω/C2: compiling the same source twice gives the same hash and no clock
+ok 384 - Ω/C2: compiling the same source twice gives the same hash and no clock
+  ---
+  duration_ms: 6.138515
+  type: 'test'
+  ...
+# Subtest: Ω/C3: a comment or whitespace change does not move the hash; a semantic change does
+ok 385 - Ω/C3: a comment or whitespace change does not move the hash; a semantic change does
+  ---
+  duration_ms: 6.331761
+  type: 'test'
+  ...
+# Subtest: Ω/C4: the IR carries budgets in the spelling every consumer reads
+ok 386 - Ω/C4: the IR carries budgets in the spelling every consumer reads
+  ---
+  duration_ms: 1.360457
+  type: 'test'
+  ...
+# Subtest: Ω/C5: the security lattice is enforced at every sink
+ok 387 - Ω/C5: the security lattice is enforced at every sink
+  ---
+  duration_ms: 0.230164
+  type: 'test'
+  ...
+# Subtest: Ω/C6: only verified values become evidence
+ok 388 - Ω/C6: only verified values become evidence
+  ---
+  duration_ms: 9.290668
+  type: 'test'
+  ...
+# Subtest: Ω/C7: a secret cannot be emitted, remembered or logged as a value
+ok 389 - Ω/C7: a secret cannot be emitted, remembered or logged as a value
+  ---
+  duration_ms: 1.111758
+  type: 'test'
+  ...
+# Subtest: Ω/C8: `vault://` is a handle token, not a string, and only handles name secrets
+ok 390 - Ω/C8: `vault://` is a handle token, not a string, and only handles name secrets
+  ---
+  duration_ms: 0.215147
+  type: 'test'
+  ...
+# Subtest: Ω/C9: capability references resolve to a concrete call and a wildcard pattern
+ok 391 - Ω/C9: capability references resolve to a concrete call and a wildcard pattern
+  ---
+  duration_ms: 0.446257
+  type: 'test'
+  ...
+# Subtest: Ω/C10: a filesystem call without a literal scope is refused, with a reason
+ok 392 - Ω/C10: a filesystem call without a literal scope is refused, with a reason
+  ---
+  duration_ms: 1.36587
+  type: 'test'
+  ...
+# Subtest: Ω/C11: the compiler never reads a clock or a random source
+ok 393 - Ω/C11: the compiler never reads a clock or a random source
+  ---
+  duration_ms: 1.22907
+  type: 'test'
+  ...
+# Subtest: Ω/C12: every error code the compiler can throw is registered with a summary
+ok 394 - Ω/C12: every error code the compiler can throw is registered with a summary
+  ---
+  duration_ms: 0.438378
+  type: 'test'
+  ...
+# Subtest: Ω/E1: the gate names eight stages and documents every one of them
+ok 395 - Ω/E1: the gate names eight stages and documents every one of them
+  ---
+  duration_ms: 1.596202
+  type: 'test'
+  ...
+# Subtest: Ω/E2: a complete candidate passes and goes to canary
+ok 396 - Ω/E2: a complete candidate passes and goes to canary
+  ---
+  duration_ms: 1.812567
+  type: 'test'
+  ...
+# Subtest: Ω/E3: a missing stage is a failed stage
+ok 397 - Ω/E3: a missing stage is a failed stage
+  ---
+  duration_ms: 8.098144
+  type: 'test'
+  ...
+# Subtest: Ω/E4: authority is monotone — the gate checks it, and does not trust the report
+ok 398 - Ω/E4: authority is monotone — the gate checks it, and does not trust the report
+  ---
+  duration_ms: 0.911288
+  type: 'test'
+  ...
+# Subtest: Ω/E5: the kernel is refused before any stage is consulted
+ok 399 - Ω/E5: the kernel is refused before any stage is consulted
+  ---
+  duration_ms: 0.846823
+  type: 'test'
+  ...
+# Subtest: Ω/E6: a forged or unauthorized manifest is refused, not quarantined
+ok 400 - Ω/E6: a forged or unauthorized manifest is refused, not quarantined
+  ---
+  duration_ms: 1.221426
+  type: 'test'
+  ...
+# Subtest: Ω/E7: a candidate that names a parent is checked against that parent
+ok 401 - Ω/E7: a candidate that names a parent is checked against that parent
+  ---
+  duration_ms: 1.768931
+  type: 'test'
+  ...
+# Subtest: Ω/E8: declared expectations are checked against the measurements
+ok 402 - Ω/E8: declared expectations are checked against the measurements
+  ---
+  duration_ms: 0.810246
+  type: 'test'
+  ...
+# Subtest: Ω/E9: the adversarial category list is complete, so a stage cannot skip an attack type
+ok 403 - Ω/E9: the adversarial category list is complete, so a stage cannot skip an attack type
+  ---
+  duration_ms: 0.431336
+  type: 'test'
+  ...
+# Subtest: Ω/E10: the registry is immutable, attributed and reversible
+ok 404 - Ω/E10: the registry is immutable, attributed and reversible
+  ---
+  duration_ms: 3.386695
+  type: 'test'
+  ...
+# Subtest: Ω/E11: a canary observation that violates an expectation quarantines the candidate
+ok 405 - Ω/E11: a canary observation that violates an expectation quarantines the candidate
+  ---
+  duration_ms: 1.315131
+  type: 'test'
+  ...
+# Subtest: Ω/E12: an unknown version is refused, and the registry never guesses
+ok 406 - Ω/E12: an unknown version is refused, and the registry never guesses
+  ---
+  duration_ms: 0.248357
+  type: 'test'
+  ...
+# Subtest: Ω/E13: an Evolution Gate verdict is data, and can be committed to a ledger
+ok 407 - Ω/E13: an Evolution Gate verdict is data, and can be committed to a ledger
+  ---
+  duration_ms: 1.474737
+  type: 'test'
+  ...
+# Subtest: Ω/I1: every error code the code throws is registered, and none is a stray string
+ok 408 - Ω/I1: every error code the code throws is registered, and none is a stray string
+  ---
+  duration_ms: 10.045074
+  type: 'test'
+  ...
+# Subtest: Ω/I2: no Ω code is referenced anywhere before it is registered
+ok 409 - Ω/I2: no Ω code is referenced anywhere before it is registered
+  ---
+  duration_ms: 24.62334
+  type: 'test'
+  ...
+# Subtest: Ω/I3: the compiler is deterministic and the runtime cannot mint authority
+ok 410 - Ω/I3: the compiler is deterministic and the runtime cannot mint authority
+  ---
+  duration_ms: 1.901818
+  type: 'test'
+  ...
+# Subtest: Ω/I4: the kernel is a closed list and nothing in it is evolvable
+ok 411 - Ω/I4: the kernel is a closed list and nothing in it is evolvable
+  ---
+  duration_ms: 0.385075
+  type: 'test'
+  ...
+# Subtest: Ω/I5: the gate has eight stages, the attack suite twelve categories, the healer six phases
+ok 412 - Ω/I5: the gate has eight stages, the attack suite twelve categories, the healer six phases
+  ---
+  duration_ms: 0.250252
+  type: 'test'
+  ...
+# Subtest: Ω/I6: no package holds ambient authority
+ok 413 - Ω/I6: no package holds ambient authority
+  ---
+  duration_ms: 7.223118
+  type: 'test'
+  ...
+# Subtest: Ω/I7: every Ω document exists, is substantive and is linked from the index
+ok 414 - Ω/I7: every Ω document exists, is substantive and is linked from the index
+  ---
+  duration_ms: 0.826055
+  type: 'test'
+  ...
+# Subtest: Ω/I8: the cellular layer keeps its two hardest promises
+ok 415 - Ω/I8: the cellular layer keeps its two hardest promises
+  ---
+  duration_ms: 6.9206
+  type: 'test'
+  ...
+# Subtest: Ω/L1: an observation counts calls, not records, and carries its evidence
+ok 416 - Ω/L1: an observation counts calls, not records, and carries its evidence
+  ---
+  duration_ms: 73.217735
+  type: 'test'
+  ...
+# Subtest: Ω/L2: measurements are the host's, and unknown ones are refused
+ok 417 - Ω/L2: measurements are the host's, and unknown ones are refused
+  ---
+  duration_ms: 64.842509
+  type: 'test'
+  ...
+# Subtest: Ω/L3: patterns are mined deterministically, in basis points
+ok 418 - Ω/L3: patterns are mined deterministically, in basis points
+  ---
+  duration_ms: 35.821025
+  type: 'test'
+  ...
+# Subtest: Ω/L4: hypotheses are falsifiable, evidence-bound, and never point at the kernel
+ok 419 - Ω/L4: hypotheses are falsifiable, evidence-bound, and never point at the kernel
+  ---
+  duration_ms: 26.135529
+  type: 'test'
+  ...
+# Subtest: Ω/L5: a proposal is data, and says what it must pass before it means anything
+ok 420 - Ω/L5: a proposal is data, and says what it must pass before it means anything
+  ---
+  duration_ms: 15.056026
+  type: 'test'
+  ...
+# Subtest: Ω/L6: the learner observes, reflects, proposes — and cannot apply
+ok 421 - Ω/L6: the learner observes, reflects, proposes — and cannot apply
+  ---
+  duration_ms: 33.047904
+  type: 'test'
+  ...
+# Subtest: Ω/L7: knowledge is born a hypothesis, verified only with evidence, invalidated when contradicted
+ok 422 - Ω/L7: knowledge is born a hypothesis, verified only with evidence, invalidated when contradicted
+  ---
+  duration_ms: 1.430028
+  type: 'test'
+  ...
+# Subtest: Ω/L8: knowledge refuses secrets, ghosts and impossible promotions
+ok 423 - Ω/L8: knowledge refuses secrets, ghosts and impossible promotions
+  ---
+  duration_ms: 0.56817
+  type: 'test'
+  ...
+# Subtest: Ω/L9: a benchmark is a measurement, and one that moves is refused
+ok 424 - Ω/L9: a benchmark is a measurement, and one that moves is refused
+  ---
+  duration_ms: 104.527901
+  type: 'test'
+  ...
+# Subtest: Ω/L10: replay proves the runtime decides the same thing twice
+ok 425 - Ω/L10: replay proves the runtime decides the same thing twice
+  ---
+  duration_ms: 64.918222
+  type: 'test'
+  ...
+# Subtest: Ω/L11: the healer classifies, and fails closed on the unknown
+ok 426 - Ω/L11: the healer classifies, and fails closed on the unknown
+  ---
+  duration_ms: 0.241562
+  type: 'test'
+  ...
+# Subtest: Ω/L12: every learning output is canonical data — no floats, no omissions
+ok 427 - Ω/L12: every learning output is canonical data — no floats, no omissions
+  ---
+  duration_ms: 64.502805
+  type: 'test'
+  ...
+# Subtest: Ω/L13: reflection reads only what it was given, and cites it
+ok 428 - Ω/L13: reflection reads only what it was given, and cites it
+  ---
+  duration_ms: 6.217876
+  type: 'test'
+  ...
+# Subtest: Ω/L14: a refusal is never routed around — the healer says stop
+ok 429 - Ω/L14: a refusal is never routed around — the healer says stop
+  ---
+  duration_ms: 6.478375
+  type: 'test'
+  ...
+# Subtest: Ω/R1: a mission runs end to end and every step is recorded
+ok 430 - Ω/R1: a mission runs end to end and every step is recorded
+  ---
+  duration_ms: 61.379607
+  type: 'test'
+  ...
+# Subtest: Ω/R2: the transcript verifies as a chain, and a single edit breaks it
+ok 431 - Ω/R2: the transcript verifies as a chain, and a single edit breaks it
+  ---
+  duration_ms: 41.389351
+  type: 'test'
+  ...
+# Subtest: Ω/R3: every call is bounded by its grant, and a spent grant is a refusal
+ok 432 - Ω/R3: every call is bounded by its grant, and a spent grant is a refusal
+  ---
+  duration_ms: 22.928311
+  type: 'test'
+  ...
+# Subtest: Ω/R4: budgets are enforced — a mission cannot spend more steps than its policy allows
+ok 433 - Ω/R4: budgets are enforced — a mission cannot spend more steps than its policy allows
+  ---
+  duration_ms: 10.367437
+  type: 'test'
+  ...
+# Subtest: Ω/R5: a closed gate refuses a well-typed module, and the refusal is evidence
+ok 434 - Ω/R5: a closed gate refuses a well-typed module, and the refusal is evidence
+  ---
+  duration_ms: 10.064725
+  type: 'test'
+  ...
+# Subtest: Ω/R6: a contract without evidence fails the mission, after it ran
+ok 435 - Ω/R6: a contract without evidence fails the mission, after it ran
+  ---
+  duration_ms: 12.77719
+  type: 'test'
+  ...
+# Subtest: Ω/R6b: a conditional runs the branch its condition selects, and records which
+ok 436 - Ω/R6b: a conditional runs the branch its condition selects, and records which
+  ---
+  duration_ms: 11.355637
+  type: 'test'
+  ...
+# Subtest: Ω/R7: secrets stay in the vault — only a handle reaches the transcript
+ok 437 - Ω/R7: secrets stay in the vault — only a handle reaches the transcript
+  ---
+  duration_ms: 15.923961
+  type: 'test'
+  ...
+# Subtest: Ω/R8: memory stores digests, never values
+ok 438 - Ω/R8: memory stores digests, never values
+  ---
+  duration_ms: 21.744318
+  type: 'test'
+  ...
+# Subtest: Ω/R9: a failing resource is isolated by the breaker, classified, and recovered
+ok 439 - Ω/R9: a failing resource is isolated by the breaker, classified, and recovered
+  ---
+  duration_ms: 36.420197
+  type: 'test'
+  ...
+# Subtest: Ω/R10: a closed gate is a permanent refusal — the healer never routes around authority
+ok 440 - Ω/R10: a closed gate is a permanent refusal — the healer never routes around authority
+  ---
+  duration_ms: 14.62223
+  type: 'test'
+  ...
+# Subtest: Ω/R11: an unauthorized call never reaches the kernel
+ok 441 - Ω/R11: an unauthorized call never reaches the kernel
+  ---
+  duration_ms: 4.172485
+  type: 'test'
+  ...
+# Subtest: Ω/R12: the runtime holds no keys — the operator is injected, not embedded
+ok 442 - Ω/R12: the runtime holds no keys — the operator is injected, not embedded
+  ---
+  duration_ms: 18.456301
+  type: 'test'
+  ...
+# Subtest: Ω/R13: the same module decides the same way twice, and produces different evidence
+ok 443 - Ω/R13: the same module decides the same way twice, and produces different evidence
+  ---
+  duration_ms: 44.96814
+  type: 'test'
+  ...
+# Subtest: Ω/R14: a mission name that does not exist is refused, not guessed
+ok 444 - Ω/R14: a mission name that does not exist is refused, not guessed
+  ---
+  duration_ms: 19.126681
+  type: 'test'
+  ...
+# Subtest: Ω/S1: every attack in every category is blocked
+ok 445 - Ω/S1: every attack in every category is blocked
+  ---
+  duration_ms: 1.405054
+  type: 'test'
+  ...
+# Subtest: Ω/S2: the headline refusals carry the code they claim to carry
+ok 446 - Ω/S2: the headline refusals carry the code they claim to carry
+  ---
+  duration_ms: 0.22281
+  type: 'test'
+  ...
+# Subtest: Ω/S3: an attack that throws something unmodelled counts as a failure, not a pass
+ok 447 - Ω/S3: an attack that throws something unmodelled counts as a failure, not a pass
+  ---
+  duration_ms: 0.419706
+  type: 'test'
+  ...
+# Subtest: Ω/S4: the gate re-counts the attack reports — a summary cannot lie
+ok 448 - Ω/S4: the gate re-counts the attack reports — a summary cannot lie
+  ---
+  duration_ms: 0.503965
+  type: 'test'
+  ...
+# Subtest: Ω/S5: a candidate cannot pass the gate by asserting that it attacked
+ok 449 - Ω/S5: a candidate cannot pass the gate by asserting that it attacked
+  ---
+  duration_ms: 4.309928
+  type: 'test'
+  ...
+# Subtest: Ω/S6: authority is bound to the grant and its subject — asking as someone else mints nothing
+ok 450 - Ω/S6: authority is bound to the grant and its subject — asking as someone else mints nothing
+  ---
+  duration_ms: 5.738858
+  type: 'test'
+  ...
+# Subtest: the lexer produces the documented token stream
+ok 451 - the lexer produces the documented token stream
+  ---
+  duration_ms: 2.331655
+  type: 'test'
+  ...
+# Subtest: a real call envelope survives a full text round-trip
+ok 452 - a real call envelope survives a full text round-trip
+  ---
+  duration_ms: 30.781038
+  type: 'test'
+  ...
+# Subtest: printing sorts keys so review diffs are stable
+ok 453 - printing sorts keys so review diffs are stable
+  ---
+  duration_ms: 5.453125
+  type: 'test'
+  ...
+# Subtest: the parser refuses malformed documents with precise errors
+ok 454 - the parser refuses malformed documents with precise errors
+  ---
+  duration_ms: 1.307083
+  type: 'test'
+  ...
+# Subtest: parse errors carry line and column information
+ok 455 - parse errors carry line and column information
+  ---
+  duration_ms: 0.191956
+  type: 'test'
+  ...
+# Subtest: bare words are strings; reserved words are values
+ok 456 - bare words are strings; reserved words are values
+  ---
+  duration_ms: 0.185526
+  type: 'test'
+  ...
+# Subtest: control characters are escaped when printing and preserved when parsing
+ok 457 - control characters are escaped when printing and preserved when parsing
+  ---
+  duration_ms: 5.852859
+  type: 'test'
+  ...
+# Subtest: the printer refuses values the data model does not allow
+ok 458 - the printer refuses values the data model does not allow
+  ---
+  duration_ms: 0.426697
+  type: 'test'
+  ...
+# Subtest: every gate is closed and reports itself as such
+ok 459 - every gate is closed and reports itself as such
+  ---
+  duration_ms: 1.471787
+  type: 'test'
+  ...
+# Subtest: gated namespaces and actions are refused, including nested ones
+ok 460 - gated namespaces and actions are refused, including nested ones
+  ---
+  duration_ms: 0.588092
+  type: 'test'
+  ...
+# Subtest: policy is default-deny and cannot be configured otherwise
+ok 461 - policy is default-deny and cannot be configured otherwise
+  ---
+  duration_ms: 19.749823
+  type: 'test'
+  ...
+# Subtest: an ALLOW rule still requires a capability and a signed envelope
+ok 462 - an ALLOW rule still requires a capability and a signed envelope
+  ---
+  duration_ms: 5.861343
+  type: 'test'
+  ...
+# Subtest: first matching rule wins, in ascending id order, and DENY outranks later ALLOW
+ok 463 - first matching rule wins, in ascending id order, and DENY outranks later ALLOW
+  ---
+  duration_ms: 4.791223
+  type: 'test'
+  ...
+# Subtest: resource patterns support namespace wildcards and prefixes
+ok 464 - resource patterns support namespace wildcards and prefixes
+  ---
+  duration_ms: 4.683223
+  type: 'test'
+  ...
+# Subtest: rules reject typos and malformed scopes instead of ignoring them
+ok 465 - rules reject typos and malformed scopes instead of ignoring them
+  ---
+  duration_ms: 0.443908
+  type: 'test'
+  ...
+# Subtest: the policy digest is deterministic and changes with the rules
+ok 466 - the policy digest is deterministic and changes with the rules
+  ---
+  duration_ms: 5.018045
+  type: 'test'
+  ...
+# Subtest: a gated resource is refused by the endpoint even when policy would allow it
+ok 467 - a gated resource is refused by the endpoint even when policy would allow it
+  ---
+  duration_ms: 20.426167
+  type: 'test'
+  ...
+# Subtest: envelope vectors: the pinned envelope still canonicalizes and verifies identically
+ok 468 - envelope vectors: the pinned envelope still canonicalizes and verifies identically
+  ---
+  duration_ms: 4.30067
+  type: 'test'
+  ...
+# Subtest: a signature covers every field except sig
+ok 469 - a signature covers every field except sig
+  ---
+  duration_ms: 19.483957
+  type: 'test'
+  ...
+# Subtest: the TTL ceiling and freshness window are enforced
+ok 470 - the TTL ceiling and freshness window are enforced
+  ---
+  duration_ms: 6.922291
+  type: 'test'
+  ...
+# Subtest: sender, recipient and type expectations are enforced
+ok 471 - sender, recipient and type expectations are enforced
+  ---
+  duration_ms: 10.491766
+  type: 'test'
+  ...
+# Subtest: body size is bounded on the way out and on the way in
+ok 472 - body size is bounded on the way out and on the way in
+  ---
+  duration_ms: 9.569332
+  type: 'test'
+  ...
+# Subtest: the replay guard remembers ids and nonces separately
+ok 473 - the replay guard remembers ids and nonces separately
+  ---
+  duration_ms: 5.446325
+  type: 'test'
+  ...
+# Subtest: the use ledger debits every link atomically
+ok 474 - the use ledger debits every link atomically
+  ---
+  duration_ms: 0.522299
+  type: 'test'
+  ...
+# Subtest: envelope construction validates the sender and the key id binding
+ok 475 - envelope construction validates the sender and the key id binding
+  ---
+  duration_ms: 5.698829
+  type: 'test'
+  ...
+# Subtest: call() attaches the capability token and binds its id
+ok 476 - call() attaches the capability token and binds its id
+  ---
+  duration_ms: 11.385459
+  type: 'test'
+  ...
+# Subtest: R0: a tool request sourced from untrusted content is DENIED with a full trail
+ok 477 - R0: a tool request sourced from untrusted content is DENIED with a full trail
+  ---
+  duration_ms: 2.194553
+  type: 'test'
+  ...
+# Subtest: R0: model output relays require approval; operator intent defers; the boundary never ALLOWs
+ok 478 - R0: model output relays require approval; operator intent defers; the boundary never ALLOWs
+  ---
+  duration_ms: 0.581145
+  type: 'test'
+  ...
+# Subtest: R1: declared MCP tools resolve as untrusted; undeclared tools refuse
+ok 479 - R1: declared MCP tools resolve as untrusted; undeclared tools refuse
+  ---
+  duration_ms: 1.839506
+  type: 'test'
+  ...
+# Subtest: R1: poisoned tool metadata evaluated as content is DENIED, never deferred
+ok 480 - R1: poisoned tool metadata evaluated as content is DENIED, never deferred
+  ---
+  duration_ms: 0.171035
+  type: 'test'
+  ...
+# Subtest: R2: skills are curated guidance only — execution is structurally off
+ok 481 - R2: skills are curated guidance only — execution is structurally off
+  ---
+  duration_ms: 0.709989
+  type: 'test'
+  ...
+# Subtest: R3: attenuating READ toward WRITE/DELETE or wider scope is NEXA_E_CAP_AMPLIFY
+ok 482 - R3: attenuating READ toward WRITE/DELETE or wider scope is NEXA_E_CAP_AMPLIFY
+  ---
+  duration_ms: 20.711144
+  type: 'test'
+  ...
+# Subtest: R4: a consumed once-scope approval cannot be replayed
+ok 483 - R4: a consumed once-scope approval cannot be replayed
+  ---
+  duration_ms: 1.963565
+  type: 'test'
+  ...
+# Subtest: R4: approve → restart → replay is MISSING: neither decide nor spend paths survive
+ok 484 - R4: approve → restart → replay is MISSING: neither decide nor spend paths survive
+  ---
+  duration_ms: 1.036612
+  type: 'test'
+  ...
+# Subtest: R4: mission context mismatch is SCOPE; expiry is EXPIRED
+ok 485 - R4: mission context mismatch is SCOPE; expiry is EXPIRED
+  ---
+  duration_ms: 1.595123
+  type: 'test'
+  ...
+# Subtest: R5: consuming a mutated target is NEXA_E_APPROVAL_TARGET, not a spend
+ok 486 - R5: consuming a mutated target is NEXA_E_APPROVAL_TARGET, not a spend
+  ---
+  duration_ms: 1.264518
+  type: 'test'
+  ...
+# Subtest: R5: the terminal refuses an expectedTarget mismatch before spawn
+ok 487 - R5: the terminal refuses an expectedTarget mismatch before spawn
+  ---
+  duration_ms: 6.691861
+  type: 'test'
+  ...
+# Subtest: R5: the pure target-stability check names both sides of the mutation
+ok 488 - R5: the pure target-stability check names both sides of the mutation
+  ---
+  duration_ms: 0.244359
+  type: 'test'
+  ...
+# Subtest: R6: a fabricated self-consistent chain is rejected against the honest head
+ok 489 - R6: a fabricated self-consistent chain is rejected against the honest head
+  ---
+  duration_ms: 4.179279
+  type: 'test'
+  ...
+# Subtest: R6: forging the Approval Center view does not move the ledger
+ok 490 - R6: forging the Approval Center view does not move the ledger
+  ---
+  duration_ms: 1.164682
+  type: 'test'
+  ...
+# Subtest: R7: unallowlisted programs, path programs and hostile args refuse pre-spawn
+ok 491 - R7: unallowlisted programs, path programs and hostile args refuse pre-spawn
+  ---
+  duration_ms: 4.343814
+  type: 'test'
+  ...
+# Subtest: R-HOLD: no authorization epoch and no usage chain exist yet (declared gaps)
+ok 492 - R-HOLD: no authorization epoch and no usage chain exist yet (declared gaps)
+  ---
+  duration_ms: 0.997998
+  type: 'test'
+  ...
+# Subtest: R8: asserted provenance can only move toward less trust
+ok 493 - R8: asserted provenance can only move toward less trust
+  ---
+  duration_ms: 0.209296
+  type: 'test'
+  ...
+# Subtest: R8: unknown provenance fails closed at the downgrade boundary
+ok 494 - R8: unknown provenance fails closed at the downgrade boundary
+  ---
+  duration_ms: 0.211831
+  type: 'test'
+  ...
+# Subtest: R8: the provenance rank is frozen and ordered toward less trust
+ok 495 - R8: the provenance rank is frozen and ordered toward less trust
+  ---
+  duration_ms: 0.118844
+  type: 'test'
+  ...
+# Subtest: S1: keys that collide after NFC normalization are rejected, not silently merged
+ok 496 - S1: keys that collide after NFC normalization are rejected, not silently merged
+  ---
+  duration_ms: 1.445639
+  type: 'test'
+  ...
+# Subtest: S1b: nesting does not create an escape hatch for illegal values
+ok 497 - S1b: nesting does not create an escape hatch for illegal values
+  ---
+  duration_ms: 0.404146
+  type: 'test'
+  ...
+# Subtest: S2: a trusted peer cannot mint itself authority that the operator never granted
+ok 498 - S2: a trusted peer cannot mint itself authority that the operator never granted
+  ---
+  duration_ms: 26.718486
+  type: 'test'
+  ...
+# Subtest: S2b: verifyCapability can require specific issuers when used standalone
+ok 499 - S2b: verifyCapability can require specific issuers when used standalone
+  ---
+  duration_ms: 5.464801
+  type: 'test'
+  ...
+# Subtest: S2c: an endpoint accepts capability roots only from trusted operators
+ok 500 - S2c: an endpoint accepts capability roots only from trusted operators
+  ---
+  duration_ms: 11.556891
+  type: 'test'
+  ...
+# Subtest: S3: a third party cannot revoke someone else capability
+ok 501 - S3: a third party cannot revoke someone else capability
+  ---
+  duration_ms: 6.89654
+  type: 'test'
+  ...
+# Subtest: S3b: revoking a root still revokes everything delegated from it
+ok 502 - S3b: revoking a root still revokes everything delegated from it
+  ---
+  duration_ms: 5.662403
+  type: 'test'
+  ...
+# Subtest: S4: an oversized body is refused before signature verification
+ok 503 - S4: an oversized body is refused before signature verification
+  ---
+  duration_ms: 20.762376
+  type: 'test'
+  ...
+# Subtest: S5: only cryptographically valid, unexpired envelopes consume replay state
+ok 504 - S5: only cryptographically valid, unexpired envelopes consume replay state
+  ---
+  duration_ms: 9.976192
+  type: 'test'
+  ...
+# Subtest: S6: truncating the log is undetectable locally, but a receipt exposes it
+ok 505 - S6: truncating the log is undetectable locally, but a receipt exposes it
+  ---
+  duration_ms: 7.638023
+  type: 'test'
+  ...
+# Subtest: S6b: a foreign record cannot be spliced in, and a co-signed continuation is reported
+ok 506 - S6b: a foreign record cannot be spliced in, and a co-signed continuation is reported
+  ---
+  duration_ms: 6.572152
+  type: 'test'
+  ...
+# Subtest: S7: no serialized surface contains private key material
+ok 507 - S7: no serialized surface contains private key material
+  ---
+  duration_ms: 7.927025
+  type: 'test'
+  ...
+# Subtest: S8: the MCP bridge cannot be talked into authority or into a gated tool
+ok 508 - S8: the MCP bridge cannot be talked into authority or into a gated tool
+  ---
+  duration_ms: 10.200186
+  type: 'test'
+  ...
+# Subtest: S9: the protocol packages never import execution or filesystem APIs
+ok 509 - S9: the protocol packages never import execution or filesystem APIs
+  ---
+  duration_ms: 18.610752
+  type: 'test'
+  ...
+# Subtest: S9b: hostile policy or capability documents cannot smuggle in behaviour
+ok 510 - S9b: hostile policy or capability documents cannot smuggle in behaviour
+  ---
+  duration_ms: 4.074248
+  type: 'test'
+  ...
+# Subtest: S9c: unknown envelope, capability and receipt fields are refused
+ok 511 - S9c: unknown envelope, capability and receipt fields are refused
+  ---
+  duration_ms: 4.304108
+  type: 'test'
+  ...
+# Subtest: T0: a real command runs inside the jail; capture, hashes and evidence are exact
+ok 512 - T0: a real command runs inside the jail; capture, hashes and evidence are exact
+  ---
+  duration_ms: 17.102755
+  type: 'test'
+  ...
+# Subtest: T1: path escape attempts are refused before anything is spawned
+ok 513 - T1: path escape attempts are refused before anything is spawned
+  ---
+  duration_ms: 12.842058
+  type: 'test'
+  ...
+# Subtest: T2: shell metacharacters are inert — they are printed, not executed
+ok 514 - T2: shell metacharacters are inert — they are printed, not executed
+  ---
+  duration_ms: 11.925591
+  type: 'test'
+  ...
+# Subtest: T3: a hanging command is killed within its timeout and reported as timedOut
+ok 515 - T3: a hanging command is killed within its timeout and reported as timedOut
+  ---
+  duration_ms: 406.185584
+  type: 'test'
+  ...
+# Subtest: T4: the program allowlist is enforced; exit codes propagate exactly
+ok 516 - T4: the program allowlist is enforced; exit codes propagate exactly
+  ---
+  duration_ms: 13.82573
+  type: 'test'
+  ...
+# Subtest: T5: the port refuses to execute a command different from its approved target
+ok 517 - T5: the port refuses to execute a command different from its approved target
+  ---
+  duration_ms: 12.351168
+  type: 'test'
+  ...
+# Subtest: T6: the filesystem diff sees adds, changes and removals with a committed digest
+ok 518 - T6: the filesystem diff sees adds, changes and removals with a committed digest
+  ---
+  duration_ms: 29.137052
+  type: 'test'
+  ...
+# Subtest: T7: stdout and stderr are captured separately with exact hashes
+ok 519 - T7: stdout and stderr are captured separately with exact hashes
+  ---
+  duration_ms: 12.594339
+  type: 'test'
+  ...
+# Subtest: T8: child processes see a minimal environment — injected secrets never reach them
+ok 520 - T8: child processes see a minimal environment — injected secrets never reach them
+  ---
+  duration_ms: 12.636272
+  type: 'test'
+  ...
+1..520
+# tests 520
+# suites 0
+# pass 520
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 37827.810636
+
+> nexa@0.1.0 audit
+> node --test tests/security.test.js
+
+TAP version 13
+# Subtest: S1: keys that collide after NFC normalization are rejected, not silently merged
+ok 1 - S1: keys that collide after NFC normalization are rejected, not silently merged
+  ---
+  duration_ms: 1.417856
+  type: 'test'
+  ...
+# Subtest: S1b: nesting does not create an escape hatch for illegal values
+ok 2 - S1b: nesting does not create an escape hatch for illegal values
+  ---
+  duration_ms: 0.400441
+  type: 'test'
+  ...
+# Subtest: S2: a trusted peer cannot mint itself authority that the operator never granted
+ok 3 - S2: a trusted peer cannot mint itself authority that the operator never granted
+  ---
+  duration_ms: 26.866313
+  type: 'test'
+  ...
+# Subtest: S2b: verifyCapability can require specific issuers when used standalone
+ok 4 - S2b: verifyCapability can require specific issuers when used standalone
+  ---
+  duration_ms: 5.439778
+  type: 'test'
+  ...
+# Subtest: S2c: an endpoint accepts capability roots only from trusted operators
+ok 5 - S2c: an endpoint accepts capability roots only from trusted operators
+  ---
+  duration_ms: 11.53016
+  type: 'test'
+  ...
+# Subtest: S3: a third party cannot revoke someone else capability
+ok 6 - S3: a third party cannot revoke someone else capability
+  ---
+  duration_ms: 6.711917
+  type: 'test'
+  ...
+# Subtest: S3b: revoking a root still revokes everything delegated from it
+ok 7 - S3b: revoking a root still revokes everything delegated from it
+  ---
+  duration_ms: 5.586395
+  type: 'test'
+  ...
+# Subtest: S4: an oversized body is refused before signature verification
+ok 8 - S4: an oversized body is refused before signature verification
+  ---
+  duration_ms: 20.695357
+  type: 'test'
+  ...
+# Subtest: S5: only cryptographically valid, unexpired envelopes consume replay state
+ok 9 - S5: only cryptographically valid, unexpired envelopes consume replay state
+  ---
+  duration_ms: 10.343452
+  type: 'test'
+  ...
+# Subtest: S6: truncating the log is undetectable locally, but a receipt exposes it
+ok 10 - S6: truncating the log is undetectable locally, but a receipt exposes it
+  ---
+  duration_ms: 7.624715
+  type: 'test'
+  ...
+# Subtest: S6b: a foreign record cannot be spliced in, and a co-signed continuation is reported
+ok 11 - S6b: a foreign record cannot be spliced in, and a co-signed continuation is reported
+  ---
+  duration_ms: 7.795007
+  type: 'test'
+  ...
+# Subtest: S7: no serialized surface contains private key material
+ok 12 - S7: no serialized surface contains private key material
+  ---
+  duration_ms: 8.76607
+  type: 'test'
+  ...
+# Subtest: S8: the MCP bridge cannot be talked into authority or into a gated tool
+ok 13 - S8: the MCP bridge cannot be talked into authority or into a gated tool
+  ---
+  duration_ms: 14.172648
+  type: 'test'
+  ...
+# Subtest: S9: the protocol packages never import execution or filesystem APIs
+ok 14 - S9: the protocol packages never import execution or filesystem APIs
+  ---
+  duration_ms: 20.850163
+  type: 'test'
+  ...
+# Subtest: S9b: hostile policy or capability documents cannot smuggle in behaviour
+ok 15 - S9b: hostile policy or capability documents cannot smuggle in behaviour
+  ---
+  duration_ms: 4.386768
+  type: 'test'
+  ...
+# Subtest: S9c: unknown envelope, capability and receipt fields are refused
+ok 16 - S9c: unknown envelope, capability and receipt fields are refused
+  ---
+  duration_ms: 5.022647
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 265.071355
+
+> nexa@0.1.0 demo
+> node tools/demo.mjs
+
+
+[1m1. Identities[0m
+-------------
+  operator kid                       nexa:key:ed25519:z6Mks931aemXLmTDGrasbApX8araucPWxRhzP8iqL7XHhXeC
+  agent kid                          nexa:key:ed25519:z6MkkBPYdMyzcYZ82316KGBobVXJL619wybD692WpZaPQSBg
+  agent fingerprint                  nexa:fp:ECGJpT4sfpvTY2EnMpa1uwoX
+
+[1m2. Trust is explicit[0m
+--------------------
+  pinned peers (caller)              1
+  unknown identity                   NEXA_E_UNTRUSTED — pin-or-reject
+
+[1m3. Endpoint with a default-deny policy[0m
+--------------------------------------
+  registered resources               tool:add, tool:echo
+  policy rules                       allow-add, allow-echo
+
+[1m4. Closed gates (measured now, not asserted in prose)[0m
+-----------------------------------------------------
+  REAL_EXECUTION                     CLOSED
+  TERMINAL                           CLOSED
+  FILESYSTEM_WRITE                   CLOSED
+  AUTO_COMMIT                        CLOSED
+  AUTO_PUSH                          CLOSED
+  AUTO_DEPLOY                        CLOSED
+
+[1m5. The operator mints a capability for the agent[0m
+------------------------------------------------
+  capability id                      urn:nexa:cap:YIam1bENSTRETYs8J9LqAA
+  subject                            nexa:key:ed25519:z6MkkBPYdMyzcYZ82316KGBobVXJL619wybD692WpZaPQSBg
+  max uses                           3
+
+[1m6. A signed CALL is accepted[0m
+----------------------------
+  decision                           DENY
+  value                              null
+  evidence record                    seq 1 (CAPABILITY_REJECTED)
+  receipt verifies                   true
+  reply type                         DENY
+
+[1m7. Replay of the same envelope is refused[0m
+-----------------------------------------
+  decision                           REJECTED (NEXA_E_REPLAY)
+  reply                              none — unauthenticated re-sends get no reply
+
+[1m8. Delegation only shrinks authority[0m
+------------------------------------
+  chain                              urn:nexa:cap:YIam1bENSTRETYs8J9LqAA -> urn:nexa:cap:7a6fVCTQeFdKbCZ5xp7KSA
+  depth / max_depth                  1 / 1
+  effective exp                      2026-09-18T12:30:00Z
+  remaining uses                     2
+  widen expiry                       NEXA_E_CAP_AMPLIFY — child expires later than its parent
+  widen scope                        NEXA_E_CAP_AMPLIFY — resource scope widened: tool:echo -> tool:add
+  relax constraint                   NEXA_E_CAP_AMPLIFY — constraint "mode" was dropped by the child
+
+[1m9. Revocation reaches the whole chain[0m
+-------------------------------------
+  revoked ids                        urn:nexa:cap:YIam1bENSTRETYs8J9LqAA
+  delegated chain revoked            true
+  verify after revoke                NEXA_E_CAP_REVOKED
+
+[1m10. A gated request never reaches policy[0m
+----------------------------------------
+  decision                           DENY (NEXA_E_GATE)
+  gate                               {"gate":"FILESYSTEM_WRITE"}
+  evidence record                    seq 4 (GATE_BLOCKED)
+  receipt                            signed, decision DENY
+
+[1m11. Default-deny for everything unlisted[0m
+----------------------------------------
+  capability                         valid (issuer-signed, in scope)
+  decision                           DENY (NEXA_E_POLICY)
+  reason                             no rule matched; NEXA v0.1 is default-deny
+
+[1m12. The evidence log[0m
+--------------------
+  records                            8
+  chain verifies                     true
+  head                               sha256:mbm_VrWZGqOa0moEWpFwjkgjBQoqSOUTtaAqxmWi1lU
+  tamper check                       evidence record 0 was modified after sealing
+    CAPABILITY_REJECTED              DENY x1
+    CAPABILITY_VERIFIED              INFO x1
+    ENVELOPE_ACCEPTED                INFO x3
+    ENVELOPE_REJECTED                DENY x1
+    GATE_BLOCKED                     DENY x1
+    POLICY_DECISION                  DENY x1
+
+[1m13. The same call in .nex syntax[0m
+--------------------------------
+  nexa 0.1
+  @type CALL
+  @id "urn:nexa:msg:0tqHZZ6xeJCRRzsPM3iZ5g"
+  @from "nexa:key:ed25519:z6Mks931aemXLmTDGrasbApX8araucPWxRhzP8iqL7XHhXeC"
+  @to "nexa:key:ed25519:z6MkkBPYdMyzcYZ82316KGBobVXJL619wybD692WpZaPQSBg"
+  @ts "2026-09-18T12:00:00Z"
+  …
+  round-trips canonically            true
+
+[1mSummary[0m
+-------
+  gate posture                       ALL SIX CLOSED
+  evidence length                    8
+  ledger                             []
+
+  No command ran, no file was written, nothing was deployed.
+
+
+> nexa@0.1.0 demo:omega
+> node tools/omega-demo.mjs
+
+
+=== 1. compile — intent becomes a hashable IR =====================
+  /home/user/nexa/examples/omega/repository-review.nexa
+  ir_hash  sha256:WSYs1Y4Plgo5hupOYx8Mxi6SsJ3XpFbIz5StNj3owRY
+  missions review
+  agents   reviewer
+
+=== 2. explain — the authority table (AI ≠ Authority) =============
+  agent reviewer: call on tool:echo · redact on sanitizer:* · read on memory:episodic · store on memory:episodic · read on world:project
+  grant echo.call: call on tool:echo (ttl 300000ms, 3 call(s))
+  grant sanitizer.redact: redact on sanitizer:* (ttl 300000ms, 2 call(s))
+  grant world.read: read on world:project (ttl 300000ms, 1 call(s))
+  grant memory.read: read on memory:episodic (ttl 300000ms, 2 call(s))
+  grant memory.store: store on memory:episodic (ttl 300000ms, 1 call(s))
+  calls the kernel will refuse whatever anyone says: none
+
+=== 3. run — one capability per call, one record per step =========
+    0 MISSION_START INFO  
+    1 PLAN          INFO  
+    2 TOOL_CALL     INFO  world:project
+    3 TOOL_RESULT   ALLOW world:project
+    4 OBSERVATION   INFO  world:project
+    5 TOOL_CALL     INFO  tool:echo
+    6 TOOL_RESULT   ALLOW tool:echo
+    7 TOOL_CALL     INFO  sanitizer:redact
+    8 TOOL_RESULT   ALLOW sanitizer:redact
+    9 DECLASSIFY    INFO  sanitizer:redact
+   10 EVIDENCE      ALLOW 
+   11 TOOL_CALL     INFO  memory:episodic
+   12 TOOL_RESULT   ALLOW memory:episodic
+   13 MEMORY_WRITE  INFO  memory:episodic
+   14 TOOL_CALL     INFO  memory:episodic
+   15 TOOL_RESULT   ALLOW memory:episodic
+   16 MEMORY_READ   INFO  memory:episodic
+   17 VERDICT       ALLOW 
+  verdict   ALLOW · contracts repository inspected=met
+  receipts  5 kernel receipts, kernel evidence length 20
+  transcript verifies: yes (18 records, head sha256:E8cf6imBjDXa6nSn7…)
+  tokens minted: echo.call 1/3, sanitizer.redact 1/2, world.read 1/1, memory.read 1/2, memory.store 1/1
+
+=== 4. a closed gate — the language asks, the kernel refuses ======
+  check   ok (the module is well-typed and the agent is allowed)
+  run     DENY NEXA_E_GATE — the FILESYSTEM_WRITE gate is closed: fs:/build/report.json write is refused by the kernel
+  recorded as GATE_REFUSAL gate=FILESYSTEM_WRITE state=CLOSED, with a signed receipt
+
+=== 5. a module that never runs — types are the first refusal =====
+  check   refused
+    50:5 OMEGA_E_EVIDENCE_UNTRUSTED: UntrustedData is not verified: only verified values become evidence
+    51:8 OMEGA_E_CAP_MISSING: agent careless does not allow delete on fs:/
+    53:5 OMEGA_E_SECRET_EGRESS: a SecretString value cannot reach the mission result: secrets stay in secrets
+  (nothing was executed; the refusals are compile-time, not runtime luck)
+
+=== 6. evolution — propose, prove, canary, activate, roll back ====
+  proposal planner: planner@4 → planner@5
+  hypothesis "reducing unnecessary replanning lowers iterations without lowering success"
+  expectations success_rate >= 96, security_findings == 0
+  capability surface memory:episodic!read, model:auto!invoke
+  gate    planner@5: PASS (10 stages) → CANARY
+  gate    planner@5: FAIL at security (security) — stage security is missing; a missing stage is a failed stage → QUARANTINE
+  gate    planner@6: FAIL at capabilities (capabilities) — authority is monotone: fs:*!write was not available to planner@4 → QUARANTINE
+  canary  planner@5 sees {"success_rate":97,"security_findings":0}
+  activate by a non-activator: OMEGA_E_NOT_ACTIVATOR — nexa:key:ed25519:z6MktwtqAzuD5F77tAMBMwNs1KybZeff61EehV9xB1ZpXQG7 may not activate versions
+  activate planner@5 (previous planner@4)
+  rollback planner@5 → planner@4 (quarantined)
+  registry planner@4:active* planner@5:quarantined planner@6:quarantined
+  evolution transcript verifies: yes (12 records)
+
+=== 7. learning — observe, reflect, propose, and stop =============
+  observed 4 runs · 8 calls
+  pattern  fs:/build/report.json!write: 3/3 denied (NEXA_E_GATE)
+  hypothes fs:/build/report.json!write is requested on a gate that is closed, so the mission is written to fail
+           confidence 8000bp · falsifiable by: a replayed window of the same size where fs:/build/report.json!write fails less often than it does today
+  proposal sha256:_8lsKV8myWZysLX… target recovery requires replay → benchmark → adversarial → evolution-gate
+  learner.apply(): OMEGA_E_LEARNER_AUTHORITY — the learner has advice, not authority
+  knowledge.verify() without evidence: OMEGA_E_UNPROVEN
+  knowledge VERIFIED → INVALIDATED; dependents now STALE
+  knowledge store {"INVALIDATED":1,"STALE":1}
+
+=== 8. benchmark — improvement has to be measured, not asserted ===
+  replay    identical · 5 decisions · plan sha256:0ifNgODE5oOXL…
+  baseline  2/2 tasks · success 10000bp
+  candidate 1/2 tasks · verdict FAIL OMEGA_E_BENCHMARK_REGRESSION
+  regression gated-refusal: failed: verdict
+
+=== 9. self-healing — detect, isolate, diagnose, recover, verify, learn 
+  attempt 1: DENY NEXA_E_HANDLER · diagnose → retry (transient)
+  attempt 2: DENY NEXA_E_HANDLER · diagnose → retry (transient)
+  attempt 3: DENY NEXA_E_HANDLER · isolate → substitute (transient) · substitute tool:backup-echo
+  attempt 4: DENY OMEGA_E_CIRCUIT_OPEN · CIRCUIT_OPEN · isolate → substitute (transient) · substitute tool:backup-echo
+  verified: verify → recovered, breaker now closed
+  healer  classifications {"transient":5} · events 5
+
+=== what this demonstrated ========================================
+  · every effect went through capability → policy → gate → receipt: no ambient authority
+  · secrets stayed in the vault: the module held a handle, the transcript held a digest
+  · a closed gate stayed closed: refusing the language was not an option anyone had
+  · a self-improving step was data until it was proven, and a pointer move when activated
+  · both transcripts (mission and evolution) verify, record by record
+  · replay turned both transcripts into the same decision skeleton: the runtime decides the same way twice
+  · learning noticed a repeated failure and produced a proposal — and could not apply it
+  · a benchmark turned "this is better" into a measurement, and caught a regression
+  · a poisoned resource was isolated, classified and recovered, on the record
+
+> nexa@0.1.0 demo:cellular
+> node tools/cellular-demo.mjs
+
+
+── 1. the topology: cells, tissues, organs, one authority ────────────
+organ software
+  tissue coding: cells planner, coder, tester, reviewer, coding.tissue
+    coder → tester.run
+    coding.tissue → planner.plan
+    planner → coder.implement
+    reviewer → archivist.remember
+    tester → reviewer.review
+organ memory
+  tissue memory: cells archivist, memory.tissue
+    memory.tissue → archivist.recall
+    memory.tissue → archivist.remember
+organ security
+  tissue security: cells watcher, security.tissue
+    security.tissue → watcher.report
+cross-organ contract: software.reviewer → memory.archivist.remember
+tissues sharing one authority: false (3 tissues, 3 guarantor)
+
+── 2. a real crossing: Planner → Coder → Tester → Reviewer → Evidence 
+  planner → coder.implement          {"patch":"patch(1 steps)","patch_digest":"sha256:eyJrZXkiOiJwYXRjaCIsInZhbHVlIjpbIm1ha2UgdGh"}
+  coder → tester.run                 {"tests":12,"passed":12,"verdict":"PASS"}
+  tester → reviewer.review           {"verdict":"APPROVE","reviewed":"sha256:eyJrZXkiOiJwYXRjaCIsInZhbHVlIjpbIm1ha2UgdGh"}
+  reviewer → archivist.remember      {"digest":"sha256:eyJrZXkiOiJ2YWx1ZSIsInZhbHVlIjoic2hhMjU2OmV"}
+  membrane steps, in order: identity → capability → type → policy → budget → execution → evidence
+  evidence records: 4, chain verifies: true
+  system state: SYSTEM_ACTIVE (4 crossings, 0 bp failure rate)
+
+── 3. refusals: each one is a code and a record ──────────────────────
+  undeclared route             OMEGA_E_ROUTE          step policy     record —
+  no capability                OMEGA_E_CAP_MISSING    step capability record sha256:_endvFg3466
+  replayed capability          NEXA_E_REPLAY          step capability record sha256:YBvI5F7u3UT
+  payload key smuggled         OMEGA_E_SCHEMA         step type       record sha256:vrmjkyILX_a
+  isolated cell asked to serve OMEGA_E_ISOLATED       step identity   record sha256:6eww1fDq7iY
+  topology widened after traffic OMEGA_E_ROUTE          the topology is sealed: routes are declared before the first call
+  refusals recorded as evidence: 6
+  denied records: 5, all signed: true
+
+── 4. homeostasis: degrade → isolate → verified recovery ─────────────
+  attempt 1: OMEGA_E_FAILED at step execution → cell state DEGRADED, consecutive failures 1
+  attempt 2: OMEGA_E_FAILED at step execution → cell state DEGRADED, consecutive failures 2
+  attempt 3: OMEGA_E_FAILED at step execution → cell state DEGRADED, consecutive failures 3
+  homeostat: isolated [{"tissue":"shaky","cell":"shaky","code":"OMEGA_E_FAILED"}]
+  recovery refused without a passing check: {"state":"ISOLATED","recovered":false,"reason":"the verification did not pass"}
+  recovery verified: {"state":"ACTIVE","recovered":true}
+
+── 5. learning: propose, never apply ─────────────────────────────────
+  observations 5, calls 10, denials 5
+  pattern coder!implement        2/3 denied (6667 bp, OMEGA_E_ISOLATED)
+  pattern tester!run             2/4 denied (5000 bp, NEXA_E_REPLAY)
+  hypothesis sha256:ORnvPKuHaUM…: coder!implement fails more often than the mission can absorb
+    target tool-selection, 2 of 3 calls to coder!implement were denied, mostly with OMEGA_E_ISOLATED, evidence 3 record(s)
+  hypothesis sha256:TVSKuxR-cbt…: tester!run fails more often than the mission can absorb
+    target tool-selection, 2 of 4 calls to tester!run were denied, mostly with NEXA_E_REPLAY, evidence 4 record(s)
+  learner.apply(): OMEGA_E_LEARNER_AUTHORITY — learning proposes, the gate decides
+  proposal sha256:ljk1ZTwqG7i…: target tool-selection, confidence 6000 bp
+    baseline  failure_rate(coder!implement) = 6667bp
+    expected  failure_rate(coder!implement) < 4167bp
+    requires  replay → benchmark → adversarial → evolution-gate
+  proposal sha256:zieEe-348Kl…: target tool-selection, confidence 5000 bp
+    baseline  failure_rate(tester!run) = 5000bp
+    expected  failure_rate(tester!run) < 2500bp
+    requires  replay → benchmark → adversarial → evolution-gate
+  proposals awaiting a gate: 2 (a proposal is not a change)
+
+── 6. cellular evolution: division, fusion, quarantine ───────────────
+  division: planner -> plan.architect, plan.verifier
+  child spec: {"name":"plan.architect","kind":"agent","nucleus":{"module":"plan.architect@2","invariants":["specialisation of planner: long-horizon planning","a child takes only the capabilities it needs"]},"capabilities":["cell:planner:plan"]}
+  a child asking for more than the parent: OMEGA_E_CELL_AMPLIFY
+  fusion plan: planner + watcher -> planner+watcher, compatible true, stages 8
+  release: planner+watcher@1, immutable true, parents planner@1 + watcher@1
+  conflicting fusion: OMEGA_E_QUARANTINED — receptor conflict: implement
+  quarantine.release(): OMEGA_E_QUARANTINED (terminal by construction)
+  quarantine after supersede: {"candidate":"plan.architect@2","code":"OMEGA_E_QUARANTINED","reason":"receptor conflict: implement","evidence":["OMEGA_E_QUARANTINED"],"state":"SUPERSEDED","superseded_by":"plan.architect@3"}
+
+── 7. the attack suite, against this layer ───────────────────────────
+  BLOCKED message-without-a-capability     OMEGA_E_CAP_MISSING
+  BLOCKED call-across-an-undeclared-route  OMEGA_E_ROUTE
+  BLOCKED replay-a-spent-capability        NEXA_E_REPLAY
+  BLOCKED present-another-cells-capability NEXA_E_CAP_AUDIENCE
+  BLOCKED forge-a-cell-capability          NEXA_E_UNTRUSTED
+  BLOCKED smuggle-a-payload-key            OMEGA_E_SCHEMA
+  BLOCKED widen-authority-by-dividing      OMEGA_E_CELL_AMPLIFY
+  BLOCKED fuse-into-a-conflict             OMEGA_E_QUARANTINED
+  BLOCKED wrap-the-kernel-in-a-cell        OMEGA_E_KERNEL_IMMUTABLE
+  BLOCKED keep-serving-while-isolated      OMEGA_E_ISOLATED
+  cellular attacks blocked: 10/10
+  whole suite: 31/31 across 12 categories
+
+  organism before homeostasis: SYSTEM_DEGRADED, degraded ["software/coding/tester"], isolated []
+  organism.react(): 0 action(s), isolated []
+  organism.recover(verified): recovered ["tester"], refused []
+  organism after recovery: SYSTEM_ACTIVE, cells 9, crossings 7, failures 0, evidence continuous true
+  (recovery clears the counters — it never clears the evidence: see the ledger below)
+  proof: ledger 10 records, chain verifies, operator nexa:key:ed25519:z6Mkebu…
+
+
+> nexa@0.1.0 attacks
+> node tools/omega-attacks.mjs
+
+  BLOCKED capability-escalation  escalate-outside-allow           OMEGA_E_CAP_MISSING
+  BLOCKED secret-exfiltration    exfiltrate-via-emit              OMEGA_E_SECRET_EGRESS
+  BLOCKED secret-exfiltration    exfiltrate-through-a-provider    OMEGA_E_SECRET_EGRESS
+  BLOCKED replay                 replay-a-signed-envelope         NEXA_E_REPLAY
+  BLOCKED tampering              tamper-with-a-record             OMEGA_E_CHAIN_BROKEN
+  BLOCKED invalid-signature      forge-a-manifest                 OMEGA_E_NOT_ACTIVATOR
+  BLOCKED invalid-signature      edit-a-signed-manifest           OMEGA_E_SIGNATURE
+  BLOCKED scope-widening         widen-authority                  OMEGA_E_GATE_STAGE
+  BLOCKED resource-exhaustion    exhaust-the-budget               OMEGA_E_BUDGET
+  BLOCKED resource-exhaustion    poison-a-tool                    OMEGA_E_CIRCUIT_OPEN
+  BLOCKED policy-bypass          bypass-a-closed-gate             NEXA_E_GATE
+  BLOCKED tool-confusion         confuse-a-tool                   OMEGA_E_DUPLICATE
+  BLOCKED capability-escalation  message-without-a-capability     OMEGA_E_CAP_MISSING
+  BLOCKED policy-bypass          call-across-an-undeclared-route  OMEGA_E_ROUTE
+  BLOCKED replay                 replay-a-spent-capability        NEXA_E_REPLAY
+  BLOCKED capability-escalation  present-another-cells-capability NEXA_E_CAP_AUDIENCE
+  BLOCKED invalid-signature      forge-a-cell-capability          NEXA_E_UNTRUSTED
+  BLOCKED tool-confusion         smuggle-a-payload-key            OMEGA_E_SCHEMA
+  BLOCKED scope-widening         widen-authority-by-dividing      OMEGA_E_CELL_AMPLIFY
+  BLOCKED policy-bypass          fuse-into-a-conflict             OMEGA_E_QUARANTINED
+  BLOCKED kernel-self-modification wrap-the-kernel-in-a-cell        OMEGA_E_KERNEL_IMMUTABLE
+  BLOCKED resource-exhaustion    keep-serving-while-isolated      OMEGA_E_ISOLATED
+  BLOCKED untrusted-to-evidence  promote-untrusted-to-evidence    OMEGA_E_EVIDENCE_UNTRUSTED
+  BLOCKED identity-forgery       lookalike-signing-key            OMEGA_E_IDENTITY_TOKEN
+  BLOCKED identity-forgery       issuer-lookalike                 OMEGA_E_IDENTITY_TOKEN
+  BLOCKED identity-forgery       audience-confusion               OMEGA_E_IDENTITY_TOKEN
+  BLOCKED identity-forgery       authorized-party-confusion       OMEGA_E_IDENTITY_TOKEN
+  BLOCKED identity-forgery       algorithm-confusion              OMEGA_E_IDENTITY_TOKEN
+  BLOCKED identity-forgery       nonce-replay-across-sessions     OMEGA_E_NONCE
+  BLOCKED identity-forgery       nonce-replay-after-login         OMEGA_E_NONCE
+  BLOCKED identity-forgery       owner-by-email                   OMEGA_E_IDENTITY
+
+31/31 attacks blocked
+NEXA_METRIC omega_blocked=31
+NEXA_METRIC omega_total=31
+NEXA_METRIC omega_failed=0
+
+> nexa@0.1.0 report
+> node tools/gate-report.mjs
+
+NEXA v0.1 posture report
+==============================
+
+Closed gates
+  CLOSED REAL_EXECUTION
+  CLOSED TERMINAL
+  CLOSED FILESYSTEM_WRITE
+  CLOSED AUTO_COMMIT
+  CLOSED AUTO_PUSH
+  CLOSED AUTO_DEPLOY
+  decision: ALL SIX CLOSED
+
+Gated namespaces
+  resources: deploy, exec, file, fs, git, infra, process, push, release, remote, shell, terminal, tty, vcs
+  actions:   chmod, commit, delete, deploy, exec, merge, move, publish, push, release, remove, shell, spawn, write
+
+Protocol surface
+  envelope types:    HELLO, CAP_GRANT, CALL, RESULT, DENY, EVIDENCE, RECEIPT, ERROR
+  error codes:       40
+  evidence kinds:    10
+  envelope TTL:      default 60s / max 300s
+  max body size:     65536 bytes
+
+Inventory
+  packages   220 files / 34215 lines
+  adapters     2 files /   285 lines
+  tools       48 files / 12037 lines
+  tests       54 files / 11383 lines
+  vectors    8 files: canonical.json, capability.json, cellular.json, envelope.json, google.json, identity.json, keys.json, omega.json
+  tests      500 tests in 44 files
+               tests/approval-security.test.js 9
+               tests/canonical.test.js        8
+               tests/capability.test.js       14
+               tests/celia-commit-crash-recovery.test.js 4
+               tests/celia-learning.test.js   14
+               tests/celia-library.test.js    13
+               tests/celia-system.test.js     21
+               tests/celia-workspace-commit-auth.test.js 19
+               tests/celia-workspace-commit-h2.test.js 7
+               tests/celia-workspace-commit-h3.test.js 8
+               tests/celia-workspace-commit-hardening.test.js 3
+               tests/celia-workspace-commit-http.test.js 3
+               tests/celia-workspace-commit-persistence.test.js 7
+               tests/celia-workspace-commit-poststate.test.js 7
+               tests/celia-workspace-http.test.js 1
+               tests/celia-workspace-write-auth.test.js 16
+               tests/cellular.test.js         26
+               tests/creative-security.test.js 10
+               tests/crypto.test.js           9
+               tests/endpoint.test.js         13
+               tests/evidence.test.js         7
+               tests/example.test.js          2
+               tests/google-attacks.test.js   10
+               tests/google-binding.test.js   22
+               tests/google-capability.test.js 23
+               tests/google-gateway.test.js   18
+               tests/google-identity.test.js  27
+               tests/google-invariants.test.js 7
+               tests/governance-security.test.js 8
+               tests/identity.test.js         9
+               tests/mcp.test.js              9
+               tests/mission-security.test.js 8
+               tests/omega-compiler.test.js   12
+               tests/omega-evolution.test.js  13
+               tests/omega-invariants.test.js 8
+               tests/omega-learning.test.js   14
+               tests/omega-runtime.test.js    15
+               tests/omega-security.test.js   6
+               tests/parser.test.js           8
+               tests/policy.test.js           9
+               tests/protocol.test.js         9
+               tests/security-governance.test.js 19
+               tests/security.test.js         16
+               tests/terminal-security.test.js 9
+
+Run `npm test` for the suite and `npm run demo` for the end-to-end flow.

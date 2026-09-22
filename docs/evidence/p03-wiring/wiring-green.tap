@@ -1,0 +1,73 @@
+TAP version 13
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-tYsta4/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-SjRZ85/root/.nexa/staging/ws_wiring_fixture evidence=none
+# Subtest: R1: two OS processes commit through the port; the lock file is honoured
+ok 1 - R1: two OS processes commit through the port; the lock file is honoured
+  ---
+  duration_ms: 33.931086
+  type: 'test'
+  ...
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-jf1GEj/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-82dFAj/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-XtUOWI/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-PnLyhP/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-zL0uAg/root/.nexa/staging/ws_wiring_fixture evidence=none
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-CUKJV3/root/.nexa/staging/ws_wiring_fixture evidence=none
+# Subtest: R1b: two real processes racing the same root through the port, one wins
+ok 2 - R1b: two real processes racing the same root through the port, one wins
+  ---
+  duration_ms: 64.855197
+  type: 'test'
+  ...
+# Subtest: R2: the port refuses a contested root with 503, not 409
+ok 3 - R2: the port refuses a contested root with 503, not 409
+  ---
+  duration_ms: 14.727018
+  type: 'test'
+  ...
+# Subtest: R3: the lock is released on the success path
+ok 4 - R3: the lock is released on the success path
+  ---
+  duration_ms: 20.145306
+  type: 'test'
+  ...
+# Subtest: R3: the lock is released on a DENY path after the grant is spent
+ok 5 - R3: the lock is released on a DENY path after the grant is spent
+  ---
+  duration_ms: 20.235673
+  type: 'test'
+  ...
+# Subtest: R3: the lock is released when the effect cannot be proven (503)
+ok 6 - R3: the lock is released when the effect cannot be proven (503)
+  ---
+  duration_ms: 22.092654
+  type: 'test'
+  ...
+# Subtest: R3: the lock is released when apply throws
+ok 7 - R3: the lock is released when apply throws
+  ---
+  duration_ms: 15.01104
+  type: 'test'
+  ...
+# [workspace-port] created ws_wiring_fixture method=file_copy staging=/tmp/nexa-wiring-NgDM7S/root/.nexa/staging/ws_wiring_fixture evidence=none
+# Subtest: R4: SIGKILL between acquire and release leaves a lock a later run can recover
+ok 8 - R4: SIGKILL between acquire and release leaves a lock a later run can recover
+  ---
+  duration_ms: 57.183077
+  type: 'test'
+  ...
+# Subtest: R5: a refusal at the lock spends the grant, and that spend is visible
+ok 9 - R5: a refusal at the lock spends the grant, and that spend is visible
+  ---
+  duration_ms: 14.867392
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 347.203341

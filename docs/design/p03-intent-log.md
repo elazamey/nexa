@@ -304,37 +304,80 @@ intent log, or the target files. Package 8 introduces a SECOND, separate lock:
 ordering mutation produce a conflict whose origin cannot be attributed — the
 same trap as H1. This is a binding decision, not a preference.
 
-### 8bis.2 Position in the decision order
+### 8bis.2 Position in the decision order — the nine numbered steps
 
-The contract from 7quater is extended to nine steps:
+The earlier list had eight steps and named `inspectIntent` as a step of its
+own. That is wrong in fact: `inspectIntent` and `planRecovery` run *inside*
+`intentLog.open()`, not beside it. Writing a contract against a step that does
+not exist is how a lock ends up guarding nothing. The corrected list:
 
 ```
-1 authorize
-2 consume          <- grant spend, guarded by the consumption lock
-3 acquire root lock  <- NEW
-4 inspectIntent
-5 planRecovery
-6 open
-7 apply
-8 verify
-9 close  (lock released last, after close)
+1  authorize                 identity, capability, policy. No filesystem writes.
+2  latch check               a root already latched refuses 503 before anything.
+3  capture + compare         changeSetHash / expectedBaseHash / non-empty diff.
+4  consume                   the grant is spent, guarded by the CONSUMPTION lock.
+5  acquire root lock         NEW. 409 ROOT_LOCKED / 503 ROOT_CONTESTED.
+6  intentLog.open            inspectIntent + planRecovery + the durable write.
+7  apply                     first repository byte, never before 6.
+8  verify                    post-state proof; rollback is its own transaction.
+9  close, then release       the lock is released LAST, on every exit path.
 ```
 
-The load-bearing rules are now two:
+**Load-bearing rules:**
 
-- **2 before 4** (unchanged): an exhausted grant is 403 regardless of root state.
-- **3 before 4** (new): the lock is acquired BEFORE any read of the root, so no
-  competitor can create an intent between inspection and open.
+- **4 before 6** (from 7quater): a spent grant is 403 regardless of root state.
+- **5 before 6** (new): the lock is held before the intent log inspects the
+  root, so no competitor can create an intent between inspection and open.
+- **9 releases on every path**, including throws. A lock leaked on a refusal
+  path holds the root forever — the same defect class as an intent left open on
+  a refusal path, which P03 already paid for once.
 
-Option (a) — lock before `consume` — is rejected: it locks the root on the DENY
-path, where nothing is written. Option (c) — lock after `inspectIntent` — is
-rejected: it leaves exactly the window the package exists to close.
+#### Why the lock comes after `consume`, not before
 
-**Accepted cost, declared:** a crash between step 2 and step 3 loses the grant
-with nothing written. This is safe (no partial effect) and detectable: a
-`consumed` record with no matching `opened` is a spend with no transaction, and
-is visible to reconciliation later. Losing a grant is strictly preferable to
-sharing one.
+Rejected: locking before step 4. A `DENY` path would then lock the root while
+writing nothing, and a legitimate capability could be blocked by a request that
+was never authorised to touch the root at all.
+
+Accepted cost, declared: if the lock is refused at step 5, the grant has
+already been spent. This is not a silent loss — it appears in the consumption
+store as a spend with no matching transaction, which is a **measured signal**.
+Losing a grant is strictly preferable to sharing one.
+
+#### Refusal codes for a locked root
+
+No new vocabulary where existing codes fit:
+
+| Lock state | Response |
+|---|---|
+| `held` (live holder, within TTL) | `409 ROOT_LOCKED` |
+| `contested` / `awaiting-operator` | `503 ROOT_CONTESTED`, `cause` carries the lock reason |
+| `abandoned` | broken per 8bis.3, then the commit proceeds |
+
+`409` says *try again later, someone is working*. `503` says *a human must
+look*. Collapsing them into one code would erase exactly the distinction the
+five-state machine exists to make.
+
+### 8bis.2a Wiring is its own package, with its own mutations
+
+A tested module and a module that is actually called are different claims. This
+project has now been caught by that gap three times: P02.x (the delete path ran
+unproven), package 7 (mutation E survived hand-written fixtures), package 8
+(mutation I survived sequential spawns). The wiring therefore ships with its own
+RED tests and its own mutations:
+
+| Test | Proves |
+|---|---|
+| R1 | two processes through the **port** contend; one wins |
+| R2 | the port refuses a `contested` root with 503 |
+| R3 | the lock is released on **every** exit: success, DENY, 503, apply throw |
+| R4 | SIGKILL between acquire and release leaves `abandoned`, recoverable |
+
+| Mutation | Must kill |
+|---|---|
+| I-real — `acquire` removed from the port (not the module) | R1, R4 |
+| R-release-partial — released only on the success path | R3 |
+| R-order — lock taken after `intentLog.open` | R1 |
+| R-consume-order — lock taken before `consume` | the DENY-without-spend test |
 
 ### 8bis.2b The empty-lock hole, and why the lock uses `link()` not `O_EXCL`
 

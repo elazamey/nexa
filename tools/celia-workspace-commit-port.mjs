@@ -12,6 +12,7 @@ import { createWorkspaceCommitAuthorizer, denyCommit, WorkspaceCommitError } fro
 
 import { createCommitConsumptionStore } from './celia-commit-consumption-store.mjs';
 import { createIntentLog, inspectIntent } from './celia-commit-intent-log.mjs';
+import { createRootLock } from './celia-commit-root-lock.mjs';
 
 // A failed rollback blocks every committer for this root in this process.
 // This latch is NOT durable quarantine; restart recovery remains a separate gate.
@@ -299,6 +300,32 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     // before: a spent grant must still be refused with 403 on an unconfirmed
     // root, so crash state can never mask a replay as a mere 503.
     authorization.consume();
+    // Step 5: the root lock is taken AFTER the grant is spent and BEFORE the
+    // intent log inspects the root, so no competitor can create an intent
+    // between inspection and open. A refusal here spends the grant with nothing
+    // written -- a measured signal in the consumption store, not a silent loss.
+    const rootLock = createRootLock({ directory: stateDirectory });
+    const lockState = rootLock.inspect();
+    if (lockState.state === 'contested' || lockState.state === 'awaiting-operator') {
+      const contested = new WorkspaceCommitError(503, 'COMMIT_ROOT_CONTESTED');
+      contested.cause = { lockState: lockState.state, reason: lockState.reason };
+      throw contested;
+    }
+    if (lockState.state === 'abandoned') rootLock.breakAbandoned();
+    let heldLock;
+    try { heldLock = rootLock.acquire(); }
+    catch (error) {
+      if (error.code === 'ROOT_LOCKED') {
+        const locked = new WorkspaceCommitError(409, 'COMMIT_ROOT_LOCKED');
+        locked.cause = { reason: error.detail?.reason };
+        throw locked;
+      }
+      throw error;
+    }
+    // Step 9: released on EVERY exit path. A lock leaked on a refusal path
+    // holds the root forever -- the same defect class as an intent left open,
+    // which P03 already paid for once.
+    try {
     // Write-ahead: durable BEFORE the first repository byte. An unconfirmed
     // root refuses here, so a crashed transaction is never silently resumed.
     const transaction = intentLog.open({
@@ -433,5 +460,9 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
       subject: authorization.subject, capabilityId: authorization.capabilityId, rule: authorization.rule,
       authorizationRef: authorization.authorizationRef,
     };
+    } finally {
+      // Every exit -- return, DENY, 503, or an apply throw -- passes here.
+      heldLock.release();
+    }
   };
 }

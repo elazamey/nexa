@@ -50,6 +50,18 @@ The later [research/skills advisory library](docs/celia-research-skills.ar.md) a
 Latest verification: **426 PASS / 2 KNOWN FAIL of 428**; targeted advisory/learning
 52/52 and boundary regression 59/59. H2/H3 and the P00 provenance HOLD remain unresolved.
 
+**2026-09-22 verification:** H3 external-writer concurrency is **resolved** — the
+bounded COMMIT executor now re-verifies each target **at the write point** (before and
+after a zero-byte reserved write through `fs.writeFileSync`), so an external writer
+that mutates a target at the moment of the write is seen before the approved bytes
+land; the stale COMMIT is denied (`COMMIT_BASE_CHANGED`, 403), the external edit is
+preserved and no other target is applied. The reserved write moves no bytes and
+changes no mtime/ctime, so a denial or a kill at that point leaves zero trace.
+Full verification via `npm run verify`: posture **ALL SIX GATES CLOSED**,
+**501 PASS / 0 FAIL of 501** (previously 500/501), audit, three demos, adversarial
+suite blocked, gate report. H1 (consumed authority across restart/ABA), H2 (compensating
+rollback) and H3 are all green.
+
 ## NEXA Ω — language · runtime · Evolution Gate · learning
 
 > **NEXA does not trust itself. NEXA proves itself.**
@@ -479,11 +491,12 @@ not the one it can assert:
                                        dependencies
 ```
 
-> Hardening status: **H1 persistence now passes**, including actual restart/ABA,
+> Hardening status: **H1 persistence passes**, including actual restart/ABA,
 > consume-before-effects and fresh-grant acceptance for the same changeSet.
-> H2 atomicity and H3 external-writer concurrency remain RED, not skipped.
-> Latest `verify` after the isolated learning addition: **392 PASS / 2 FAIL of 394**.
-> WRITE/COMMIT + H1 persistence regression: **59/59** (39 + 20).
+> H2 atomicity and H3 external-writer concurrency are **green**: H2 via compensating
+> rollback under exclusive-root ownership; H3 via write-point re-verification
+> (zero-byte reserved write, then a post-check before the approved bytes are applied).
+> Latest `verify`: **501 PASS / 0 FAIL of 501**, with the six gates CLOSED.
 > The metrics block below remains the historical all-green baseline, not current acceptance.
 > COMMIT now also requires a pre-provisioned, external persistent `CELIA_COMMIT_STATE_DIR`.
 > See [H1 evidence, storage contract and limits](docs/celia-workspace-commit-h1-persistence.ar.md)
@@ -521,7 +534,7 @@ Numerical tests use explicitly synthetic fixtures, not claimed real repair gains
 Research retrieval is read-only, fixed-source and bounded; live arXiv access
 failed with `ECONNRESET` in this sandbox, despite passing connector unit tests.
 See [Arabic setup, data schemas, research references and measured limits](docs/celia-adaptive-learning.ar.md).
-H2/H3 remain unresolved; this module does not reopen the execution gates.
+H2/H3 are out of scope for this module (both are now green — see the 2026-09-22 verification above); this module does not reopen the execution gates.
 
 ## License
 

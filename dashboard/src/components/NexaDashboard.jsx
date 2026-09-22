@@ -166,7 +166,11 @@ export default function NexaDashboard() {
           fetch('/api/celia/evidence').then(r=>r.json()).then(ev=>{
             const arr = Array.isArray(ev) ? ev : (ev.evidence || []);
             setEvidence(arr);
-          }).catch(()=>{});
+          }).catch(error => {
+            // Never discard the failure: a stale evidence list that silently
+            // stopped refreshing looks identical to a current one.
+            setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✖ evidence refresh failed: ${error.message}`, ...prev].slice(0,30));
+          });
         } else if (data.type === 'SPECULATIVE_START') {
           setMetrics(m => ({ ...m, speculativeHits: m.speculativeHits + 1 }));
           setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⚡ SPECULATIVE ${data.payload.nodeId}`, ...prev].slice(0,30));

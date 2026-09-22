@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react';
+import { fetchStats } from '../lib/fetchStats';
 
 export default function OmegaPanel() {
   const [stats, setStats] = useState(null);
   const [taskResult, setTaskResult] = useState(null);
   const [executing, setExecuting] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [statsError, setStatsError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('/api/v1/omega/stats').then(r => r.json()).then(setStats).catch(() => {});
-  }, []);
+  const loadStats = async () => {
+    const result = await fetchStats('/api/v1/omega/stats');
+    if (result.ok) { setStats(result.stats); setStatsError(null); }
+    else { setStats(null); setStatsError(result.error); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadStats(); }, []);
 
   const executeOmegaTask = async () => {
     setExecuting(true);
@@ -31,7 +39,7 @@ export default function OmegaPanel() {
       setLogs([{ engine: 'error', message: e.message }]);
     } finally {
       setExecuting(false);
-      fetch('/api/v1/omega/stats').then(r => r.json()).then(setStats).catch(() => {});
+      loadStats();
     }
   };
 
@@ -48,6 +56,22 @@ export default function OmegaPanel() {
         </button>
       </div>
 
+
+      {loading && (
+        <div className="p-3 bg-gray-800/60 rounded border border-gray-600 text-sm text-gray-300">
+          Loading stats from /api/v1/omega/stats...
+        </div>
+      )}
+      {statsError && (
+        <div className="p-3 bg-red-900/40 rounded border border-red-500/60 text-sm">
+          <span className="font-bold text-red-300">Stats unavailable.</span>{' '}
+          <span className="text-red-200 font-mono text-xs">{statsError}</span>
+          <div className="text-xs text-gray-400 mt-1">
+            Figures below are placeholders, not measurements. A failed fetch is
+            shown, never silently replaced with zeros.
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-4 gap-4">
         <div className="p-4 bg-gradient-to-br from-purple-900/40 to-pink-900/40 rounded-lg border border-purple-500/40">
           <div className="text-sm text-gray-400">Version</div>

@@ -3,8 +3,8 @@
  * Permission flag probing — robust detection of Node's permission model flag.
  *
  * Node's permission model flag has changed across versions:
- *   - Node >=20.8: --permission
- *   - Node 20.0-20.7: --experimental-permission
+ *   - Node >=22: --permission (stable name)
+ *   - Node 20/21: --experimental-permission (no --permission in any 20.x release)
  *   - Some builds: no permission model at all
  *
  * This script probes the runtime and prints the supported flag, and optionally

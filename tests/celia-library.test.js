@@ -20,8 +20,14 @@ function withReport(input, { pass = 2, fail = 0, skipped = 0, exitCode = 0 } = {
   return input;
 }
 const ids = guidance => guidance.plans[0].matches.map(m => m.skillId);
+// Node renamed the permission-model flag across versions: --experimental-permission
+// (Node 20/21) became the stable --permission in Node 22. CI exercises both lines, so
+// pick the flag the current runtime understands — the same split
+// tools/permission-probe.mjs applies for the CI proof step (it probes at runtime).
+const PERMISSION_FLAG = Number(process.versions.node.split('.')[0]) >= 22 ? '--permission' : '--experimental-permission';
+
 function run(args, cwd = ROOT, permission = false) {
-  const flags = permission ? ['--permission', `--allow-fs-read=${ROOT}`, `--allow-fs-read=${cwd}`] : [];
+  const flags = permission ? [PERMISSION_FLAG, `--allow-fs-read=${ROOT}`, `--allow-fs-read=${cwd}`] : [];
   const r = spawnSync(process.execPath, [...flags, CLI, ...args], { cwd, env, encoding: 'utf8', timeout: 15000, maxBuffer: 4 * 1024 * 1024 });
   assert.ifError(r.error); return r;
 }

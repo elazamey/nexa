@@ -21,6 +21,21 @@ and the project uses semantic versioning once it leaves `0.x`.
   a new target we created rolls back to its expected absence, and I/O failures keep
   the previous compensating-rollback semantics.
 
+### Fixed
+
+* **Node 20 CI compatibility** (`tests/celia-system.test.js`, `tests/celia-library.test.js`) —
+  both CLI helpers spawned the advisory/library CLIs with the stable `--permission`
+  flag, which exists only on Node ≥22; on Node 20/21 the permission model is enabled
+  with `--experimental-permission` (no 20.x release ever shipped `--permission`). On
+  the CI matrix's Node 20 leg, `node --permission` died instantly with
+  `bad option` (exit 9), so the suite was red on Node 20 while the identical suite
+  passed on Node 22. The helpers now select the flag for the running Node version —
+  the same split `tools/permission-probe.mjs` applies to the CI proof step. No
+  security assertion changed: the CLIs still run under the permission model, which
+  still must deny filesystem writes and child processes. The probe's header comment
+  (which described `--permission` as available from "Node ≥20.8") is corrected to
+  match the official release history.
+
 ### Verified
 
 * `npm run verify` → posture **ALL SIX GATES CLOSED** → **501/501 tests**

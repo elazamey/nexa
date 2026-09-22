@@ -294,3 +294,87 @@ test('R5: a refusal at the lock spends the grant, and that spend is visible', as
   assert.ok(after.length > before, 'the spend must be recorded even though the commit was refused');
   assert.equal(fs.readFileSync(join(f.root, 'a.txt'), 'utf8'), 'old\n', 'and nothing may be written');
 });
+
+// -------------------------------------------- gaps found by the mutation run
+//
+// Two mutations survived the 8.x suite and were only caught by re-running the
+// matrix against the wired port:
+//
+//   R-order          moving acquire() to AFTER intentLog.open killed R4 but NOT
+//                    R1. R1 asserts the OUTCOME (one winner), which stays true
+//                    however late the lock is taken. That is the same survival
+//                    shape as R4 in P03: a test that measures the result rather
+//                    than the mechanism cannot see the mechanism move.
+//   R-release-swallow wrapping release() in `try {} catch {}` killed nothing,
+//                    because no test ever made release() fail.
+//
+// R6 and R7 close those two holes by observing the critical region itself.
+
+test('R6: the lock is already held when the intent log writes', async t => {
+  // Mechanism, not outcome. 8bis.2 orders the lock BEFORE the intent log
+  // touches the root, so the honest probe looks at the lock file FROM INSIDE
+  // the critical region -- via the intent log's own hooks, not afterwards.
+  // R1 cannot see this: it asserts that one process wins, which stays true
+  // however late the lock is taken. Same survival shape as R4 in P03.
+  const f = await fixture(t);
+  const observed = [];
+  const committer = createWorkspaceCommitter({
+    root: f.root, workspacePort: f.port, config: f.config, stateDirectory: f.stateDirectory,
+    intentHooks: (event, detail) => {
+      if (event === 'after-rename' && detail.state === 'opened') {
+        observed.push(fs.existsSync(f.lockPath));
+      }
+    },
+  });
+
+  const result = committer(f.request());
+  assert.equal(result.ok, true);
+  assert.ok(observed.length > 0, 'the intent log must have written at least once');
+  assert.equal(observed[0], true,
+    'the root lock must already be held when the intent log writes, not acquired afterwards');
+});
+
+test('R7: a failure to release is surfaced, never swallowed', async t => {
+  // A swallowed release failure leaves the root locked forever while the
+  // caller is told the commit succeeded -- `.catch(() => {})` transplanted
+  // into the commit path.
+  //
+  // The first version of this test chmod-ed the whole state directory and
+  // "passed" on COMMIT_DURABLE_STATE_UNAVAILABLE: the consumption store failed
+  // long before release() was ever reached, so it asserted nothing about
+  // releasing. Diagnosed by printing the error it was actually catching.
+  //
+  // The fault is now injected exactly at release(), by giving the lock its own
+  // directory and sealing only that directory once the lock is held.
+  const f = await fixture(t);
+  const lockDirectory = fs.mkdtempSync(join(f.parent, 'lockdir-'));
+  t.after(() => { try { fs.chmodSync(lockDirectory, 0o700); } catch { /* gone */ } });
+
+  const committer = createWorkspaceCommitter({
+    root: f.root, workspacePort: f.port, config: f.config, stateDirectory: f.stateDirectory,
+    intentHooks: (event, detail) => {
+      // Seal the lock's directory while the commit is mid-flight, so the
+      // unlink in release() fails for real rather than being stubbed.
+      if (event === 'after-rename' && detail.state === 'opened') fs.chmodSync(lockDirectory, 0o500);
+    },
+    rootLockDirectory: lockDirectory,
+  });
+
+  const probe = join(lockDirectory, 'probe');
+  fs.writeFileSync(probe, 'x');
+  fs.chmodSync(lockDirectory, 0o500);
+  let unlinkBlocked = true;
+  try { fs.unlinkSync(probe); unlinkBlocked = false; } catch { /* expected */ }
+  fs.chmodSync(lockDirectory, 0o700);
+  try { fs.unlinkSync(probe); } catch { /* already gone */ }
+  if (!unlinkBlocked) {
+    t.skip('this filesystem allows unlink from a read-only directory; cannot provoke a release failure');
+    return;
+  }
+
+  let caught;
+  try { committer(f.request()); } catch (error) { caught = error; }
+  fs.chmodSync(lockDirectory, 0o700);
+  assert.ok(caught, 'a release failure must reach the caller rather than be swallowed');
+  assert.equal(caught.code, 'EACCES', `expected the release error itself, got ${caught.code ?? caught.message}`);
+});

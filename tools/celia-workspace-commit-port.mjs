@@ -261,7 +261,10 @@ export function inspectWorkspaceCommit(input) {
   return captureOrDeny(input).descriptor;
 }
 
-export function createWorkspaceCommitter({ root, workspacePort, config = {}, stateDirectory = process.env.CELIA_COMMIT_STATE_DIR, intentHooks }) {
+// `rootLockDirectory` defaults to the state directory and exists so a test can
+// place the lock somewhere a release failure can be provoked for real. It does
+// not change where the lock lives in production.
+export function createWorkspaceCommitter({ root, workspacePort, config = {}, stateDirectory = process.env.CELIA_COMMIT_STATE_DIR, intentHooks, rootLockDirectory }) {
   const base = resolve(root);
   const store = createCommitConsumptionStore({ directory: stateDirectory, targetRoot: workspaceCommitRoot(base), root: base });
   // P03: write-ahead intent. Digests only; it can prove a root is unconfirmed,
@@ -304,7 +307,7 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     // intent log inspects the root, so no competitor can create an intent
     // between inspection and open. A refusal here spends the grant with nothing
     // written -- a measured signal in the consumption store, not a silent loss.
-    const rootLock = createRootLock({ directory: stateDirectory });
+    const rootLock = createRootLock({ directory: rootLockDirectory ?? stateDirectory });
     const lockState = rootLock.inspect();
     if (lockState.state === 'contested' || lockState.state === 'awaiting-operator') {
       const contested = new WorkspaceCommitError(503, 'COMMIT_ROOT_CONTESTED');

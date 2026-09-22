@@ -184,6 +184,35 @@ test('an unsealed bundle marked UNVERIFIABLE.md is acknowledged, never checkable
   assert.equal(report.summary.packagesWithoutSums, 1);
 });
 
+test('explained gaps are counted apart from matches and from unresolved findings', t => {
+  const f = fixture(t, { 'a.tap': 'changed\n', 'b.tap': 'gone-wrong\n' },
+    `${sha('one\n')}  a.tap\n${sha('two\n')}  b.tap\n`);
+  fs.writeFileSync(join(f.pkg, 'SUPERSEDED.md'), VALID_RECORD('a.tap'));
+  const { summary } = verifyEvidence({ evidenceDir: f.dir });
+  assert.equal(summary.explained_gaps, 1);
+  assert.equal(summary.match, 0, 'an explained gap is never a match');
+  assert.equal(summary.total_unresolved, 1, 'only the unaccounted-for mismatch is unresolved');
+  assert.match(summary.note, /not resolved/);
+});
+
+test('the live archive: deleting h2-atomicity SUPERSEDED.md restores the mismatch', t => {
+  // Permanent, not a one-off mutation. "0 mismatch" is only meaningful while
+  // this holds: the finding is attributed, not gone. Operates on a COPY of the
+  // archive (P6) — this test must never be able to damage the real bundle.
+  const sandbox = fs.mkdtempSync(join(tmpdir(), 'nexa-h2-copy-'));
+  t.after(() => fs.rmSync(sandbox, { recursive: true, force: true }));
+  fs.cpSync(join(ROOT, 'docs/evidence/h2-atomicity'), join(sandbox, 'h2-atomicity'), { recursive: true });
+
+  const withRecord = verifyEvidence({ evidenceDir: sandbox }).packages[0];
+  assert.equal(withRecord.files.some(file => file.status === 'superseded-explained'), true);
+
+  fs.rmSync(join(sandbox, 'h2-atomicity/SUPERSEDED.md'));
+  const without = verifyEvidence({ evidenceDir: sandbox }).packages[0];
+  const reverted = without.files.filter(file => file.status === 'mismatch');
+  assert.equal(reverted.length, 1, 'removing the explanation must restore the mismatch, not hide it');
+  assert.match(reverted[0].name, /celia-workspace-commit-port/);
+});
+
 test('the real h2-atomicity gap is documented, not regenerated', () => {
   // Guards the actual decision: this bundle must keep its recorded mismatch.
   const record = join(ROOT, 'docs/evidence/h2-atomicity/SUPERSEDED.md');

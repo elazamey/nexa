@@ -19,6 +19,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { unwrapStats } from '../dashboard/src/lib/fetchStats.js';
 
 const ROOT = process.cwd();
@@ -48,7 +50,15 @@ test('unwrapStats does not invent an object out of a failure body', () => {
 /** Start the dashboard API on an ephemeral port and wait for it to listen. */
 async function startServer(t) {
   const port = 34000 + Math.floor(Math.random() * 1000);
+  // P6: never inherit the repository as the working directory for a spawned
+  // tool. This server's writes happen to be module-relative (into gitignored
+  // .nexa/), so cwd does not currently decide where it writes — but relying on
+  // that is relying on a detail of the tool, not on a boundary. A throwaway
+  // cwd makes the isolation a property of the test.
+  const sandbox = mkdtempSync(join(tmpdir(), 'nexa-dash-cwd-'));
+  t.after(() => { try { rmSync(sandbox, { recursive: true, force: true }); } catch { /* best effort */ } });
   const child = spawn(process.execPath, [join(ROOT, 'tools/celia-dashboard-server.mjs')], {
+    cwd: sandbox,
     env: { ...process.env, PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

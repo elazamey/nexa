@@ -195,6 +195,56 @@ that is precisely what re-sealing does. It was caught by noticing a finding had
 
 ---
 
+## P6 — Mutations run on copies, never on live data
+
+**The rule:** any test that invokes a tool capable of writing must point that
+tool at a throwaway directory. A mutation that touches production data — even
+with the intent of breaking something — is not a test. It is an incident
+waiting for its turn.
+
+**This is not P4.** P4 is about recovering from a destructive command after the
+fact. P6 is about the isolation boundary that exists *before* the command runs.
+P4 limits loss; P6 removes the reach.
+
+**Why it had to become a rule rather than a fix.** Mutation M5 disabled the
+re-seal refusal while the test pointed the sealer at the live
+`docs/evidence/h2-atomicity`, and the real archive was overwritten
+(`docs/incidents/2026-09-mutation-destroyed-evidence.md`). Fixing that one test
+would have been treating the symptom. M1–M4 in the same run invoked the same
+write-capable tool; they did no damage only because they happened not to target
+the refusal. They were equally capable of it. The next mutation, on code not
+yet written, would inherit the same exposure.
+
+The general shape: **a mutation run deliberately breaks guards, so any test
+whose safety rests on the guard it is testing becomes destructive at exactly
+the moment it matters.** That is a circular safety argument, the same form as
+every other failure recorded here.
+
+**The audit this produced.** Every test that can spawn a process was checked.
+`celia-system.mjs` writes only under `--state`, which the tests point at temp
+directories. The crash and HTTP tests already build their `root` with
+`mkdtemp`. One real exposure was found beyond M5:
+`dashboard-stats-contract.test.js` spawned the dashboard server with no `cwd`
+at all, inheriting the repository. Its writes happen to be module-relative into
+gitignored `.nexa/`, so nothing was harmed — but that is a property of the
+tool, not a boundary, and it now runs with a throwaway `cwd`.
+
+**Where it is enforced:** `tests/mutation-isolation.test.js` holds three
+layers, because a source scan alone can be outwitted by a path built at
+runtime:
+1. No test spawns a write-capable tool with the repository as its cwd.
+2. No test writes *into* `docs/evidence/` (copying *out of* it is the rule
+   being obeyed, so only the destination is judged).
+3. `git status` confirms the archive is byte-unchanged after the suite runs.
+   This is the backstop that would have caught M5 the moment it happened.
+
+**The operational limit that goes with it:** `git checkout` recovered
+`h2-atomicity` only because it was committed. An uncommitted bundle has no
+recovery path whatsoever. `tools/seal-evidence.mjs --strict` therefore refuses
+to run while `docs/evidence/` has uncommitted changes.
+
+---
+
 ## How these are enforced
 
 - P1 — every package ships a mutation matrix in `docs/evidence/`; mutations run
@@ -208,6 +258,8 @@ that is precisely what re-sealing does. It was caught by noticing a finding had
 - P5 — `tools/seal-evidence.mjs` refuses to re-seal; old bundles keep their
   `unlisted` and `no commit recorded` findings; gaps are annotated with
   `SUPERSEDED.md` or `UNVERIFIABLE.md`, never regenerated.
+- P6 — `tests/mutation-isolation.test.js` blocks live-data mutation at three
+  layers; `seal-evidence.mjs --strict` refuses an uncommitted archive.
 - Evidence claims — `npm run verify-evidence` recomputes digests; the dashboard
   displays that output and is forbidden by test from adding a verdict
   (`tests/evidence-check.test.js`).

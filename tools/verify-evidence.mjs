@@ -230,6 +230,11 @@ export function verifyEvidence({ evidenceDir = EVIDENCE_DIR } = {}) {
 const emptySummary = () => ({ packages: 0, match: 0, mismatch: 0, 'superseded-explained': 0, missing: 0, unlisted: 0, malformed: 0, packagesWithoutSums: 0 });
 
 function summarise(packages) {
+  // `explained_gaps` is kept strictly apart from `match`, and
+  // `total_unresolved` counts only what nobody has accounted for. A reader must
+  // not be able to mistake "0 mismatch" for "no gaps": the mismatch in
+  // h2-atomicity did not go away when it was explained, it was attributed.
+  // Delete its SUPERSEDED.md and it returns to `mismatch` immediately.
   const summary = emptySummary();
   summary.packages = packages.length;
   for (const pkg of packages) {
@@ -243,6 +248,11 @@ function summarise(packages) {
       else if (file.status === 'malformed-record') summary.malformed++;
     }
   }
+  summary.explained_gaps = summary['superseded-explained'];
+  summary.total_unresolved = summary.mismatch + summary.missing;
+  summary.note = summary.explained_gaps
+    ? `${summary.explained_gaps} explained gap(s) are counted separately from match and are not resolved`
+    : 'no explained gaps';
   return summary;
 }
 

@@ -1,6 +1,6 @@
 {
   "schema": "nexa-evidence-check/v1",
-  "checkedAt": "2026-09-22T01:40:30.524Z",
+  "checkedAt": "2026-09-22T01:46:02.061Z",
   "limits": "A digest match proves the bytes are unchanged since the digest was recorded. It does not prove the run happened, that the file describes the current code, or that any claim inside the file is true. Commit provenance is checked only when the package records a commit.",
   "packages": [
     {
@@ -616,6 +616,9 @@
     "missing": 0,
     "unlisted": 14,
     "malformed": 0,
-    "packagesWithoutSums": 1
+    "packagesWithoutSums": 1,
+    "explained_gaps": 1,
+    "total_unresolved": 0,
+    "note": "1 explained gap(s) are counted separately from match and are not resolved"
   }
 }

@@ -11,7 +11,13 @@
  * If files were added to a bundle after it was sealed, they do not belong to
  * it. Make a new bundle, or write a SUPERSEDED.md. Do not widen the old seal.
  *
- * Usage: node tools/seal-evidence.mjs <bundle-name> [--force-new]
+ * `--strict` refuses to seal while docs/evidence/ has uncommitted changes.
+ * That is an operational limit, not a principle: when mutation M5 overwrote
+ * h2-atomicity, `git checkout` recovered it ONLY because the bundle was
+ * committed. An uncommitted bundle has no recovery path at all — one stray
+ * write and it is gone (docs/incidents/2026-09-mutation-destroyed-evidence.md).
+ *
+ * Usage: node tools/seal-evidence.mjs <bundle-name> [--strict]
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -35,6 +41,20 @@ function main() {
     console.error('If the bundle is out of date, add a SUPERSEDED.md beside it, or seal a NEW bundle.');
     console.error('See docs/principles.md P5.');
     return 1;
+  }
+
+  if (process.argv.includes('--strict')) {
+    let dirtyEvidence = '';
+    try { dirtyEvidence = execFileSync('git', ['status', '--porcelain', '--', 'docs/evidence'], { cwd: ROOT, encoding: 'utf8' }).trim(); }
+    catch { console.error('--strict: cannot query git; refusing rather than assuming a clean archive.'); return 2; }
+    const blocking = dirtyEvidence.split('\n').filter(Boolean)
+      .filter(line => !line.includes('evidence-check.json'));
+    if (blocking.length) {
+      console.error('REFUSED (--strict): docs/evidence/ has uncommitted changes:');
+      for (const line of blocking) console.error(`  ${line}`);
+      console.error('\nCommit the archive first. An uncommitted bundle cannot be recovered if a write goes wrong.');
+      return 1;
+    }
   }
 
   // The commit is read now, from the repository, not supplied by hand.

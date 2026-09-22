@@ -12,7 +12,15 @@ import { fileURLToPath } from 'node:url';
  * يُزال هذا الملف في نفس تغيير إغلاق D1.11.
  * (spawn مستقل: الـ helper المشترك لا يمرر NODE_ENV، وهذا الاختبار يثبت
  *  سلوك الإقلاع تحت NODE_ENV=production تحديدًا.)
+ *
+ * تحديث D1.10 (طبقة 3): الإنتاج صار يرفض الإقلاع بلا NEXA_API_KEY، فبقاء هذا
+ * المُعيد صالحًا إثباتِه يستلزم مفتاحًا تجريبيًا في البيئة وعلى الطلب — لا علاقة
+ * له بالفجوة نفسها. ما يُختبر هنا ما زال هو: «production + mock://memory يقلع
+ * ويخدم». حارس المحيط لا يبتلع D1.11 ولا يغلقها (انظر
+ * tests/server-production-failfast.test.js — نفس الجملة معكوسة عمدًا).
  */
+
+const PERIMETER_TEST_KEY = 'd1.11-reproducer-placeholder-key';
 
 const repository = fileURLToPath(new URL('../../', import.meta.url));
 const bootstrap = fileURLToPath(new URL('../fixtures/celia-http-child.mjs', import.meta.url));
@@ -47,7 +55,8 @@ async function startProductionServer(t) {
   }
   cpSync(join(repository, 'package.json'), join(root, 'package.json'));
 
-  const env = { PORT: '0', NODE_ENV: 'production' };
+  // مفتاح محيط تجريبي: بدونه يرفض الحارس الإقلاع فلا نصل إلى ما نريد إثباته.
+  const env = { PORT: '0', NODE_ENV: 'production', NEXA_API_KEY: PERIMETER_TEST_KEY };
   for (const name of ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR']) {
     if (process.env[name]) env[name] = process.env[name];
   }
@@ -86,7 +95,8 @@ async function startProductionServer(t) {
 test('known-gap D1.11 (O03): إنتاج بلا SUPABASE يقلع ويخدم بدل fail-fast', async (t) => {
   const port = await startProductionServer(t);
   const response = await fetch(`http://127.0.0.1:${port}/api/celia/state`, {
+    headers: { Authorization: `Bearer ${PERIMETER_TEST_KEY}` },
     signal: AbortSignal.timeout(5_000),
   });
-  assert.equal(response.status, 200, 'الوضع الحالي: إنتاج + mock = إقلاع ناجح بصمت (لا حارس بدء)');
+  assert.equal(response.status, 200, 'الوضع الحالي: إنتاج + mock = إقلاع ناجح بصمت (لا حارس ذاكرة)');
 });

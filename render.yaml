@@ -12,6 +12,31 @@
 # Note: Vercel static-only hosting does NOT work for this app — the frontend
 # requires the persistent Node backend (in-memory DAG/governed-memory state +
 # long-lived SSE connections), which only a web service (Render/Koyeb/Fly) can run.
+#
+# --- D1.10 (P0-B) deploy contract -------------------------------------------------
+# This is a production runtime, so the server now refuses to boot with an open
+# perimeter: NODE_ENV=production without NEXA_API_KEY = exit 1 at startup (loud, on
+# purpose — "it served unauthenticated until someone noticed" is the failure this
+# closes). Set BOTH secrets in the Render dashboard before the next deploy:
+#
+#   NEXA_API_KEY       operator/CLI credential (>= 32 chars). The browser never
+#                      receives it: the SPA exchanges it once for an HttpOnly,
+#                      SameSite=Strict session cookie. It is sync:false below, so
+#                      no secret is ever committed to git or shipped to the SPA.
+#   NEXA_OPERATOR_SEED 32-byte hex seed that signs approvals. Left at the default
+#                      it is the published demo seed — any clone of this repo can
+#                      derive that key id, so a deploy must pin its own. The
+#                      perimeter protects the transport; this protects the
+#                      signature. (Warning at boot, not fatal.)
+#
+# healthCheckPath is /healthz, not an /api route: /healthz answers with no
+# credential, no state read and no rate-limit budget, so a platform probe can
+# never read "401" as "app down" — nor spend the operator's quota.
+#
+# Supabase credentials (SUPABASE_URL / SUPABASE_ANON_KEY) are intentionally NOT
+# declared here: production without them still falls back to mock://memory, which
+# is a separate open ticket (D1.11) with its own guard. Do not add them until that
+# gap is closed, or the deploy will look verified while it is not.
 
 services:
   - type: web
@@ -20,8 +45,24 @@ services:
     plan: free
     buildCommand: cd dashboard && npm install --no-audit --no-fund && npm run build
     startCommand: node tools/celia-dashboard-server.mjs
-    healthCheckPath: /api/celia/state
+    healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 22.x
+      # Production signal read by tools/celia-startup-guard.mjs (and by the
+      # Secure-cookie flag in the perimeter).
+      - key: NODE_ENV
+        value: production
+      # Secrets live in the Render dashboard only (sync: false keeps them out of
+      # the blueprint file, so a repo read is never a credential read).
+      - key: NEXA_API_KEY
+        sync: false
+      - key: NEXA_OPERATOR_SEED
+        sync: false
+      # Optional tuning knobs for the perimeter layers (defaults are production
+      # safe; see tools/celia-rate-limit.mjs for units and semantics).
+      - key: NEXA_RATE_LIMIT_MAX
+        value: "120"
+      - key: NEXA_TRUST_PROXY
+        value: "1"

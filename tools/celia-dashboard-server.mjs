@@ -43,6 +43,7 @@ import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
 import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
 import { createPerimeter, HEALTH_ROUTE, SESSION_ROUTE, unauthorizedPayload } from './celia-perimeter-auth.mjs';
 import { createRateLimiter, sendTooManyRequests, rateLimitHeaders } from './celia-rate-limit.mjs';
+import { assertProductionPerimeter, operatorSeedWarning } from './celia-startup-guard.mjs';
 import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
 import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
@@ -109,6 +110,19 @@ const rateLimit = createRateLimiter({
   env: process.env,
   onAudit: (entry) => emitDagEvent(entry.type, entry),
 });
+
+// === D1.10 / P0-B layer 3 — production does not boot with an open wall ========
+// Ahead of every other initialisation (no jail directory, no ledger, no listen):
+// an unconfigured production deployment must die at the moment of the omission,
+// not after it has served mutating traffic. Local/dev/test are untouched.
+const startup = assertProductionPerimeter({ env: process.env, required: perimeter.required });
+if (!startup.ok) {
+  console.error(`[nexa] ${startup.message}`);
+  process.exitCode = 1;
+  process.exit(1);
+}
+const seedWarning = operatorSeedWarning(process.env);
+if (seedWarning) console.warn(`[nexa] ${seedWarning}`);
 
 // Trusted operator configuration, never derived from request headers/body.
 // Missing configuration denies every workspace write; invalid config stops startup.

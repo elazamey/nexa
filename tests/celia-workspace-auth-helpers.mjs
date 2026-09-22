@@ -38,6 +38,49 @@ export function snapshot(root, prefix = '', result = new Map()) {
   return result;
 }
 
+export function copySources(root) {
+  for (const area of ['packages', 'adapters', 'tools']) {
+    cpSync(join(repository, area), join(root, area), {
+      recursive: true,
+      filter(path) {
+        const stat = lstatSync(path);
+        if (stat.isSymbolicLink()) return false;
+        const name = basename(path);
+        if (name.startsWith('.') || name === 'node_modules') return false;
+        return stat.isDirectory() || /\.(?:m?js)$/.test(name) || name === 'package.json';
+      },
+    });
+  }
+  cpSync(join(repository, 'package.json'), join(root, 'package.json'));
+  return root;
+}
+
+/** Throwaway source root, removed with the test. Needed by boot-time tests that
+ *  spawn the server directly instead of through the readiness fixture. */
+export function isolatedRoot(t, prefix = 'nexa-isolated-') {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  copySources(root);
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  return root;
+}
+
+/**
+ * Environment for a spawned server: no inherited credentials, NODE_OPTIONS or
+ * live service URLs. `extra` wins, so a test can pin NODE_ENV / NEXA_API_KEY.
+ */
+export function minimalEnv(extra = {}) {
+  const env = { PORT: '0', SUPABASE_URL: 'mock://integration-test', SUPABASE_ANON_KEY: 'mock-key' };
+  for (const name of ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR']) {
+    if (process.env[name]) env[name] = process.env[name];
+  }
+  return Object.assign(env, extra);
+}
+
+/** repository-relative path of the test transport bootstrap (patches listen). */
+export const httpChildBootstrap = bootstrap;
+export const repositoryRoot = repository;
+export const serverEntry = join(repository, 'tools/celia-dashboard-server.mjs');
+
 export async function startIsolatedServer(t, config, commitConfig, options = {}) {
   // root is resolved from the server's import.meta.url, not cwd. Copy sources
   // rather than importing the checkout's server, which would write into it.
@@ -58,28 +101,12 @@ export async function startIsolatedServer(t, config, commitConfig, options = {})
     }
   });
 
-  for (const area of ['packages', 'adapters', 'tools']) {
-    cpSync(join(repository, area), join(root, area), {
-      recursive: true,
-      filter(path) {
-        const stat = lstatSync(path);
-        if (stat.isSymbolicLink()) return false;
-        const name = basename(path);
-        if (name.startsWith('.') || name === 'node_modules') return false;
-        return stat.isDirectory() || /\.(?:m?js)$/.test(name) || name === 'package.json';
-      },
-    });
-  }
-  cpSync(join(repository, 'package.json'), join(root, 'package.json'));
+  copySources(root);
 
   // Deliberately do not inherit credentials, NODE_OPTIONS or live service URLs.
-  const env = { PORT: '0', SUPABASE_URL: 'mock://integration-test', SUPABASE_ANON_KEY: 'mock-key' };
-  for (const name of ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR']) {
-    if (process.env[name]) env[name] = process.env[name];
-  }
-  // Perimeter/deploy-layer tests need to control the runtime env (a key, or
-  // NODE_ENV) without touching the shared callers of this fixture.
-  if (options.env !== undefined) Object.assign(env, options.env);
+  // Perimeter/deploy-layer tests pin the runtime env (a key, NODE_ENV) through
+  // options.env without changing any existing caller.
+  const env = minimalEnv(options.env ?? {});
   if (stateDirectory) {
     initializeCommitConsumptionStore({ directory: stateDirectory, root, targetRoot: workspaceCommitRoot(root) });
     env.CELIA_COMMIT_STATE_DIR = stateDirectory;

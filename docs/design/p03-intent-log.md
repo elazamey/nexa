@@ -192,6 +192,74 @@ test 8 will be written against that contract. A lock is never broken merely
 because its owning PID died — a dead owner leaves an unconfirmed root, which is
 an operator decision, not an automatic reclaim.
 
+## 7sexies. Test 7 — the restore as its own transaction
+
+Phase 1 left `restoring` as a sub-state of the parent intent. That shape has a
+hole: a `SIGKILL` **before** the restore plan is durable leaves `restoring`
+with no plan, which `planRecovery` can only classify as `INTERRUPTED_RESTORE`
+— safe, but a dead end rather than recovery. Option A is adopted: the restore
+is a **separate transaction** with its own `txId` and a `parentTxId` back-link.
+
+### State machine
+
+```text
+parent: applying
+   │  apply failed, or post-state verify mismatched
+   ▼
+parent: restore_pending        <- durable BEFORE the child is opened
+   │  restoreIntent.open(parent)
+   ▼
+child: opened  ->  child: applying  ->  child: committed  -> child erased
+   │
+   ▼
+parent: restore_pending with NO child  =  the restore completed
+   ▼
+parent erased
+```
+
+### The seven governing rules
+
+1. `restore_pending` is never acted on directly; always through the child.
+2. If a child exists with `parentTxId == parent.txId`, **process the child and
+   ignore the parent entirely**.
+3. No child + parent in `restore_pending` ⇒ **the restore completed**; erase
+   the parent. No other inference is permitted.
+4. `restoreIntent.open(parent)` refuses unless `parent.state === 'applying'`.
+5. `restoreIntent.open(parent)` refuses if the parent itself carries a
+   `parentTxId`. **There is no restore of a restore.** Declared limit.
+6. Any on-disk state matching neither `fromDigest` nor `toDigest` of a child op
+   ⇒ `CORRUPT_RESTORE_STATE`, fail-closed.
+7. The old `INTERRUPTED_RESTORE` classification becomes an assertion: with the
+   child transaction in place it must be unreachable, and a test proves it.
+
+### Declared limits for test 7
+
+* No automatic full restore. `planRecovery` classifies; an operator decides.
+* No restore of a restore (rule 5).
+* Atomic-write discipline for the child's own writes is a **separate** contract
+  and is not asserted by the 7-param test.
+
+### Acceptance rule (stricter than passing)
+
+The 7-param test will very likely pass on its first run, exactly as tests 4-6
+did. **That is a danger signal, not completion.** Mutations E and F are run
+*before* the green result is accepted. If neither kills at least one cut point,
+then `restore_pending` was never tested — only `restoring` under a new name.
+
+| Mutation | Breaks | 4 | 5 | 6 | corrupt | order | 7-param |
+|---|---|---|---|---|---|---|---|
+| A — unreadable intent read as absent | fail-closed | ok | ok | ok | **FAIL** | ok | expect FAIL |
+| B — intent check before `consume` | decision order | ok | ok | ok | ok | **FAIL** | expect FAIL |
+| C — direct write, no temp+`rename` | atomic write | ok | **FAIL** | **FAIL** | ok | ok | — (separate contract) |
+| D — intent opened after first root write | write-ahead | **FAIL** | **FAIL** | **FAIL** | ok | **FAIL** | expect FAIL |
+| E — parent left `applying` when child opens | package invariant | — | — | — | — | — | **must FAIL** |
+| F — parent erased before the child | package invariant | — | — | — | — | — | **must FAIL** |
+| G — `parentTxId` pointing at a missing intent unchecked | link integrity | — | — | — | — | — | **must FAIL** |
+
+E and F measure the invariant that makes this a package at all: **exactly one
+actionable intent at a time**. C deliberately does not kill 7-param; a mutation
+is not required to break everything.
+
 ## 8. RED plan (fixed before implementation)
 
 | # | Test | Proves |

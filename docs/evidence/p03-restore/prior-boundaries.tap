@@ -1,0 +1,276 @@
+TAP version 13
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-pKS0EA/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-O1AZbd/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-vi0JQ8/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-QD4Znj/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/4: a cut before fsync leaves no uninterpretable state
+ok 1 - P03/4: a cut before fsync leaves no uninterpretable state
+  ---
+  duration_ms: 558.804917
+  type: 'test'
+  ...
+# {"attempt":1,"present":false,"state":null,"applied":[]}
+# {"attempt":2,"present":false,"state":null,"applied":[]}
+# {"attempt":3,"present":false,"state":null,"applied":[]}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-g8mNrF/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-qgIEfe/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-DWnfb4/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/5: a cut after fsync but before rename leaves the old target and an orphan temp
+ok 2 - P03/5: a cut after fsync but before rename leaves the old target and an orphan temp
+  ---
+  duration_ms: 517.957264
+  type: 'test'
+  ...
+# {"attempt":1,"temps":[".intent.json.41285.tmp"],"present":false}
+# {"attempt":2,"temps":[".intent.json.41296.tmp"],"present":false}
+# {"attempt":3,"temps":[".intent.json.41307.tmp"],"present":false}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-TD9q62/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/6: an orphan temp is never mistaken for a committed intent
+ok 3 - P03/6: an orphan temp is never mistaken for a committed intent
+  ---
+  duration_ms: 204.459452
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-8Pxdju/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/corrupt: an unreadable active intent is fail-closed, never treated as empty
+ok 4 - P03/corrupt: an unreadable active intent is fail-closed, never treated as empty
+  ---
+  duration_ms: 189.574648
+  type: 'test'
+  ...
+# An empty log and an unreadable log are different facts and never collapse into one.
+# Subtest: P03/order: a spent grant is refused 403 even while the root is unconfirmed
+ok 5 - P03/order: a spent grant is refused 403 even while the root is unconfirmed
+  ---
+  duration_ms: 339.835407
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-TOGzQo/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-ToxyLt/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/1: the intent is durable before the first repository byte is written
+ok 6 - P03/1: the intent is durable before the first repository byte is written
+  ---
+  duration_ms: 202.149458
+  type: 'test'
+  ...
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-BZSBuG/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-e0eRm6/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-0AXZKF/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/2: SIGKILL right after the intent is opened leaves a detectable incomplete transaction
+ok 7 - P03/2: SIGKILL right after the intent is opened leaves a detectable incomplete transaction
+  ---
+  duration_ms: 563.109956
+  type: 'test'
+  ...
+# {"attempt":1,"state":"opened","cuts":3}
+# {"attempt":2,"state":"opened","cuts":3}
+# {"attempt":3,"state":"opened","cuts":3}
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-cLWdeW/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# [workspace-port] created ws_p03_fixture method=file_copy staging=/tmp/nexa-p03-parent-dTB1GK/nexa-p03-root/.nexa/staging/ws_p03_fixture evidence=none
+# Subtest: P03/3: SIGKILL mid-apply records which targets were already applied
+ok 8 - P03/3: SIGKILL mid-apply records which targets were already applied
+  ---
+  duration_ms: 674.504557
+  type: 'test'
+  ...
+# {"attempt":1,"state":"opened","applied":[],"observed":["a.txt"]}
+# {"attempt":2,"state":"opened","applied":[],"observed":["a.txt"]}
+# {"attempt":3,"state":"opened","applied":[],"observed":["a.txt"]}
+# Subtest: P03/recovery decision: only a provably untouched root is cleared automatically
+ok 9 - P03/recovery decision: only a provably untouched root is cleared automatically
+  ---
+  duration_ms: 1.000537
+  type: 'test'
+  ...
+# Recovery never rolls forward: the log holds digests, not payloads.
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-qSHRIq/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-2JbzI5/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-Mn9wsx/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-h7jnW2/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-9c3LBj/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-pH0mQO/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-2XR1bf/root/.nexa/staging/ws_h2_fixture evidence=none
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-V2zx5L/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: failure at target 1 restores only attempted changes
+ok 10 - H2 recovery: failure at target 1 restores only attempted changes
+  ---
+  duration_ms: 57.767243
+  type: 'test'
+  ...
+# {"faultAt":"a.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 2 restores only attempted changes
+ok 11 - H2 recovery: failure at target 2 restores only attempted changes
+  ---
+  duration_ms: 100.510792
+  type: 'test'
+  ...
+# {"faultAt":"b.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: failure at target 3 restores only attempted changes
+ok 12 - H2 recovery: failure at target 3 restores only attempted changes
+  ---
+  duration_ms: 60.956464
+  type: 'test'
+  ...
+# {"faultAt":"c.bin","restored":true,"stagingUnchanged":true,"consumptionRetained":true}
+# Subtest: H2 recovery: partially written failing target is restored, not just successful previous writes
+ok 13 - H2 recovery: partially written failing target is restored, not just successful previous writes
+  ---
+  duration_ms: 36.089803
+  type: 'test'
+  ...
+# Subtest: H2 recovery: removes new files and only its own empty directories after apply failure
+ok 14 - H2 recovery: removes new files and only its own empty directories after apply failure
+  ---
+  duration_ms: 27.239191
+  type: 'test'
+  ...
+# Subtest: H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+ok 15 - H2 recovery: directory creation fault restores earlier files and removes already-created empty ancestors
+  ---
+  duration_ms: 37.7875
+  type: 'test'
+  ...
+# Subtest: H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+ok 16 - H2 recovery: failed rollback reports 503 and holds later authorized requests in this process
+  ---
+  duration_ms: 28.353353
+  type: 'test'
+  ...
+# Recovery latch is process-local, not durable restart quarantine. P03 remains required.
+# Subtest: H2 recovery: positive authorized control writes real existing and nested new files
+ok 17 - H2 recovery: positive authorized control writes real existing and nested new files
+  ---
+  duration_ms: 24.802416
+  type: 'test'
+  ...
+# [workspace-port] created ws_h2_fixture method=file_copy staging=/tmp/nexa-h2-recovery-avpM0Z/root/.nexa/staging/ws_h2_fixture evidence=none
+# Subtest: H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+ok 18 - H2 recovery: original fault fixture rolls back without reviving spent authority after actual restart
+  ---
+  duration_ms: 384.057256
+  type: 'test'
+  ...
+# {"oldPid":41465,"newPid":41474,"rollback":true,"oldGrant":"DENY","freshGrantSameChanges":"ALLOW"}
+# Subtest: H2 recovery: restores original permission bits when the operating system clears them on write
+ok 19 - H2 recovery: restores original permission bits when the operating system clears them on write
+  ---
+  duration_ms: 36.626123
+  type: 'test'
+  ...
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-GqxbMP/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-adG6IB/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-gW3b6C/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-JbSSSD/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-t8wqCi/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-dAQYMx/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-OvZuYj/root/.nexa/staging/ws_h3_fixture evidence=none
+# [workspace-port] created ws_h3_fixture method=file_copy staging=/tmp/nexa-h3-kvLEFI/root/.nexa/staging/ws_h3_fixture evidence=none
+# Subtest: H3: a competing edit to the first target is preserved and no other target is applied
+ok 20 - H3: a competing edit to the first target is preserved and no other target is applied
+  ---
+  duration_ms: 49.521348
+  type: 'test'
+  ...
+# Subtest: H3: a competing edit to a LATER target rolls back the already-applied earlier target
+ok 21 - H3: a competing edit to a LATER target rolls back the already-applied earlier target
+  ---
+  duration_ms: 46.231703
+  type: 'test'
+  ...
+# Subtest: H3: deletion of a verified target during the window refuses and leaves no resurrected file
+ok 22 - H3: deletion of a verified target during the window refuses and leaves no resurrected file
+  ---
+  duration_ms: 23.32983
+  type: 'test'
+  ...
+# Subtest: H3: a same-size competing edit is caught by bytes, not by length or mtime
+ok 23 - H3: a same-size competing edit is caught by bytes, not by length or mtime
+  ---
+  duration_ms: 21.689457
+  type: 'test'
+  ...
+# Subtest: H3: a competing mode change on verified bytes is refused
+ok 24 - H3: a competing mode change on verified bytes is refused
+  ---
+  duration_ms: 22.178899
+  type: 'test'
+  ...
+# Subtest: H3: positive control — an uncontended commit still applies every target
+ok 25 - H3: positive control — an uncontended commit still applies every target
+  ---
+  duration_ms: 23.764629
+  type: 'test'
+  ...
+# Subtest: H3: the probe preserves the original mode on an uncontended existing target
+ok 26 - H3: the probe preserves the original mode on an uncontended existing target
+  ---
+  duration_ms: 23.516656
+  type: 'test'
+  ...
+# Subtest: H3: a refused commit does not refund the consumed authorization
+ok 27 - H3: a refused commit does not refund the consumed authorization
+  ---
+  duration_ms: 26.42221
+  type: 'test'
+  ...
+# Consumed-on-refusal is intentional: the window was entered under real authority.
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-k8GPsF/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-ktSxdR/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-0cVXVS/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-gkyLcL/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-SVhRd7/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-mOGgAg/root/.nexa/staging/ws_poststate_fixture evidence=none
+# [workspace-port] created ws_poststate_fixture method=file_copy staging=/tmp/nexa-poststate-Dqe2TI/root/.nexa/staging/ws_poststate_fixture evidence=none
+# Subtest: RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+ok 28 - RED1/GREEN: ok:true is only returned after the written bytes are re-read and proven
+  ---
+  duration_ms: 50.855762
+  type: 'test'
+  ...
+# {"verified":2,"method":"READ_BACK_SHA256_EQUAL_BYTES"}
+# Subtest: RED2: a target whose bytes differ after a successful write must not report success
+ok 29 - RED2: a target whose bytes differ after a successful write must not report success
+  ---
+  duration_ms: 46.344895
+  type: 'test'
+  ...
+# Subtest: RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+ok 30 - RED3: when the rollback of an unverified effect cannot itself be proven, recovery is unverified
+  ---
+  duration_ms: 49.026227
+  type: 'test'
+  ...
+# RECOVERY_UNVERIFIED is distinct from EFFECT_UNVERIFIED: the restore itself was not proven.
+# Subtest: post-state: a new file removed during rollback is proven gone, not assumed gone
+ok 31 - post-state: a new file removed during rollback is proven gone, not assumed gone
+  ---
+  duration_ms: 30.229193
+  type: 'test'
+  ...
+# Subtest: post-state: the verification reads real bytes, not the in-memory buffer
+ok 32 - post-state: the verification reads real bytes, not the in-memory buffer
+  ---
+  duration_ms: 34.416277
+  type: 'test'
+  ...
+# Subtest: post-state: positive control — an uncontended commit still succeeds and reports its proof
+ok 33 - post-state: positive control — an uncontended commit still succeeds and reports its proof
+  ---
+  duration_ms: 26.37118
+  type: 'test'
+  ...
+# Subtest: post-state: verification does not refund the consumed authorization
+ok 34 - post-state: verification does not refund the consumed authorization
+  ---
+  duration_ms: 36.928577
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5079.467509

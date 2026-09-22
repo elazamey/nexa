@@ -346,9 +346,22 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
         transaction.advance('applying', file.path); // durable record of what is now on disk
       }
     } catch (error) {
-      // A rollback is itself a transaction: record that we entered it, so a
-      // crash DURING recovery is still visible as an unconfirmed root.
-      transaction.advance('restoring');
+      // A rollback is itself a transaction with its own durable intent, so a
+      // crash DURING recovery is an ordinary incomplete child, not a dead end.
+      // Rule 4 holds only once something was actually applied. With no applied
+      // target there is nothing to roll back, so no child transaction is opened.
+      // A log that cannot record the rollback must not prevent it, and must not
+      // replace the original failure with its own. The intent error is carried
+      // in the cause and latches the root instead.
+      let restoreTx = null;
+      let intentError = null;
+      if (attempted.length) {
+        try {
+          restoreTx = transaction.openRestore(attempted.map(file => ({
+            path: file.path, fromDigest: file.hash, toDigest: file.base.hash, mode: file.base.mode,
+          })));
+        } catch (logError) { intentError = logError.code ?? logError.message; }
+      }
       if (error instanceof WorkspaceCommitError && error.code === 'COMMIT_CONCURRENT_MODIFICATION') {
         // The stale target set must not be half-applied either: roll back the
         // targets this operation already wrote, then refuse the whole commit.
@@ -359,7 +372,14 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
           unavailable.cause = { applyCode: error.code, rollbackFailures: failures };
           throw unavailable;
         }
-        transaction.recovered(); // proven rollback closes the transaction
+        if (intentError) {
+          recoveryRequiredRoots.add(base);
+          const unavailable = new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');
+          unavailable.cause = { applyCode: error.code, intentError };
+          throw unavailable;
+        }
+        restoreTx?.complete(); // the child closes first (rule 3)
+        transaction.recovered();
         throw error; // 403; authorization stays consumed.
       }
       const failures = restore(base, attempted, created);
@@ -369,7 +389,8 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
         unavailable.cause = { applyCode: error.code ?? error.message, rollbackFailures: failures };
         throw unavailable;
       }
-      transaction.recovered();
+      if (intentError) recoveryRequiredRoots.add(base);
+      else { restoreTx?.complete(); transaction.recovered(); }
       // Preserve the original I/O error, and never refund consumed authorization.
       throw error;
     }
@@ -377,18 +398,27 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
     // cleanly every write syscall returned.
     const mismatches = verifyPostState(base, changed);
     if (mismatches.length) {
-      transaction.advance('restoring');
+      // The rollback must happen even if the intent write fails: a log that
+      // cannot record recovery must not also prevent it. A failed open is
+      // surfaced in the cause, and the root stays latched below.
+      let restoreTx = null;
+      let intentError = null;
+      try {
+        restoreTx = transaction.openRestore(changed.map(file => ({
+          path: file.path, fromDigest: file.hash, toDigest: file.base.hash, mode: file.base.mode,
+        })));
+      } catch (error) { intentError = error.code ?? error.message; }
       const failures = restore(base, changed, created);
       // The rollback is itself an unproven success until it is re-read.
       const unproven = failures.length ? failures : verifyRestored(base, changed);
-      if (!unproven.length) transaction.recovered();
+      if (!unproven.length && restoreTx) { restoreTx.complete(); transaction.recovered(); }
       // Latch only when the root's state could not be proven back to base. A
       // proven rollback leaves a consistent root, so later authorized work is
       // refused on its own merits rather than by a blanket 503.
-      if (unproven.length) recoveryRequiredRoots.add(base);
+      if (unproven.length || intentError) recoveryRequiredRoots.add(base);
       const code = unproven.length ? 'COMMIT_RECOVERY_UNVERIFIED' : 'COMMIT_EFFECT_UNVERIFIED';
       const unavailable = new WorkspaceCommitError(503, code);
-      unavailable.cause = { mismatches, rollbackFailures: failures, unprovenRestores: unproven };
+      unavailable.cause = { mismatches, rollbackFailures: failures, unprovenRestores: unproven, intentError };
       throw unavailable;
     }
 

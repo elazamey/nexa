@@ -27,8 +27,11 @@ import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 const MAX_BYTES = 4 * 1024 * 1024;
 const MAX_OPS = 128;
 const HASH = /^sha256:[A-Za-z0-9_-]{43}$/;
-export const INTENT_STATES = Object.freeze(['opened', 'applying', 'restoring', 'committed', 'recovered']);
-const UNCONFIRMED = Object.freeze(['opened', 'applying', 'restoring']);
+// 'restoring' is retained only so an intent written by an older build still
+// parses; new code uses restore_pending + a child transaction (section 7sexies).
+export const INTENT_STATES = Object.freeze(['opened', 'applying', 'restoring', 'restore_pending', 'committed', 'recovered']);
+const UNCONFIRMED = Object.freeze(['opened', 'applying', 'restoring', 'restore_pending']);
+const CHILD = 'intent-restore.json';
 const hash = value => sha256Multihash(canonicalBytes(value));
 const unavailable = () => new WorkspaceCommitError(503, 'COMMIT_DURABLE_STATE_UNAVAILABLE');
 const check = condition => { if (!condition) throw unavailable(); };
@@ -98,6 +101,7 @@ function atomicWrite(directory, name, value, hooks) {
 function validate(intent) {
   check(intent && intent.version === 1 && intent.kind === 'COMMIT_INTENT');
   check(typeof intent.txId === 'string' && intent.txId.length > 0);
+  check(intent.parentTxId === undefined || (typeof intent.parentTxId === 'string' && intent.parentTxId.length > 0));
   check(INTENT_STATES.includes(intent.state));
   check(HASH.test(intent.targetRoot) && HASH.test(intent.changeSetHash)
     && HASH.test(intent.expectedBaseHash) && HASH.test(intent.authorizationRef));
@@ -118,17 +122,16 @@ function validate(intent) {
  * consults the committer's in-memory state, so it can be verified on its own
  * and later moved into a separate process.
  */
-export function inspectIntent({ directory, root, targetRoot }) {
-  const path = privateDirectory(directory, root);
+function readIntentFile(path, name, targetRoot) {
   let text;
-  try { text = readChecked(join(path, ACTIVE)); }
+  try { text = readChecked(join(path, name)); }
   catch (error) {
     if (error.code === 'ENOENT') return { present: false, unconfirmed: false, intent: null };
     throw error;
   }
   let intent;
   try { intent = validate(JSON.parse(text)); }
-  catch { // An unreadable active intent is the most dangerous state: fail closed.
+  catch { // An unreadable intent is the most dangerous state: fail closed.
     return { present: true, unconfirmed: true, unreadable: true, intent: null };
   }
   check(!targetRoot || intent.targetRoot === targetRoot);
@@ -139,6 +142,15 @@ export function inspectIntent({ directory, root, targetRoot }) {
     intent,
     appliedPaths: intent.ops.filter(op => op.applied).map(op => op.path),
   };
+}
+
+export function inspectIntent({ directory, root, targetRoot }) {
+  const path = privateDirectory(directory, root);
+  const parent = readIntentFile(path, ACTIVE, targetRoot);
+  const child = readIntentFile(path, CHILD, targetRoot);
+  // Rule 2: a child transaction, if present, is what recovery acts on. The
+  // parent is reported for diagnosis only.
+  return { ...parent, child };
 }
 
 /**
@@ -153,17 +165,53 @@ export function inspectIntent({ directory, root, targetRoot }) {
  * stays blocked for an operator. The log holds digests, never payloads, so it
  * can never roll a commit forward; it can only prove a return to base.
  */
+function digestsMatch(ops, digestOf, field) {
+  for (const op of ops) {
+    let observed;
+    try { observed = digestOf(op.path); }
+    catch (error) { return { ok: false, reason: `UNREADABLE:${op.path}:${error.code ?? error.message}` }; }
+    if (observed !== op[field]) return { ok: false, reason: `MISMATCH:${op.path}`, path: op.path, observed };
+  }
+  return { ok: true };
+}
+
 export function planRecovery(report, digestOf) {
+  const child = report.child;
+  // Rule 2: when a child restore transaction exists it is the only thing acted
+  // on; the parent is ignored entirely until the child is resolved.
+  if (child?.present) {
+    if (child.unreadable) return { action: 'block', reason: 'RESTORE_INTENT_UNREADABLE' };
+    // Rule G: the back-link must name the parent actually on disk.
+    if (!report.present || child.intent.parentTxId !== report.intent?.txId) {
+      return { action: 'block', reason: 'RESTORE_PARENT_MISSING' };
+    }
+    // Rule 6: every target must be at base (restored) or at target (not yet
+    // restored). Anything else is an unexplained state and is fail-closed.
+    const atBase = digestsMatch(child.intent.ops, digestOf, 'toDigest');
+    if (atBase.ok) return { action: 'restore_complete', txId: child.intent.txId, parentTxId: report.intent.txId };
+    const pending = child.intent.ops.filter(op => !op.applied);
+    const unexplained = digestsMatch(pending, digestOf, 'fromDigest');
+    if (!unexplained.ok && !unexplained.reason.startsWith('UNREADABLE')) {
+      const stillAtBase = digestsMatch([child.intent.ops.find(op => op.path === unexplained.path)], digestOf, 'toDigest');
+      if (!stillAtBase.ok) return { action: 'block', reason: 'CORRUPT_RESTORE_STATE' };
+    }
+    return { action: 'block', reason: 'RESTORE_INCOMPLETE' };
+  }
   if (!report.present) return { action: 'none' };
   if (report.unreadable) return { action: 'block', reason: 'INTENT_UNREADABLE' };
   if (!report.unconfirmed) return { action: 'block', reason: 'INTENT_NOT_CLOSED' };
-  if (report.appliedPaths.length) return { action: 'block', reason: 'PARTIALLY_APPLIED' };
+  // Rule 3: parent in restore_pending with NO child means the restore finished.
+  // No other inference is permitted here.
+  if (report.intent.state === 'restore_pending') {
+    return { action: 'clear', txId: report.intent.txId, reason: 'RESTORE_COMPLETED' };
+  }
+  // Rule 7: with the child transaction in place this classification is
+  // unreachable for intents written by this build.
   if (report.intent.state === 'restoring') return { action: 'block', reason: 'INTERRUPTED_RESTORE' };
-  for (const op of report.intent.ops) {
-    let observed;
-    try { observed = digestOf(op.path); }
-    catch (error) { return { action: 'block', reason: `UNREADABLE:${op.path}:${error.code ?? error.message}` }; }
-    if (observed !== op.fromDigest) return { action: 'block', reason: `BASE_MOVED:${op.path}` };
+  if (report.appliedPaths.length) return { action: 'block', reason: 'PARTIALLY_APPLIED' };
+  const base = digestsMatch(report.intent.ops, digestOf, 'fromDigest');
+  if (!base.ok) {
+    return { action: 'block', reason: base.reason.startsWith('UNREADABLE') ? base.reason : `BASE_MOVED:${base.path}` };
   }
   return { action: 'clear', txId: report.intent.txId };
 }
@@ -219,6 +267,47 @@ export function createIntentLog({ directory, root, targetRoot, hooks, digestOf }
           finally { closeSync(fd); }
           unlinkSync(join(path, ACTIVE));
           syncDirectory(path);
+        },
+        /**
+         * Rule 1/4/5: the parent moves to restore_pending BEFORE a child is
+         * opened, and a restore is never opened on a restore.
+         */
+        openRestore(ops) {
+          check(current.state === 'applying'); // rule 4
+          check(current.parentTxId === undefined); // rule 5: no restore of a restore
+          current = { ...current, state: 'restore_pending' };
+          atomicWrite(path, ACTIVE, validate(current), hooks);
+          const childIntent = validate({
+            version: 1, kind: 'COMMIT_INTENT', txId: randomUUID(), parentTxId: current.txId,
+            state: 'opened', targetRoot: current.targetRoot, workspaceId: current.workspaceId,
+            changeSetHash: current.changeSetHash, expectedBaseHash: current.expectedBaseHash,
+            authorizationRef: current.authorizationRef,
+            ops: ops.map(op => ({ ...op, applied: false })),
+            createdAt: new Date().toISOString(),
+          });
+          atomicWrite(path, CHILD, childIntent, hooks);
+          let childCurrent = childIntent;
+          return {
+            txId: childIntent.txId,
+            advance(state, appliedPath) {
+              check(INTENT_STATES.includes(state));
+              childCurrent = {
+                ...childCurrent, state,
+                ops: childCurrent.ops.map(op => (op.path === appliedPath ? { ...op, applied: true } : op)),
+              };
+              atomicWrite(path, CHILD, validate(childCurrent), hooks);
+            },
+            /** Rule 3: the child closes first, then the parent may be erased. */
+            complete() {
+              childCurrent = { ...childCurrent, state: 'committed' };
+              atomicWrite(path, CHILD, validate(childCurrent), hooks);
+              const fd = openSync(join(path, ARCHIVE), 'a', 0o600);
+              try { writeAll(fd, encode(childCurrent)); fsyncSync(fd); } finally { closeSync(fd); }
+              unlinkSync(join(path, CHILD));
+              syncDirectory(path);
+              hooks?.('child-erased', { txId: childCurrent.txId });
+            },
+          };
         },
         /** A proven rollback closes the transaction exactly like a commit does. */
         recovered() {

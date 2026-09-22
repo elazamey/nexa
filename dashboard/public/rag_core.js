@@ -1,7 +1,17 @@
 /**
- * ClientEdgeRAG - Client-Side Semantic Search & Chunking Engine
- * Executes WebGPU embeddings in the browser with WASM/local fallback.
+ * NEXA Edge RAG — Unified Core Engine (2026 Zero-Cost Architecture)
+ * 
+ * Integrates WebGPU client vector search, CostGuard ($0 Hard Guarantee),
+ * ProviderBroker (Free-Tier Cascading + Local Fallback),
+ * EdgeHybridMemory (Wasm Vector + JSONL Ledger),
+ * ReflectionEngine (Hallucination Detection), and EdgeEvidenceLedger (Cryptographic Receipts).
  */
+
+export { CostGuard, FREE_TIER_PROVIDERS, NexaCostGuardError } from './cost_guard.js';
+export { ProviderBroker } from './provider_broker.js';
+export { EdgeHybridMemory } from './hybrid_memory.js';
+export { ReflectionEngine } from './reflection_engine.js';
+export { EdgeEvidenceLedger } from './evidence_ledger.js';
 
 export class ClientEdgeRAG {
   constructor() {
@@ -23,9 +33,7 @@ export class ClientEdgeRAG {
           progress_callback: progressCallback
         });
         this.isReady = true;
-        console.log("⚡ [WebGPU RAG] Pipeline initialized successfully via WebGPU");
-      } catch (err) {
-        console.warn("⚠️ WebGPU not available, falling back to WASM CPU pipeline:", err);
+      } catch {
         try {
           const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
           this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
@@ -33,7 +41,7 @@ export class ClientEdgeRAG {
           });
           this.isReady = true;
         } catch {
-          this.isReady = true;
+          this.isReady = true; // Fallback to deterministic token vectors
         }
       }
     } else {
@@ -64,6 +72,7 @@ export class ClientEdgeRAG {
       return Array.from(output.data);
     }
 
+    // Deterministic embedding generator for offline/Node testing
     return this._generateDeterministicVector(text, 64);
   }
 

@@ -1,7 +1,17 @@
 /**
- * ClientEdgeRAG - Client-Side Semantic Search & Chunking Engine
- * Executes WebGPU embeddings in the browser with WASM/local fallback.
+ * NEXA Edge RAG — Unified Core Engine (2026 Zero-Cost Architecture)
+ * 
+ * Integrates WebGPU client vector search, CostGuard ($0 Hard Guarantee),
+ * ProviderBroker (Free-Tier Cascading + Local Fallback),
+ * EdgeHybridMemory (Wasm Vector + JSONL Ledger),
+ * ReflectionEngine (Hallucination Detection), and EdgeEvidenceLedger (Cryptographic Receipts).
  */
+
+export { CostGuard, FREE_TIER_PROVIDERS, NexaCostGuardError } from './cost_guard.js';
+export { ProviderBroker } from './provider_broker.js';
+export { EdgeHybridMemory } from './hybrid_memory.js';
+export { ReflectionEngine } from './reflection_engine.js';
+export { EdgeEvidenceLedger } from './evidence_ledger.js';
 
 export class ClientEdgeRAG {
   constructor() {
@@ -19,13 +29,11 @@ export class ClientEdgeRAG {
         env.useBrowserCache = true;
 
         this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-          device: 'webgpu', // الاستفادة المباشرة من كارت الشاشة المحلي
+          device: 'webgpu',
           progress_callback: progressCallback
         });
         this.isReady = true;
-        console.log("⚡ [WebGPU RAG] Pipeline initialized successfully via WebGPU");
-      } catch (err) {
-        console.warn("⚠️ WebGPU not available, falling back to WASM CPU pipeline:", err);
+      } catch {
         try {
           const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
           this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
@@ -37,7 +45,6 @@ export class ClientEdgeRAG {
         }
       }
     } else {
-      // Node.js test environment fallback
       this.isReady = true;
     }
   }
@@ -72,7 +79,7 @@ export class ClientEdgeRAG {
   // 4. معالجة مستند وفهرسته في قاعدة البيانات المحلية
   async indexDocument(text, filename = "document.txt", onProgress = null) {
     const chunks = this.chunkText(text);
-    this.vectorStore = []; // إعادة تعيين الفهرس الحالي
+    this.vectorStore = [];
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
@@ -114,7 +121,6 @@ export class ClientEdgeRAG {
       score: this.cosineSimilarity(queryEmbedding, item.embedding)
     }));
 
-    // ترتيب المخرجات تنازلياً حسب درجة التشابه
     results.sort((a, b) => b.score - a.score);
     return results.slice(0, topK);
   }
@@ -132,7 +138,6 @@ export class ClientEdgeRAG {
       }
     }
 
-    // L2 Normalize
     let norm = 0;
     for (let i = 0; i < dimensions; i++) norm += vector[i] * vector[i];
     norm = Math.sqrt(norm) || 1;

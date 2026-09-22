@@ -336,6 +336,56 @@ with nothing written. This is safe (no partial effect) and detectable: a
 is visible to reconciliation later. Losing a grant is strictly preferable to
 sharing one.
 
+### 8bis.2b The empty-lock hole, and why the lock uses `link()` not `O_EXCL`
+
+`O_EXCL` creates the file and the metadata is written afterwards. Between those
+two syscalls the lock exists with **no contents**. A reader at boot sees an
+empty lock file and cannot tell apart:
+
+- the holder died between `open` and `write` — abandoned, and
+- the holder is writing right now — very much alive.
+
+Classifying that as `abandoned` breaks a live lock. It is the false
+`RESTORE_COMPLETED` again: a silence (empty file) read as a negation (no
+holder). Adding a sixth state for "empty" would only give the ambiguity a name.
+
+**The lock is therefore taken with `link()`, which removes the state instead of
+handling it:**
+
+```
+1. write the complete metadata to .commit.lock.tmp.<pid>   (fsync, then)
+2. linkSync('.commit.lock.tmp.<pid>', 'commit.lock')        EEXIST = already held
+3. unlinkSync('.commit.lock.tmp.<pid>')                     always, success or not
+```
+
+`link()` is atomic on POSIX: `commit.lock` is either absent, or present and
+complete. There is no intermediate. Verified on this platform: a second
+`linkSync` onto an existing name fails `EEXIST`, and the content is whole the
+instant the name appears.
+
+**Mutation N:** replace `link()` with `open(wx)` + `write`. It must kill a test
+dedicated to "an empty lock file found at boot" — that test asserts the empty
+state is never classified `abandoned`.
+
+### 8bis.2c `ttlMs` is a parameter, and who sets it
+
+A 30-second TTL cannot be tested with a 30-second wait, and a test that sleeps
+is a test that measures the scheduler. `ttlMs` is therefore a constructor
+parameter of the lock module: 30_000 in production, 200 in tests.
+
+Declared, because a tunable timeout is an authority question:
+
+- The value is set **by the process that takes the lock**, from its own
+  configuration. It is recorded inside the lock metadata.
+- A reader uses the TTL **recorded in the lock**, not its own. Otherwise a
+  short-TTL reader could declare a long-TTL holder expired.
+- The TTL never authorises a break by itself (8bis.3). Shrinking it cannot turn
+  a live holder into an abandoned one; it can only move `held` to `contested`
+  sooner, and `contested` requires an operator.
+
+This bounds the damage of a hostile or misconfigured TTL: worst case is a root
+that needs manual clearing, never two concurrent writers.
+
 ### 8bis.3 The dead lock after SIGKILL — a five-state machine
 
 `O_EXCL` creates a file; a killed process does not remove it. The first sketch
@@ -423,13 +473,34 @@ wait. Waiting would add latency and a new failure mode with no security value.
 | K — the stale break is not atomic | 8: two processes breaking in the same instant |
 | L — `abandoned` without a full PID + startTime check | 8: PID reuse |
 | M — no recovery intent before `freeing` | 8: the recovery trace |
+| N — `link()` replaced by `open(wx)` + write | 8: empty lock file at boot |
 
 Expected NOT to kill package 8: mutation C (atomic write discipline) and
 mutation B (consume ordering) — they belong to other contracts, and forcing
 every mutation to kill every test destroys attribution.
 
+**Test order (a test cannot precede the primitive it needs):**
+
+| # | Test | Targets |
+|---|---|---|
+| 1 | acquire and release, normal path | foundation |
+| 2 | **frozen is not dead** (`SIGSTOP` + TTL expiry) | **J** |
+| 3 | basic contention, two processes, one wins | I, I2 |
+| 4 | proven dead lock (PID wholly absent) becomes `abandoned` | L |
+| 5 | two processes breaking one dead lock simultaneously | K, M |
+| 6 | empty lock file at boot is never `abandoned` | N |
+
+Test 2 comes second deliberately: building contention first invites an implicit
+"expired TTL means free", which test 2 would then demolish.
+
+**Platform note, measured:** a `SIGSTOP`-ed process on Linux keeps `/proc/<pid>`
+with `state=T` and answers `kill(pid, 0)` — so the hazard is reproducible.
+Where it is not (non-Linux, restricted PID namespace), test 2 **skips
+explicitly**; it never reports a pass it did not earn.
+
 **Acceptance rule for package 8:** mutations I, J, K and M are run BEFORE any
-green result is read. If none of them kills at least one cut point, the tests
+green result is read. **If J survives, the package stops** — a surviving J means
+the tests never touched the real lifecycle, exactly as in package 7. If none of them kills at least one cut point, the tests
 are measuring a counterfeit lock — precisely what happened in package 7, where
 the first version of test 7 passed 11/11 and survived mutation E completely.
 

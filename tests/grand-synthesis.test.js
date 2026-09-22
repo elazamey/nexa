@@ -306,18 +306,19 @@ test('Grand Synthesis: NEXA deterministic core enforces capability attenuation a
   assert.equal(escalatedDecision.code, 'NEXA_E_CAP_DENIED');
 });
 
-test('Grand Synthesis: NEXA deterministic core detects envelope tampering and signature forgery', () => {
+test('Grand Synthesis: NEXA deterministic core detects envelope tampering, signature forgery, and key substitution', () => {
   const core = new NexaDeterministicCore();
-  const caller = createIdentity({ label: 'tamper-caller' });
+  const honestCaller = createIdentity({ label: 'honest-caller' });
+  const attacker = createIdentity({ label: 'attacker-impostor' });
 
   const capability = core.mintAuthority({
-    subject: caller.kid,
+    subject: honestCaller.kid,
     resource: 'workspace_commit:global',
     actions: ['commit']
   });
 
   const envelope = buildEnvelope({
-    sender: caller,
+    sender: honestCaller,
     to: core.audience.kid,
     type: 'CALL',
     capability: capability.id,
@@ -329,7 +330,7 @@ test('Grand Synthesis: NEXA deterministic core detects envelope tampering and si
     }
   });
 
-  // Tamper with envelope payload after signing
+  // Tamper 1: Modify args after signing
   const tamperedEnvelope = {
     ...envelope,
     body: {
@@ -337,10 +338,36 @@ test('Grand Synthesis: NEXA deterministic core detects envelope tampering and si
       args: { maliciousInjectedArg: true }
     }
   };
+  const decision1 = core.evaluateAndDecide(tamperedEnvelope);
+  assert.equal(decision1.decision, 'DENY');
+  assert.equal(decision1.code, 'NEXA_E_IDENTITY_INVALID');
 
-  const decision = core.evaluateAndDecide(tamperedEnvelope);
-  assert.equal(decision.decision, 'DENY');
-  assert.equal(decision.code, 'NEXA_E_IDENTITY_INVALID');
+  // Tamper 2: Key substitution attack (Attacker signs honest envelope but swaps signature to their own key)
+  const keySubstitutedEnvelope = {
+    ...envelope,
+    sig: {
+      alg: 'ed25519',
+      kid: attacker.kid, // Attacker's key
+      val: attacker.keys.sign(Buffer.from('forged_payload'))
+    }
+  };
+  const decision2 = core.evaluateAndDecide(keySubstitutedEnvelope);
+  assert.equal(decision2.decision, 'DENY');
+  assert.equal(decision2.code, 'NEXA_E_IDENTITY_INVALID');
+
+  // Tamper 3: Sender claims honest identity but signature signed by attacker key
+  const forgedSenderEnvelope = {
+    ...envelope,
+    from: honestCaller.kid,
+    sig: {
+      alg: 'ed25519',
+      kid: honestCaller.kid, // Claims honest key ID
+      val: attacker.keys.sign(Buffer.from('forged_payload')) // Signed with attacker private key
+    }
+  };
+  const decision3 = core.evaluateAndDecide(forgedSenderEnvelope);
+  assert.equal(decision3.decision, 'DENY');
+  assert.equal(decision3.code, 'NEXA_E_IDENTITY_INVALID');
 });
 
 test('Grand Synthesis: NEXA deterministic core rejects replay attacks', () => {
@@ -449,7 +476,7 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   const latestRollup = fabric.getLatestRollup();
   assert.equal(latestRollup.batchSize, 4);
 
-  // Generate and verify Merkle inclusion proof for leaf 1
+  // 1. Generate and verify valid Merkle inclusion proof for leaf 1
   const inclusionProof1 = fabric.generateInclusionProof(1);
   assert.equal(inclusionProof1.leafHash, b1.leafHash);
   
@@ -460,7 +487,18 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   );
   assert.equal(isValidProof, true, 'Valid Merkle inclusion proof must verify against root hash');
 
-  // Byzantine peer test 1: tampered leaf hash must be rejected
+  // 2. Negative Merkle test: tampered sibling hash in path must return false
+  const tamperedPath = inclusionProof1.path.map((step, idx) => {
+    return idx === 0 ? { ...step, hash: 'sha256:TAMPERED_SIBLING_00000000000000000000000' } : step;
+  });
+  const isTamperedPathValid = ZeroCostDistributedFabric.verifyInclusionProof(
+    inclusionProof1.leafHash,
+    tamperedPath,
+    latestRollup.rootHash
+  );
+  assert.equal(isTamperedPathValid, false, 'Tampered Merkle inclusion path must strictly fail verification');
+
+  // 3. Byzantine peer test 1: tampered leaf hash must be rejected
   const byzantineTamperedProof = {
     id: 'byzantine_01',
     leafHash: 'sha256:FORGED_HASH_VAL_0000000000000000000000000',
@@ -477,7 +515,7 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   assert.equal(byzantineIngest.accepted, false);
   assert.equal(byzantineIngest.reason, 'TAMPERED_LEAF_HASH_DETECTED');
 
-  // Byzantine peer test 2: unauthenticated peer node must be rejected
+  // 4. Byzantine peer test 2: unauthenticated peer node must be rejected
   const unauthenticatedPeerProof = {
     ...byzantineTamperedProof,
     broadcastBy: 'peer:unregistered:hacker'
@@ -486,7 +524,7 @@ test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rej
   assert.equal(unauthIngest.accepted, false);
   assert.equal(unauthIngest.reason, 'UNAUTHENTICATED_PEER_NODE');
 
-  // Byzantine peer test 3: Ed25519 signature forgery detection
+  // 5. Byzantine peer test 3: Ed25519 signature forgery detection
   const peerIdentity = createIdentity({ label: 'honest-peer' });
   fabric.registerPeer(peerIdentity.kid);
 
@@ -601,7 +639,7 @@ test('Grand Synthesis: Rejection when all hypotheses violate constitutional safe
   assert.equal(result.code, 'E_CONSTITUTIONAL_VIOLATION');
 });
 
-test('Grand Synthesis: S9 protocol surface invariant verification (Zero Ambient IO & Pure Logic)', async () => {
+test('Grand Synthesis: S9 protocol surface invariant verification (Zero Ambient IO, AST & Token Scanner)', async () => {
   const { readFileSync, readdirSync, statSync } = await import('node:fs');
   const { join, dirname } = await import('node:path');
   const { fileURLToPath } = await import('node:url');
@@ -612,15 +650,29 @@ test('Grand Synthesis: S9 protocol surface invariant verification (Zero Ambient 
     return statSync(path).isDirectory() ? walk(path) : [path];
   });
 
-  const forbidden = [
+  const forbiddenStaticImports = [
     /from\s+['"]node:child_process['"]/,
     /from\s+['"]node:fs['"]/,
     /from\s+['"]node:fs\/promises['"]/,
     /from\s+['"]node:net['"]/,
     /from\s+['"]node:http['"]/,
     /from\s+['"]node:dgram['"]/,
+    /from\s+['"]child_process['"]/,
+    /from\s+['"]fs['"]/,
+    /from\s+['"]net['"]/,
+    /from\s+['"]http['"]/,
     /\b(eval|Function)\s*\(/,
     /process\.binding/,
+  ];
+
+  // Deep token / dynamic import patterns (preventing evasion via dynamic import or require)
+  const forbiddenDynamicPatterns = [
+    /\bimport\s*\(\s*['"`]node:/,
+    /\bimport\s*\(\s*['"`]fs/,
+    /\bimport\s*\(\s*['"`]child_process/,
+    /\brequire\s*\(/,
+    /\bprocess\.binding\s*\(/,
+    /\bprocess\.dlopen\s*\(/,
   ];
 
   const files = walk(root).filter((file) => file.endsWith('.js') || file.endsWith('.mjs'));
@@ -628,8 +680,11 @@ test('Grand Synthesis: S9 protocol surface invariant verification (Zero Ambient 
 
   for (const file of files) {
     const source = readFileSync(file, 'utf8');
-    for (const pattern of forbidden) {
-      assert.equal(pattern.test(source), false, `${file} violates S9 invariant: matches ${pattern}`);
+    for (const pattern of forbiddenStaticImports) {
+      assert.equal(pattern.test(source), false, `${file} violates S9 static invariant: matches ${pattern}`);
+    }
+    for (const pattern of forbiddenDynamicPatterns) {
+      assert.equal(pattern.test(source), false, `${file} violates S9 dynamic/obfuscation invariant: matches ${pattern}`);
     }
   }
 });

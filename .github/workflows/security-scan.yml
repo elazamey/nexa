@@ -1,0 +1,51 @@
+name: "NEXA Invariants & Security Guard"
+
+on:
+  push:
+    branches: [ "main", "arena/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  invariants-check:
+    name: Verify Invariants & Restricted Code
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+
+    - name: Run Security Invariants Test Suite
+      run: |
+        echo "🔍 Running S1-S9c Security Invariants Suite..."
+        node --test tests/security.test.js
+        node --test tests/grand-synthesis.test.js
+
+    - name: Check for Unsafe Dynamic Execution (S9 Enforcement)
+      run: |
+        echo "🔍 Checking for unsafe dynamic execution calls (eval, Function constructor) in protocol packages..."
+        IF_FOUND=$(grep -rn --include="*.js" --include="*.mjs" -E "\beval\(|\bnew Function\(" packages/ || true)
+        if [ -n "$IF_FOUND" ]; then
+          echo "❌ Critical Security Error: Forbidden dynamic code execution detected in packages/!"
+          echo "$IF_FOUND"
+          exit 1
+        else
+          echo "✅ S9 Invariant Check Passed: Zero unsafe dynamic execution found in packages/."
+        fi
+
+    - name: Scan for Exposed Secret Patterns
+      run: |
+        echo "🔍 Scanning repository for accidental private keys or secret exposures..."
+        KEY_FOUND=$(grep -rn --include="*.js" --include="*.mjs" --include="*.json" -E "BEGIN (PRIVATE|RSA|EC) KEY|nexa:key:priv:" packages/ tools/ || true)
+        if [ -n "$KEY_FOUND" ]; then
+          echo "❌ Security Alert: Private Key pattern detected in files!"
+          echo "$KEY_FOUND"
+          exit 1
+        else
+          echo "✅ Secret Exposure Scan Passed: Zero private key material exposed."
+        fi

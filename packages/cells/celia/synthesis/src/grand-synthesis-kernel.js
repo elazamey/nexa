@@ -80,11 +80,26 @@ export class GrandSynthesisKernel {
     // Phase 1: OpenAI Frontier Reasoning (Tree-of-Thoughts Exploration)
     // ─────────────────────────────────────────────────────────────────────────
     logTrace('PHASE_1_OPENAI', 'Generating multi-branch hypothesis tree via OpenAI Frontier Reasoning');
-    const reasoningResult = this.openaiReasoning.generateHypotheses(task);
-    logTrace('PHASE_1_OPENAI', `Generated ${reasoningResult.hypothesesCount} reasoning branches`, {
-      intent: reasoningResult.intent,
-      branches: reasoningResult.hypotheses.map(h => h.strategy)
-    });
+    let reasoningResult;
+    try {
+      reasoningResult = this.openaiReasoning.generateHypotheses(task);
+      logTrace('PHASE_1_OPENAI', `Generated ${reasoningResult.hypothesesCount} reasoning branches`, {
+        intent: reasoningResult.intent,
+        branches: reasoningResult.hypotheses.map(h => h.strategy)
+      });
+    } catch (err) {
+      const failResult = {
+        success: false,
+        taskId: task.id,
+        stage: 'OPENAI_REASONING_FAULT',
+        code: 'E_REASONING_UNAVAILABLE',
+        reason: `Reasoning generation failed: ${err.message}`,
+        trace,
+        durationMs: Date.now() - startTime
+      };
+      this.executionHistory.push(failResult);
+      return failResult;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Phase 2: Anthropic Constitutional AI (Safety Audit & Attenuation)
@@ -104,7 +119,9 @@ export class GrandSynthesisKernel {
         success: false,
         taskId: task.id,
         stage: 'ANTHROPIC_CONSTITUTIONAL_REJECTION',
+        code: 'E_CONSTITUTIONAL_VIOLATION',
         reason: 'All proposed hypotheses violated constitutional safety invariants',
+        auditReport: auditResult,
         trace,
         durationMs: Date.now() - startTime
       };
@@ -116,15 +133,30 @@ export class GrandSynthesisKernel {
     // Phase 3: Manus Autonomous Micro-Sandbox Swarm (Parallel CoW Trials)
     // ─────────────────────────────────────────────────────────────────────────
     logTrace('PHASE_3_MANUS', 'Spawning micro-sandboxes for parallel hypothesis trials');
-    const sandboxResult = await this.manusSandbox.runTrialSwarm(auditResult.compliantHypotheses, {
-      baseState: task.context || {},
-      evaluator: options.sandboxEvaluator
-    });
+    let sandboxResult;
+    try {
+      sandboxResult = await this.manusSandbox.runTrialSwarm(auditResult.compliantHypotheses, {
+        baseState: task.context || {},
+        evaluator: options.sandboxEvaluator
+      });
 
-    logTrace('PHASE_3_MANUS', `Swarm trials completed: ${sandboxResult.successfulTrials}/${sandboxResult.totalTrials} succeeded`, {
-      winningStrategy: sandboxResult.winningTrial?.strategy,
-      winningSandbox: sandboxResult.winningTrial?.sandboxId
-    });
+      logTrace('PHASE_3_MANUS', `Swarm trials completed: ${sandboxResult.successfulTrials}/${sandboxResult.totalTrials} succeeded`, {
+        winningStrategy: sandboxResult.winningTrial?.strategy,
+        winningSandbox: sandboxResult.winningTrial?.sandboxId
+      });
+    } catch (err) {
+      const failResult = {
+        success: false,
+        taskId: task.id,
+        stage: 'MANUS_SANDBOX_FAILURE',
+        code: 'E_SANDBOX_FAULT',
+        reason: `Sandbox execution threw unexpected error: ${err.message}`,
+        trace,
+        durationMs: Date.now() - startTime
+      };
+      this.executionHistory.push(failResult);
+      return failResult;
+    }
 
     const winningTrial = sandboxResult.winningTrial;
     if (!winningTrial || !winningTrial.success) {
@@ -132,7 +164,9 @@ export class GrandSynthesisKernel {
         success: false,
         taskId: task.id,
         stage: 'MANUS_SANDBOX_FAILURE',
+        code: 'E_SANDBOX_REGRESSION',
         reason: 'None of the candidate hypotheses passed empirical sandbox testing',
+        sandboxReport: sandboxResult,
         trace,
         durationMs: Date.now() - startTime
       };
@@ -176,7 +210,7 @@ export class GrandSynthesisKernel {
     // Authoritative deterministic evaluation
     const decisionResult = this.nexaCore.evaluateAndDecide(envelope);
     logTrace('PHASE_4_NEXA_CORE', `NEXA Core Decision: ${decisionResult.decision} (${decisionResult.code})`, {
-      receiptSigner: decisionResult.receipt?.signer,
+      receiptSigner: decisionResult.receipt?.actor,
       recordHash: decisionResult.recordHash
     });
 
@@ -185,6 +219,7 @@ export class GrandSynthesisKernel {
         success: false,
         taskId: task.id,
         stage: 'NEXA_DETERMINISTIC_DENIAL',
+        code: decisionResult.code,
         reason: `NEXA Core denied commit: ${decisionResult.reason}`,
         decisionResult,
         trace,
@@ -249,9 +284,10 @@ export class GrandSynthesisKernel {
         },
         zeroCostFabric: {
           proofId: fabricResult.proofId,
+          leafIndex: fabricResult.leafIndex,
           rollupRoot: fabricResult.rollupRoot,
           peerConfirmations: fabricResult.peerConfirmations,
-          financialCostUSD: '$0.00',
+          financialCostUSD: fabricResult.financialCostUSD,
           energyMicroJoules: fabricResult.energyCostMicroJoules,
           durationMs: fabricResult.durationMs
         }

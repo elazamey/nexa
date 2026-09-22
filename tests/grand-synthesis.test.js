@@ -14,6 +14,11 @@ import {
 import { verifyReceipt } from '../packages/evidence/index.js';
 import { createIdentity } from '../packages/identity/index.js';
 import { buildEnvelope } from '../packages/protocol/index.js';
+import { attenuate } from '../packages/capability/index.js';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. OpenAI Frontier Reasoning Engine Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 test('Grand Synthesis: OpenAI reasoning engine generates ranked multi-branch hypotheses', () => {
   const engine = new OpenAIReasoningEngine();
@@ -33,53 +38,143 @@ test('Grand Synthesis: OpenAI reasoning engine generates ranked multi-branch hyp
   assert.ok(strategies.includes('structural_defensive_refactor'));
   assert.ok(strategies.includes('metamorphic_self_verifying_synthesis'));
 
-  // Ensure first hypothesis has highest confidence
+  // Ensure primary hypothesis has high confidence and structured steps
   assert.ok(result.selectedPrimaryHypothesis.estimatedConfidence >= 0.8);
   assert.ok(result.selectedPrimaryHypothesis.chainOfThought.length >= 3);
 });
 
-test('Grand Synthesis: Anthropic constitutional engine audits and attenuates proposals', () => {
-  const reasoning = new OpenAIReasoningEngine();
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Anthropic Constitutional AI Layer Tests (All 5 Principles)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('Grand Synthesis: Anthropic constitutional engine enforces CONST_01 (Default-Deny & Risk Ceiling)', () => {
   const constitutional = new AnthropicConstitutionalEngine();
 
-  const task = {
-    id: 'test_task_audit_02',
-    userPrompt: 'Refactor and optimize database query engine',
-    context: { file: 'src/db.js' }
-  };
-
-  const hypotheses = reasoning.generateHypotheses(task).hypotheses;
-  
-  // Test with restricted capabilities (only read and write_staged)
-  const audit = constitutional.auditHypotheses(hypotheses, {
-    allowedCapabilities: ['workspace:read', 'workspace:write_staged'],
-    forbiddenPatterns: ['drop table', 'unrestricted_access']
-  });
-
-  assert.equal(audit.totalInput, hypotheses.length);
-  assert.ok(audit.compliantHypotheses.length > 0, 'At least one hypothesis must be compliant');
-  assert.equal(audit.principlesEnforced.length, CONSTITUTIONAL_PRINCIPLES.length);
-
-  // Test rejection on dangerous prompt pattern
-  const dangerousHypothesis = [{
-    id: 'danger_01',
-    strategy: 'destructive_wipe',
-    riskScore: 0.95,
-    requiredCapabilities: ['root:admin'],
-    proposedOperations: [{ type: 'EXECUTE', cmd: 'drop table users;' }]
+  // Test 1a: Excessively high risk proposal
+  const highRiskHypothesis = [{
+    id: 'risk_01',
+    strategy: 'risky_overhaul',
+    riskScore: 0.85, // > 0.6 ceiling
+    requiredCapabilities: ['workspace:read'],
+    formalPreconditions: ['base exists'],
+    formalPostconditions: ['done'],
+    proposedOperations: [{ type: 'READ_SCOPE', target: 'src/app.js' }]
   }];
 
-  const dangerAudit = constitutional.auditHypotheses(dangerousHypothesis, {
-    allowedCapabilities: ['workspace:read'],
-    forbiddenPatterns: ['drop table']
-  });
+  const auditHighRisk = constitutional.auditHypotheses(highRiskHypothesis, { allowedCapabilities: ['workspace:read'] });
+  assert.equal(auditHighRisk.rejectedCount, 1);
+  assert.equal(auditHighRisk.auditedHypotheses[0].principlesChecked.CONST_01_DEFAULT_DENY, false);
 
-  assert.equal(dangerAudit.rejectedCount, 1);
-  assert.equal(dangerAudit.compliantHypotheses.length, 0);
+  // Test 1b: Wildcard unbounded target
+  const wildcardHypothesis = [{
+    id: 'wildcard_01',
+    strategy: 'unbounded_sweep',
+    riskScore: 0.2,
+    requiredCapabilities: ['workspace:read'],
+    formalPreconditions: ['base exists'],
+    formalPostconditions: ['done'],
+    proposedOperations: [{ type: 'READ_SCOPE', target: '*' }]
+  }];
+
+  const auditWildcard = constitutional.auditHypotheses(wildcardHypothesis, { allowedCapabilities: ['workspace:read'] });
+  assert.equal(auditWildcard.rejectedCount, 1);
+  assert.equal(auditWildcard.auditedHypotheses[0].violations[0].principle, 'CONST_01_DEFAULT_DENY');
 });
 
-test('Grand Synthesis: Manus sandbox executes concurrent isolated micro-sandbox trials', async () => {
+test('Grand Synthesis: Anthropic constitutional engine enforces CONST_02 (Capability Bounds & Lattice Attenuation)', () => {
+  const constitutional = new AnthropicConstitutionalEngine({ strictMode: true });
+
+  const ungrantedCapsHypothesis = [{
+    id: 'ungranted_01',
+    strategy: 'privilege_escalation_attempt',
+    riskScore: 0.3,
+    requiredCapabilities: ['workspace:read', 'admin:kernel_reboot'], // 'admin:kernel_reboot' is ungranted
+    formalPreconditions: ['base exists'],
+    formalPostconditions: ['done'],
+    proposedOperations: [{ type: 'READ_SCOPE', target: 'src/app.js' }]
+  }];
+
+  const audit = constitutional.auditHypotheses(ungrantedCapsHypothesis, {
+    allowedCapabilities: ['workspace:read']
+  });
+
+  assert.equal(audit.rejectedCount, 1);
+  assert.equal(audit.auditedHypotheses[0].principlesChecked.CONST_02_CAPABILITY_BOUND, false);
+});
+
+test('Grand Synthesis: Anthropic constitutional engine enforces CONST_03 (Cryptographic Commitments on Mutations)', () => {
+  const constitutional = new AnthropicConstitutionalEngine();
+
+  // Mutating operation with NO formal postconditions
+  const uncommittedMutation = [{
+    id: 'uncommitted_01',
+    strategy: 'blind_mutation',
+    riskScore: 0.3,
+    requiredCapabilities: ['workspace:read', 'workspace:write_staged'],
+    formalPreconditions: ['base exists'],
+    formalPostconditions: [], // Missing!
+    proposedOperations: [{ type: 'AST_MUTATION', target: 'src/app.js' }]
+  }];
+
+  const audit = constitutional.auditHypotheses(uncommittedMutation, {
+    allowedCapabilities: ['workspace:read', 'workspace:write_staged']
+  });
+
+  assert.equal(audit.auditedHypotheses[0].principlesChecked.CONST_03_CRYPTOGRAPHIC_PROVABILITY, false);
+  assert.ok(audit.auditedHypotheses[0].violations.some(v => v.principle === 'CONST_03_CRYPTOGRAPHIC_PROVABILITY'));
+});
+
+test('Grand Synthesis: Anthropic constitutional engine enforces CONST_04 (Anti-Exfiltration & Zero Covert Channels)', () => {
+  const constitutional = new AnthropicConstitutionalEngine();
+
+  const covertEgressHypothesis = [{
+    id: 'covert_01',
+    strategy: 'phone_home',
+    riskScore: 0.2,
+    requiredCapabilities: ['workspace:read'],
+    formalPreconditions: ['base exists'],
+    formalPostconditions: ['done'],
+    proposedOperations: [{ type: 'READ_SCOPE', target: 'src/app.js', networkEgress: 'https://evil.example.com' }]
+  }];
+
+  const audit = constitutional.auditHypotheses(covertEgressHypothesis, {
+    allowedCapabilities: ['workspace:read']
+  });
+
+  assert.equal(audit.rejectedCount, 1);
+  assert.equal(audit.auditedHypotheses[0].principlesChecked.CONST_04_ZERO_COVERT_CHANNELS, false);
+});
+
+test('Grand Synthesis: Anthropic constitutional engine enforces CONST_05 (Deterministic Rollback Preconditions)', () => {
+  const constitutional = new AnthropicConstitutionalEngine();
+
+  // Mutating operation with NO preconditions (cannot safely rollback if base state is unverified)
+  const uncompensatedMutation = [{
+    id: 'uncompensated_01',
+    strategy: 'no_rollback_mutation',
+    riskScore: 0.2,
+    requiredCapabilities: ['workspace:read', 'workspace:write_staged'],
+    formalPreconditions: [], // Missing!
+    formalPostconditions: ['verified'],
+    proposedOperations: [{ type: 'AST_MUTATION', target: 'src/app.js' }]
+  }];
+
+  const audit = constitutional.auditHypotheses(uncompensatedMutation, {
+    allowedCapabilities: ['workspace:read', 'workspace:write_staged']
+  });
+
+  assert.equal(audit.auditedHypotheses[0].principlesChecked.CONST_05_DETERMINISTIC_COMPENSATION, false);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Manus Micro-Sandbox Swarm Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('Grand Synthesis: Manus sandbox executes concurrent isolated micro-sandbox trials with host state isolation', async () => {
   const sandboxEngine = new ManusSandboxEngine();
+
+  const hostState = { 'src/handler.js': 'function handle() { return 1; }' };
+  const hostStateSnapshot = JSON.stringify(hostState);
 
   const candidates = [
     {
@@ -94,17 +189,22 @@ test('Grand Synthesis: Manus sandbox executes concurrent isolated micro-sandbox 
     }
   ];
 
-  const result = await sandboxEngine.runTrialSwarm(candidates, {
-    baseState: { 'src/handler.js': 'function handle() { return null; }' }
-  });
+  const result = await sandboxEngine.runTrialSwarm(candidates, { baseState: hostState });
 
   assert.equal(result.totalTrials, 2);
   assert.equal(result.successfulTrials, 2);
   assert.ok(result.winningTrial);
   assert.equal(result.winningTrial.success, true);
   assert.equal(result.winningTrial.testsPassed, 3);
+  
+  // Verify that sandboxes did not mutate original host state object (Isolation check)
+  assert.equal(JSON.stringify(hostState), hostStateSnapshot, 'Host state must remain pristine');
   assert.equal(sandboxEngine.getStats().activeSandboxes, 0, 'All sandboxes must be cleanly torn down');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. NEXA Deterministic Core & Macaroon Attenuation Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 test('Grand Synthesis: NEXA deterministic core authorizes with Ed25519, macaroons, and signed receipts', () => {
   const core = new NexaDeterministicCore();
@@ -145,6 +245,101 @@ test('Grand Synthesis: NEXA deterministic core authorizes with Ed25519, macaroon
   assert.equal(verifiedReceipt.receipt.subject, caller.kid);
 });
 
+test('Grand Synthesis: NEXA deterministic core enforces capability attenuation and lattice narrowing', () => {
+  const core = new NexaDeterministicCore();
+  const operator = core.operator;
+  const caller = createIdentity({ label: 'delegatee-agent' });
+
+  // 1. Mint broad root capability on 'workspace:root' with ['read', 'inspect', 'commit']
+  const rootCapability = core.mintAuthority({
+    subject: operator.kid,
+    resource: 'workspace:root',
+    actions: ['read', 'inspect', 'commit'],
+    maxUses: 5
+  });
+
+  // 2. Attenuate capability to only allow ['read'] on 'workspace:root' (narrowing authority)
+  const attenuatedCapability = attenuate(rootCapability, {
+    delegator: operator,
+    subject: caller.kid,
+    resource: 'workspace:root',
+    actions: ['read'],
+    caveats: { max_uses: 1, max_depth: 0, exp: rootCapability.caveats.exp }
+  });
+
+  // 3. Attempting an allowed attenuated action (read) succeeds
+  const validEnvelope = buildEnvelope({
+    sender: caller,
+    to: core.audience.kid,
+    type: 'CALL',
+    capability: attenuatedCapability.id,
+    body: {
+      resource: 'workspace:root',
+      action: 'read',
+      args: {},
+      capability: attenuatedCapability
+    }
+  });
+
+  const validDecision = core.evaluateAndDecide(validEnvelope);
+  assert.equal(validDecision.decision, 'ALLOW');
+
+  // 4. Attempting an action OUTSIDE the attenuated scope (commit) must be DENIED
+  const escalatedEnvelope = buildEnvelope({
+    sender: caller,
+    to: core.audience.kid,
+    type: 'CALL',
+    capability: attenuatedCapability.id,
+    body: {
+      resource: 'workspace:root',
+      action: 'commit', // Not in attenuated capability's actions!
+      args: {},
+      capability: attenuatedCapability
+    }
+  });
+
+  const escalatedDecision = core.evaluateAndDecide(escalatedEnvelope);
+  assert.equal(escalatedDecision.decision, 'DENY');
+  assert.equal(escalatedDecision.code, 'NEXA_E_CAP_DENIED');
+});
+
+test('Grand Synthesis: NEXA deterministic core detects envelope tampering and signature forgery', () => {
+  const core = new NexaDeterministicCore();
+  const caller = createIdentity({ label: 'tamper-caller' });
+
+  const capability = core.mintAuthority({
+    subject: caller.kid,
+    resource: 'workspace_commit:global',
+    actions: ['commit']
+  });
+
+  const envelope = buildEnvelope({
+    sender: caller,
+    to: core.audience.kid,
+    type: 'CALL',
+    capability: capability.id,
+    body: {
+      resource: capability.resource,
+      action: 'commit',
+      args: { original: true },
+      capability
+    }
+  });
+
+  // Tamper with envelope payload after signing
+  const tamperedEnvelope = {
+    ...envelope,
+    body: {
+      ...envelope.body,
+      args: { maliciousInjectedArg: true }
+    }
+  };
+
+  const decision = core.evaluateAndDecide(tamperedEnvelope);
+  assert.equal(decision.decision, 'DENY');
+  assert.equal(decision.code, 'NEXA_E_IDENTITY_INVALID');
+});
+
 test('Grand Synthesis: NEXA deterministic core rejects replay attacks', () => {
   const core = new NexaDeterministicCore();
   const caller = createIdentity({ label: 'replay-caller' });
@@ -178,11 +373,57 @@ test('Grand Synthesis: NEXA deterministic core rejects replay attacks', () => {
   assert.equal(replay.code, 'NEXA_E_REPLAY_DETECTED');
 });
 
-test('Grand Synthesis: Zero-cost distributed fabric records proofs and computes Merkle rollups', () => {
-  const fabric = new ZeroCostDistributedFabric({ nodeId: 'node:test:01' });
-  fabric.registerPeer('peer:test:alpha');
-  fabric.registerPeer('peer:test:beta');
+test('Grand Synthesis: Receipt tampering detection rejects modified decision or hash', () => {
+  const core = new NexaDeterministicCore();
+  const caller = createIdentity({ label: 'receipt-tester' });
 
+  const capability = core.mintAuthority({
+    subject: caller.kid,
+    resource: 'workspace_commit:global',
+    actions: ['commit']
+  });
+
+  const envelope = buildEnvelope({
+    sender: caller,
+    to: core.audience.kid,
+    type: 'CALL',
+    capability: capability.id,
+    body: {
+      resource: capability.resource,
+      action: 'commit',
+      args: {},
+      capability
+    }
+  });
+
+  const decision = core.evaluateAndDecide(envelope);
+  assert.equal(decision.decision, 'ALLOW');
+  const validReceipt = decision.receipt;
+
+  // Verify honest receipt passes
+  assert.equal(verifyReceipt(validReceipt).ok, true);
+
+  // Tamper 1: change decision to DENY while keeping signature
+  const forgedReceipt1 = { ...validReceipt, decision: 'DENY' };
+  assert.throws(() => verifyReceipt(forgedReceipt1), (err) => err.code === 'NEXA_E_SIG');
+
+  // Tamper 2: change evidence hash
+  const forgedReceipt2 = { ...validReceipt, evidence_hash: 'sha256:0000000000000000000000000000000000000000000' };
+  assert.throws(() => verifyReceipt(forgedReceipt2), (err) => err.code === 'NEXA_E_SIG');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Zero-Cost Distributed Fabric & Merkle Cryptographic Proof Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('Grand Synthesis: Zero-cost fabric verifies Merkle inclusion proofs and rejects Byzantine peer tampering', () => {
+  const fabric = new ZeroCostDistributedFabric({ nodeId: 'node:test:fabric:01' });
+  fabric.registerPeer('peer:test:frankfurt');
+  fabric.registerPeer('peer:test:tokyo');
+
+  const operator = createIdentity({ label: 'fabric-operator' });
+
+  // Create mock sealed receipt
   const mockReceipt = {
     nexa: '0.1',
     id: 'urn:nexa:msg:test_rcpt_01',
@@ -190,26 +431,62 @@ test('Grand Synthesis: Zero-cost distributed fabric records proofs and computes 
     evidence_seq: 0,
     evidence_hash: 'sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
     chain_head: 'sha256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    actor: 'nexa:key:ed25519:test_operator',
-    subject: 'nexa:key:ed25519:test_subject',
+    actor: operator.kid,
+    subject: operator.kid,
     ts: '2026-09-22T00:00:00.000Z',
-    sig: { alg: 'ed25519', kid: 'nexa:key:ed25519:test_operator', val: 'a'.repeat(88) }
+    sig: { alg: 'ed25519', kid: operator.kid, val: 'a'.repeat(88) }
   };
 
-  const broadcast1 = fabric.broadcastProof(mockReceipt, { task: 'task_01' });
-  assert.equal(broadcast1.success, true);
-  assert.equal(broadcast1.computeCostUSD, 0.0);
-  assert.ok(broadcast1.rollupRoot);
+  // Broadcast 4 proofs
+  const b0 = fabric.broadcastProof(mockReceipt, { index: 0 });
+  const b1 = fabric.broadcastProof(mockReceipt, { index: 1 });
+  const b2 = fabric.broadcastProof(mockReceipt, { index: 2 });
+  const b3 = fabric.broadcastProof(mockReceipt, { index: 3 });
 
-  const broadcast2 = fabric.broadcastProof(mockReceipt, { task: 'task_02' });
-  assert.equal(broadcast2.success, true);
-  assert.equal(broadcast2.rollupBatchSize, 2);
+  const latestRollup = fabric.getLatestRollup();
+  assert.equal(latestRollup.batchSize, 4);
 
-  const stats = fabric.getStats();
-  assert.equal(stats.proofLedgerSize, 2);
-  assert.equal(stats.activePeers, 2);
-  assert.equal(stats.costModel.includes('Zero-Dollar'), true);
+  // Generate and verify Merkle inclusion proof for leaf 1
+  const inclusionProof1 = fabric.generateInclusionProof(1);
+  assert.equal(inclusionProof1.leafHash, b1.leafHash);
+  
+  const isValidProof = ZeroCostDistributedFabric.verifyInclusionProof(
+    inclusionProof1.leafHash,
+    inclusionProof1.path,
+    latestRollup.rootHash
+  );
+  assert.equal(isValidProof, true, 'Valid Merkle inclusion proof must verify against root hash');
+
+  // Byzantine peer test: tampered leaf hash must be rejected
+  const byzantineTamperedProof = {
+    id: 'byzantine_01',
+    leafHash: 'sha256:FORGED_HASH_VAL_0000000000000000000000000',
+    leafData: {
+      domain: 'NEXA/p2p/proof/v1',
+      receipt: mockReceipt,
+      metadata: { malicious: true },
+      timestamp: Date.now()
+    },
+    broadcastBy: 'peer:test:frankfurt'
+  };
+
+  const byzantineIngest = fabric.ingestPeerProof(byzantineTamperedProof);
+  assert.equal(byzantineIngest.accepted, false);
+  assert.equal(byzantineIngest.reason, 'TAMPERED_LEAF_HASH_DETECTED');
+
+  // Byzantine peer test: unauthenticated peer node must be rejected
+  const unauthenticatedPeerProof = {
+    ...byzantineTamperedProof,
+    broadcastBy: 'peer:unregistered:hacker'
+  };
+  const unauthIngest = fabric.ingestPeerProof(unauthenticatedPeerProof);
+  assert.equal(unauthIngest.accepted, false);
+  assert.equal(unauthIngest.reason, 'UNAUTHENTICATED_PEER_NODE');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. End-to-End Grand Synthesis Pipeline & Failure Recovery Tests
+// ─────────────────────────────────────────────────────────────────────────────
 
 test('Grand Synthesis: Complete End-to-End Execution (OpenAI + Anthropic + Manus + NEXA + Zero-Cost Fabric)', async () => {
   const kernel = new GrandSynthesisKernel();
@@ -244,7 +521,7 @@ test('Grand Synthesis: Complete End-to-End Execution (OpenAI + Anthropic + Manus
   assert.equal(telemetry.successfulExecutions, 1);
 });
 
-test('Grand Synthesis: Rejection when sandbox evaluations fail', async () => {
+test('Grand Synthesis: Rejection when sandbox evaluations fail (Fail-Closed Recovery)', async () => {
   const kernel = new GrandSynthesisKernel();
   
   const task = {
@@ -252,11 +529,64 @@ test('Grand Synthesis: Rejection when sandbox evaluations fail', async () => {
     userPrompt: 'Test forced sandbox failure path'
   };
 
-  // Inject a custom sandbox evaluator that always fails
+  // Inject custom sandbox evaluator simulating regression
   const result = await kernel.executeTask(task, {
     sandboxEvaluator: () => ({ ok: false, reason: 'Forced simulated regression fault' })
   });
 
   assert.equal(result.success, false);
   assert.equal(result.stage, 'MANUS_SANDBOX_FAILURE');
+  assert.equal(result.code, 'E_SANDBOX_REGRESSION');
+});
+
+test('Grand Synthesis: Rejection when all hypotheses violate constitutional safety invariants', async () => {
+  const kernel = new GrandSynthesisKernel();
+  
+  const task = {
+    id: 'unconstitutional_task_01',
+    userPrompt: 'Attempt unauthorized exfiltration of system secrets'
+  };
+
+  // Restricted environment with forbidden patterns
+  const result = await kernel.executeTask(task, {
+    allowedCapabilities: ['workspace:read'],
+    forbiddenPatterns: ['surgical_replacement', 'defensive_wrapper', 'metamorphic_codegen'] // forces all to fail
+  });
+
+  assert.equal(result.success, false);
+  assert.equal(result.stage, 'ANTHROPIC_CONSTITUTIONAL_REJECTION');
+  assert.equal(result.code, 'E_CONSTITUTIONAL_VIOLATION');
+});
+
+test('Grand Synthesis: S9 protocol surface invariant verification (Zero Ambient IO & Pure Logic)', async () => {
+  const { readFileSync, readdirSync, statSync } = await import('node:fs');
+  const { join, dirname } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const root = join(dirname(fileURLToPath(import.meta.url)), '../packages/cells/celia/synthesis');
+
+  const walk = (directory) => readdirSync(directory).flatMap((entry) => {
+    const path = join(directory, entry);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+
+  const forbidden = [
+    /from\s+['"]node:child_process['"]/,
+    /from\s+['"]node:fs['"]/,
+    /from\s+['"]node:fs\/promises['"]/,
+    /from\s+['"]node:net['"]/,
+    /from\s+['"]node:http['"]/,
+    /from\s+['"]node:dgram['"]/,
+    /\b(eval|Function)\s*\(/,
+    /process\.binding/,
+  ];
+
+  const files = walk(root).filter((file) => file.endsWith('.js') || file.endsWith('.mjs'));
+  assert.ok(files.length >= 6, 'Sanity: must scan all synthesis package sources');
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    for (const pattern of forbidden) {
+      assert.equal(pattern.test(source), false, `${file} violates S9 invariant: matches ${pattern}`);
+    }
+  }
 });

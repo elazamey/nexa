@@ -1,0 +1,35 @@
+name: 💡 Feature Request / Proposal
+description: Suggest an idea or architectural improvement for NEXA
+title: "[FEATURE]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the limitation is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Architectural Solution
+      description: Describe the solution you'd like to see added to NEXA / Celia.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Target Architectural Layer
+      options:
+        - Local Model Mesh (Ollama / llama.cpp / LiteLLM)
+        - Multi-Protocol Tools (MCP / A2A / OpenAPI)
+        - 4-Tier Memory & Temporal Knowledge Graph
+        - Computer Interface (Terminal / Browser / Files)
+        - Governance Kernel (OPA / Policy / Ed25519)
+        - Agentic Bug Hunter Suite
+        - Interactive Dashboard
+    validations:
+      required: true

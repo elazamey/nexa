@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 NEXA Community Discussions
+    url: https://github.com/elazamey/nexa/discussions
+    about: Ask questions, share architectures, and discuss agent governance with the community.
+  - name: 🛡️ Security Vulnerability Reporting
+    url: https://github.com/elazamey/nexa/security/advisories/new
+    about: Report sensitive vulnerabilities privately via GitHub Security Advisories.

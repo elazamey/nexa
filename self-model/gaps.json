@@ -153,21 +153,33 @@
       "sources": [
         "A12"
       ],
-      "current": "autopilot يمرر {inScope:true} حرفيًا (autopilot.js:55)؛ GATE_1 يثق بالسياق لا بمصدر مستقل (seven-gate-validator.js:26)",
+      "current": "كانت GATE_1 تكتب `pass: context.inScope !== false && !finding.outOfScope`: غياب السياق يُقرأ ترخيصًا، والجسر يعوّض الغياب بـ `{ inScope: true }` (nexa-evidence-bridge.js:100)، وautopilot يروي `{ inScope: true }` حرفيًا (autopilot.js:55) بعد فحص نطاق حقيقي عند :39",
       "required": "قرار النطاق يُشتق من بيانات recon/نطاق موثقة تُمرر للـ validator كبيانات لا كحكم مسبق (DI-13)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/scope-independence.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.5-red.tap (8 من 8 حمراء عند 9cda12b قبل الإصلاح) → d1.5-green.tap (8/8)؛ d1.5-inversion.txt: شلّ GATE_1 إلى الثقة boolean يُحمرّ حارس D1.5 وحده (0 من 8)، ورَدُّ الافتراض المُهدى في الجسر يُحمرّ اختبار الجسر وحده (7 من 8) — وgates-computed/gate-boundary/artifact-reader/agentic-hunter ومُعيدات D1.6/D1.7 خضراء في الحالتين",
         "criteria": [
-          "GATE_1 يفشل لـ target خارج أنماط النطاق مهما مرر المتصل",
-          "الـ validator يستقبل بيانات النطاق (أنماط/نتيجة recon) لا boolean جاهزًا"
+          "GATE_1 تفشل لكل target خارج الأنماط مهما مرّر المتصل: `{inScope:true}` أو `'yes'` أو ملاحظة نصية لا تُجيب البوابة، وغياب السياق نفسه رفضٌ مُعلَّل",
+          "المُقيِّم يستقبل بيانات لا حكمًا: سجل `{target, allow[], deny[]}` يُعاد حسابه داخليًا (مطابقة allow ثم استبعاد deny ثم مطابقة أصل الـ finding)، و`sco­pe.allow` مفردًا (نص لا مصفوفة) مرفوض",
+          "أصل الـ finding لا يستعير ترشيح غيره: مضيف في `endpoint|url|host|asset` يختلف عن الهدف ⇒ رفض يسمّي المضيفين؛ والمسار النسبي يبقى مربوطًا بهدف الجولة",
+          "لا نمط يبتلع العالم: `*` و`.*` و`**` و`.com` و`com` والبادئة `*.` الفارغة كلها عيوب في السجل تُرفض صراحةً، لا تُغفَل",
+          "المستدعي يضيّق ولا يوسّع: `inScope:false` و`finding.outOfScope` قاطعان حتى مع سجل مطابق، و`scope.authorized:false` يُلغي الترخيص",
+          "الجسر يرفض افتراضيًا: certifyFinding بلا gateContext ⇒ NEXA-E-REJECTED يسمّي GATE_1، وبلا signature؛ والحظر مُثبَّت بمسح مصدر الجسر (على الأسطر التنفيذية) فلا يعود الافتراض المُرخِّص",
+          "وضع المسار لجرولات المصدر المحلي: الجذر المُصرَّح به يحدّ، و`/` مرفوض كنطاق، و`../` لا يعبر الخروج، والمسار النسبي يُفهم نسبةً للهدف",
+          "autopilot يشتق السجل من إعداد recon نفسه في الموضعين (التصفية والإيصال) — لا `{ inScope: true }` مكتوبة؛ وبلا أنماط مُعرَّفة لا تُصدَر أي إيصال مع بقاء العدّ مفتوحًا كما هو (لا توسيع على ReconAgent)",
+          "قاعدة 7/7 وحتمية §6.3 محفوظتان: السجل لا يُدخل لحظة، ونفس المدخلات يعطي نفس findingDigest؛ وقوالب D1.2/D1.3/D1.4 قُوِّيت بسجل نطاق بدل الادعاء (لا assert خُفِّف)"
         ]
       },
-      "verification": null,
+      "verification": "tests/scope-independence.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T09:05:00Z",
+      "ticket_status": "closed 2026-09-23 — GATE_1 محسوبة من سجل نطاق (scope-evidence.js) بمضيف أو بجذر مسار، وتُطابق من جديد في المُقيِّم؛ الجسر بلا افتراض مُرخِّص؛ autopilot يشتق من recon؛ إباحة العدّ في ReconAgent باقية لكنها لم تعد تشتري إيصالات",
+      "follow_ups": [
+        "ReconAgent.isScopeAllowed تبقى مريحة عند غياب الأنماط (عدّ مفتوح) — قرار مقصود: الترخيص يُحجب عند البوابة لا عند الاستطلاع؛ من يريد منع الجولة كلها يضبط inScopePatterns",
+        "سجل النطاق يصرّح به المشغِّل (allow/deny/target)؛ مصدر خارجي مُوقَّع لقائمة النطاق (scope file مُصدَّق) خارج نطاق التذكرة ولا يُضاف على المقاس",
+        "الأثر ما زال ادعاءً نصيًا (قصور D1.4 المسجَّل) — ربط الأثر بالدليل والسجل معًا مرهون بتذكرة مستقلة"
+      ]
     },
     {
       "id": "D1.6",

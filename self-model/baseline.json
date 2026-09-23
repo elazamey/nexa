@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "66995864b726b3b0b7b3eb447ba1efe5a9b251c7",
-    "tree_state": "D1.4 closure worktree (measured before the closure commit)",
+    "commit": "9cda12b3739a9fb2eaa9ab043fc42d1ac2182215",
+    "tree_state": "D1.5 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 645,
-    "pass": 645,
+    "tests": 651,
+    "pass": 651,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 645 = 641 (تسجيل D1.17) + 6 (tests/gate-boundary-vs-impact.test.js) − 2 (مُعيد known-gaps/d1.4 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 651 = 645 (إغلاق D1.4) + 8 (tests/scope-independence.test.js) − 2 (مُعيد known-gaps/d1.5 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -77,6 +77,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.4 (P0-D / A09 / DI-06): GATE_3 وGATE_6 صارا مسندين منفصلين — الأثر بمقياس مضمونه (متجه ضرر مسمّى، لا صياغة احتمال، لا شدة) وعبور الحدود بسجل {from,to,kind} مقيَّد بجدول أصناف؛ الشدة خرجت من القرارين فبطل أن تُغلَّق 7/7 برفع severity؛ 645/645 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.5 (P0-D / A12 / DI-13): GATE_1 صارت محسوبة من سجل نطاق يعيد المُقيِّم مطابقته بنفسه (مضيف + allow/deny، أو جذر مسار مع اختبار احتواء) بدل كلمة المتصل؛ الجسر لم يعوّض الغياب بترخيص، وautopilot يشتق سجله من recon؛ 651/651 أخضر"
     }
   ],
   "post_d1_2": {
@@ -210,6 +214,33 @@
       "docs/repository-audit-2026-09-22.ar.md §O11"
     ],
     "residual": "الأثر ما زال ادعاءً نصيًا يصرّح به المُنتِج (بلا شهادة مربوطة كما في D1.3)، وجدول الحدود يحدّ ما يُعدّ عبورًا — صنف جديد غير مُسجَّل يُرفض افتراضيًا. كلا القصرين مُوثَّق في follow_ups ولا يُغلق بتوسيع على المقاس",
+    "side_effects_restored": []
+  },
+  "d1.5_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.5 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 651,
+    "pass": 651,
+    "fail": 0,
+    "breakdown": "645 بعد D1.4 + 8 (tests/scope-independence.test.js) − 2 (مُعيد known-gaps/d1.5 حُذف)؛ قوالب D1.2/D1.3/D1.4 استُبدل فيها `{inScope:true}` بسجل نطاق صالح (تقوية، لا تليين)",
+    "red_evidence": "self-model/evidence/d1.5-red.tap (8 من 8 حمراء عند 9cda12b قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.5-green.tap (8/8) + d1.5-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.5-inversion.txt — نسختان: إعادة GATE_1 إلى الثقة boolean تُحمرّ D1.5 وحدها (0 من 8)؛ ردّ `{ inScope: true }` الافتراضي في الجسر يُحمرّ اختبار الجسر وحده (7 من 8)؛ والحراس الآخرون ومُعيدات D1.6/D1.7 خضراء",
+    "tools_changed": [
+      "src/security/hunter/scope-evidence.js (جديد — وضع المضيف ووضع المسار، جداول عيوب الأنماط، احتواء الجذر)",
+      "src/security/hunter/seven-gate-validator.js (GATE_1 من السجل المُعاد حسابه)",
+      "src/security/hunter/nexa-evidence-bridge.js (لا سجل نطاق مُهدى عند غياب السياق)",
+      "src/security/hunter/recon-agent.js (scopeRecord يُسلَّم كبيانات؛ isScopeAllowed تبقى للعدّ)",
+      "src/security/hunter/autopilot.js (سجل واحد للتصفية والإيصال) وsrc/security/agentic-hunter.js (جذر محلي صريح)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-13 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 651)",
+      "docs/repository-audit-2026-09-22.ar.md §O12"
+    ],
+    "residual": "قائمة النطاق يصرّح بها المشغِّل ولا تُثبت من مصدر خارجي موقَّع؛ وReconAgent يحتفظ بإباحة العدّ عند غياب الأنماط عمدًا — الفارق بين «يُسمح بالعدّ» و«يُصدَق عليه» صار عند البوابة لا عند الاستطلاع",
     "side_effects_restored": []
   }
 }

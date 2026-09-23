@@ -44,6 +44,19 @@ export class ReconAgent {
   }
 
   /**
+   * D1.5 (DI-13): يُسلَّم للنطاق كبيانات، فيعيد المُقيِّم حسابه بنفسه.
+   * ملاحظة مقصودة: `isScopeAllowed` تبقى مريحة للعدّ (بلا أنماط = عدّ مفتوح)، أما
+   * الترخيص الذي تقرأه GATE_1 فيُشتق من هذا السجل — فمن لا يُعرّف أنماطًا لا يحصل على إيصالات.
+   */
+  scopeRecord(target) {
+    return {
+      target,
+      allow: [...this.inScopePatterns],
+      deny: [...this.outOfScopePatterns]
+    };
+  }
+
+  /**
    * Discovers and simulates endpoint and subdomain attack surfaces
    */
   mapSurface(target, options = {}) {

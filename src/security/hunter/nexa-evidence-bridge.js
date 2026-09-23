@@ -97,7 +97,9 @@ export class NexaEvidenceBridge {
 
       // §6.1(3): إعادة تقييم مستقلة للبوابات — gateCheck المرفق يُتجاهل كليًا
       const validator = options.validator || this.validator;
-      const gateContext = options.gateContext ?? { inScope: true };
+      // D1.5 (DI-13): لا سجل نطاق مُهدى — من لا يمرّر سياقًا يُرفض عند GATE_1 بسبب معلن،
+      // فالافتراض السابق كان يجعل عدم المعرفة ترخيصًا. الفراغ هنا يعني «لا دليل»، لا «مسموح».
+      const gateContext = options.gateContext ?? {};
       evaluation = validator.evaluateFinding(finding, gateContext);
 
       // §10.10: قاعدة 7/7 — سبع بوابات محسوبة كلها pass

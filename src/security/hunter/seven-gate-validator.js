@@ -2,6 +2,7 @@ import { ArtifactReader } from './artifact-reader.js';
 import { evaluateSafeTestingRecord } from './safe-testing.js';
 import { evaluateImpactDemonstration } from './impact-evidence.js';
 import { evaluateBoundaryEvidence } from './boundary-evidence.js';
+import { evaluateScopeAuthorization } from './scope-evidence.js';
 
 /**
  * SevenGateValidator - 7-Question Strict Finding Gate & 4-Gate Triage
@@ -40,13 +41,17 @@ export class SevenGateValidator {
     );
     // D1.4 (DI-06): مسندان مستقلان — الأثر من مضمون الادعاء، والحدود من سجلّ {from,to,kind}
     // مقيَّد بجدول الأصناف. لا شدة في أيٍّ منهما: رفع severity كان يفتح البوابتين معًا.
+    // D1.5 (DI-13): النطاق يُطابق هنا من سجل بيانات — ادعاء `inScope:true` لا يُجيب البوابة
+    const scope = evaluateScopeAuthorization(finding, context);
     const impact = evaluateImpactDemonstration(finding);
     const boundary = evaluateBoundaryEvidence(finding);
     const checks = [
       {
         id: 'GATE_1_SCOPE',
         question: 'Is the asset strictly within authorized program scope?',
-        pass: context.inScope !== false && !finding.outOfScope
+        // D1.5: المطابقة معادة الحساب (target ∈ allow ∖ deny) وأصل الـ finding مطابق للهدف
+        pass: scope.pass,
+        reason: scope.reason
       },
       {
         id: 'GATE_2_REPRODUCIBILITY',

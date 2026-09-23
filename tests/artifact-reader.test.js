@@ -4,11 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+
+
   ArtifactReader,
   SevenGateValidator,
   NexaEvidenceBridge,
   VulnEngine
 } from '../src/security/agentic-hunter.js';
+
+// D1.5 (DI-13): سياق النطاق سجلٌّ لا حكم — المُقيِّم يعيد مطابقته، ولا يُهدى الترخيص بغيابه.
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
 
 /**
  * اختبار الانعكاس لتذكرة D1.2 — Artifact Reader + GATE_2 (§5.1) + certifyFinding (§6.1/§6.3)
@@ -132,7 +137,7 @@ test('D1.2/§5.1 (A03): GATE_2 تفشل بمجرد locator نصي بلا artifac
 
 test('D1.2/§5.1: GATE_2 تمر عبر artifact صالح — والبوابات السبع محسوبة ومعلنة', () => {
   const validator = new SevenGateValidator();
-  const result = validator.evaluateFinding(validFinding(), { inScope: true });
+  const result = validator.evaluateFinding(validFinding(), ctx());
   assert.equal(result.score, '7/7');
   assert.equal(result.isValid, true);
   assert.ok(Array.isArray(result.checks) && result.checks.length === 7, 'evaluateFinding تعلن المساند السبعة المحسوبة');
@@ -182,7 +187,7 @@ test('D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gate
 
 test('D1.2/§6.2: إيصال كامل عند استيفاء الشروط — الحقول من تحقق فعلي', () => {
   const bridge = new NexaEvidenceBridge();
-  const receipt = bridge.certifyFinding(validFinding(), 'api.example.com');
+  const receipt = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
   assert.ok(receipt.signature);
   assert.ok(receipt.findingDigest);
   assert.ok(receipt.artifactDigest, 'الإيصال مربوط بدليله (artifactDigest)');
@@ -218,8 +223,8 @@ test('D1.2/A10: signFinding يخضع لنفس الصرامة — لا ختم ب�
 
 test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest/findingId، ومفاتيح مرتبة', () => {
   const bridge = new NexaEvidenceBridge();
-  const a = bridge.certifyFinding(validFinding(), 'api.example.com');
-  const b = bridge.certifyFinding(validFinding(), 'api.example.com');
+  const a = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
+  const b = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
   assert.equal(a.findingDigest, b.findingDigest);
   assert.equal(a.findingId, b.findingId);
 
@@ -247,18 +252,18 @@ test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest
     boundary: { kind: 'authorization', to: 'object owned by another principal', from: 'authenticated caller' },
     impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.'
   };
-  const c = bridge.certifyFinding(reordered, 'api.example.com');
+  const c = bridge.certifyFinding(reordered, 'api.example.com', { gateContext: ctx() });
   assert.equal(c.findingDigest, a.findingDigest, 'canonicalization يجب أن يمحو أثر ترتيب المفاتيح');
 
   // هدف مختلف → digest مختلف
-  const d = bridge.certifyFinding(validFinding(), 'other.example.com');
+  const d = bridge.certifyFinding(validFinding(), 'other.example.com', { gateContext: ctx('other.example.com') });
   assert.notEqual(d.findingDigest, a.findingDigest);
 });
 
 test('D1.2/§6.3 (A08): الربط — verifyReceipt يعيد حساب الحمولة ويرفض المستبدلة', () => {
   const bridge = new NexaEvidenceBridge();
   const finding = validFinding();
-  const receipt = bridge.certifyFinding(finding, 'api.example.com');
+  const receipt = bridge.certifyFinding(finding, 'api.example.com', { gateContext: ctx() });
 
   assert.equal(bridge.verifyReceipt(receipt), true, 'فحص التوقيع وحده كما كان');
   assert.equal(bridge.verifyReceipt(receipt, finding), true, 'الربط بالحمولة الأصلية ينجح');

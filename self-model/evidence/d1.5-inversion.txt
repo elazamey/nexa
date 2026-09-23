@@ -1,0 +1,18 @@
+D1.5 INVERSION EVIDENCE — كل بارِعاء تُعطَّل على حدة؛ حارس تذكرة أخرى لا يجوز أن يمسّه شيء
+--- INVERSION A (GATE_1 عادت لثقة boolean) ---
+  # pass 0 # fail 8 <- scope-independence.test.js
+  # pass 6 # fail 0 <- gates-computed.test.js
+  # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # pass 16 # fail 0 <- artifact-reader.test.js
+  # pass 10 # fail 0 <- agentic-hunter.test.js
+  # pass 2 # fail 0 <- d1.6-hunt-memory-fail-open.test.js
+  # pass 2 # fail 0 <- d1.7-inline-detectors-coupling.test.js
+--- INVERSION B (الجسر أعاد {inScope:true} الافتراضي) ---
+  # pass 7 # fail 1 <- scope-independence.test.js
+  # pass 6 # fail 0 <- gates-computed.test.js
+  # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # pass 16 # fail 0 <- artifact-reader.test.js
+  # pass 10 # fail 0 <- agentic-hunter.test.js
+  # pass 2 # fail 0 <- d1.6-hunt-memory-fail-open.test.js
+  # pass 2 # fail 0 <- d1.7-inline-detectors-coupling.test.js
+--- restored: 1 / 1 ---

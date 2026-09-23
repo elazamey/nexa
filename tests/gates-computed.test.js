@@ -47,6 +47,9 @@ const baseFinding = (extra = {}) => ({
 
 const gate = (result, id) => result.checks.find(c => c.id === id);
 
+// D1.5 (DI-13): سجل نطاق صالح في السياق — لتبقى كل حالة هنا محصورة في البوابة التي تخصّها
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
+
 test('D1.3: GATE_1..7 كلها محسوبة — لا pass حرفي في مصدر المُقيِّم', () => {
   const src = fs.readFileSync(VALIDATOR_SRC, 'utf8');
   const checksBody = src.slice(src.indexOf('const checks = ['), src.indexOf('const passedChecks'));
@@ -68,7 +71,7 @@ test('D1.3: GATE_1..7 كلها محسوبة — لا pass حرفي في مصدر
 
 test('D1.3: finding بلا سجل اختبار آمن → GATE_7 تفشل، والسبب معلن', () => {
   const v = new SevenGateValidator();
-  const result = v.evaluateFinding(baseFinding(), { inScope: true });
+  const result = v.evaluateFinding(baseFinding(), ctx());
   const g7 = gate(result, 'GATE_7_SAFE_TESTING_COMPLIANCE');
   assert.equal(g7.pass, false, 'غياب الدليل لا يزال يُمرّر البوابة');
   assert.equal(result.isValid, false);
@@ -89,7 +92,7 @@ test('D1.3: شهادة عامة غير مربوطة بالدليل لا تكفي
     'يقر بقطع خدمة': { ...safeTesting, serviceDisrupted: true }
   };
   for (const [name, record] of Object.entries(cases)) {
-    const result = v.evaluateFinding(baseFinding({ safeTesting: record }), { inScope: true });
+    const result = v.evaluateFinding(baseFinding({ safeTesting: record }), ctx());
     assert.equal(
       gate(result, 'GATE_7_SAFE_TESTING_COMPLIANCE').pass,
       false,
@@ -101,7 +104,7 @@ test('D1.3: شهادة عامة غير مربوطة بالدليل لا تكفي
 
 test('D1.3: سجل صالح ومربوط → البوابة السابعة محسوبة-ناجحة و7/7 محفوظة', () => {
   const v = new SevenGateValidator();
-  const result = v.evaluateFinding(baseFinding({ safeTesting }), { inScope: true });
+  const result = v.evaluateFinding(baseFinding({ safeTesting }), ctx());
   assert.equal(gate(result, 'GATE_7_SAFE_TESTING_COMPLIANCE').pass, true);
   assert.equal(result.isValid, true, 'الدليل الصالح يجب أن يمرّ');
   assert.equal(result.score, '7/7');
@@ -111,21 +114,21 @@ test('D1.3: سجل صالح ومربوط → البوابة السابعة مح�
 
 test('D1.3: السجل يُقبل من سياق الجولة بشرط أن يغطي نفس منتج الدليل', () => {
   const v = new SevenGateValidator();
-  const fromContext = v.evaluateFinding(baseFinding(), { inScope: true, safeTesting });
+  const fromContext = v.evaluateFinding(baseFinding(), { ...ctx(), safeTesting });
   assert.equal(gate(fromContext, 'GATE_7_SAFE_TESTING_COMPLIANCE').pass, true);
   const wrongProducer = v.evaluateFinding(baseFinding(), {
-    inScope: true,
+    ...ctx(),
     safeTesting: { ...safeTesting, attestedBy: 'VulnEngine.detectSsrf' }
   });
   assert.equal(gate(wrongProducer, 'GATE_7_SAFE_TESTING_COMPLIANCE').pass, false);
   // finding يحمل شهادته الخاصة: تُقدَّم على شهادة السياق (الأخصّ أولاً)
-  const ownWins = v.evaluateFinding(baseFinding({ safeTesting: false }), { inScope: true, safeTesting });
+  const ownWins = v.evaluateFinding(baseFinding({ safeTesting: false }), { ...ctx(), safeTesting });
   assert.equal(gate(ownWins, 'GATE_7_SAFE_TESTING_COMPLIANCE').pass, false);
 });
 
 test('D1.3: الجسر يعيد الحساب — شهادة ناقصة تُسقط الإيصال، ومحتوى مستقرّ يظل حتميًّا', () => {
   const bridge = new NexaEvidenceBridge();
-  const without = bridge.certifyFinding(baseFinding(), 'api.example.com');
+  const without = bridge.certifyFinding(baseFinding(), 'api.example.com', { gateContext: ctx() });
   assert.equal(without.certified, false);
   assert.equal(without.signature, undefined, 'إيصال وُقع رغم غياب دليل الاختبار الآمن');
   assert.ok(
@@ -134,8 +137,8 @@ test('D1.3: الجسر يعيد الحساب — شهادة ناقصة تُسق�
   );
 
   const full = baseFinding({ safeTesting });
-  const first = bridge.certifyFinding(full, 'api.example.com');
-  const second = bridge.certifyFinding(structuredClone(full), 'api.example.com');
+  const first = bridge.certifyFinding(full, 'api.example.com', { gateContext: ctx() });
+  const second = bridge.certifyFinding(structuredClone(full), 'api.example.com', { gateContext: ctx() });
   assert.equal(first.verified, true, 'الدليل الكامل يجب أن يُصدر إيصالًا: ' + JSON.stringify(first.reasons));
   assert.ok(first.signature, 'الإيصال بلا توقيع ليس إيصالًا');
   assert.equal(first.gateScore, '7/7_PASSED');

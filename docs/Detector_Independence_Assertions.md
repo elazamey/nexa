@@ -80,9 +80,11 @@ finding عارٍ من artifact في مسار الاعتماد.
 - المصدر: A04 (نمط الغياب), A11 (نمط الابتلاع) — المرجع التعاقدي: §10.9 — الحالة: **enforced** (D1.2)
 
 ### DI-13 — قرار النطاق من مصدر مستقل
-قرار GATE_1 يُشتق من بيانات recon/نطاق موثقة، لا من سياق المتصل المُمرَّر حرفيًا
-(`{ inScope: true }`).
-- المصدر: A12 (`autopilot.js:55` + `seven-gate-validator.js:26`) — الحالة: **open** (D1.5)
+قرار GATE_1 محسوب من سجلّ نطاق يُسلَّم كبيانات ويعيد المُقيِّم مطابقته بنفسه: `scope-evidence.js`
+يطلب `{target, allow[], deny[]}` (مضيف) أو جذر مسار مُصرَّحًا به (جولة مصدر محلي)، ويطابق الهدف
+ثم يستبعد deny ثم يتأكد أن **أصل الـ finding نفسه** هو الأصل المرخَّص. ادعاء منطقي وحده لا يُجيب
+البوابة، والنمط الذي يبتلع كل المضيفين عيبٌ مرفوض لا تسهيل.
+- المصدر: A12 (`autopilot.js:55` + `seven-gate-validator.js:26` عند التسجيل) — الحالة: **enforced** (D1.5، 2026-09-23؛ التحقق الحيّ في `tests/scope-independence.test.js`)
 
 ### DI-14 — ذاكرة لا تبتلع الفشل
 فشل قراءة/كتابة `HuntMemory` يظهر صراحة (خطأ/إشارة) ولا يستبدل بصمت بذاكرة فارغة.
@@ -111,6 +113,7 @@ finding عارٍ من artifact في مسار الاعتماد.
 | enforced عبر D1.2 (تحقق حي في `tests/artifact-reader.test.js` — أُغلقت 2026-09-22) | DI-02, DI-03, DI-04, DI-05, DI-08, DI-09, DI-10, DI-11, DI-12 |
 | enforced عبر D1.3 (تحقق حي في `tests/gates-computed.test.js` — أُغلقت 2026-09-23) | DI-07 |
 | enforced عبر D1.4 (تحقق حي في `tests/gate-boundary-vs-impact.test.js` — أُغلقت 2026-09-23) | DI-06 |
-| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-13, DI-14, DI-15, DI-16, DI-17 |
+| enforced عبر D1.5 (تحقق حي في `tests/scope-independence.test.js` — أُغلقت 2026-09-23) | DI-13 |
+| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-14, DI-15, DI-16, DI-17 |
 
 **العدد الكلي: 17 assertion** (يُفحص آليًا في `tests/guards/docs-consistency.test.js`).

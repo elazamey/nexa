@@ -52,6 +52,9 @@ const finding = (extra = {}) => ({
 });
 
 const gate = (result, id) => result.checks.find(c => c.id === id);
+
+// D1.5 (DI-13): سجل نطاق صالح كسياق — ليُقاس أثر/حدّ كل حالة وحدها، ولا تُهدى GATE_1 بالكلام
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
 const v = () => new SevenGateValidator();
 
 test('D1.4: البوابتان محسوبتان من مسندين مختلفين — لا مرآة لشرط واحد', () => {
@@ -79,7 +82,7 @@ test('D1.4: البوابتان محسوبتان من مسندين مختلفين
 
 test('D1.4: التمايز الفعلي — شدة عالية بلا دليل حدّ تُسقط GATE_6 وتُبقي GATE_3، وبالعكس', () => {
   // HIGH + أثر ملموس + لا سجل حدود: A09 الحالي كان يمرّر الاثنين
-  const highNoBoundary = v().evaluateFinding(finding({ boundary: undefined }), { inScope: true });
+  const highNoBoundary = v().evaluateFinding(finding({ boundary: undefined }), ctx());
   assert.equal(gate(highNoBoundary, 'GATE_3_DEMONSTRABLE_IMPACT').pass, true, 'الأثر الملموس يجب أن يُعترف به');
   assert.equal(gate(highNoBoundary, 'GATE_6_BOUNDARY_BYPASS').pass, false, 'لا عبور حدّ مبيَّن — البوابة تُرفض');
   assert.equal(highNoBoundary.score, '6/7');
@@ -87,14 +90,14 @@ test('D1.4: التمايز الفعلي — شدة عالية بلا دليل ح
   // INFO (شدة غير تقريرية) + عبور حدّ مبيَّن: GATE_6 تُحكم بدليلها فتنجح، و GATE_3 لا تُهدى بالشدة
   const infoBoundary = v().evaluateFinding(
     finding({ severity: 'INFO', impact: 'Attacker can read and exfiltrate other users’ private documents via the parameter.' }),
-    { inScope: true }
+    ctx()
   );
   assert.equal(gate(infoBoundary, 'GATE_6_BOUNDARY_BYPASS').pass, true, 'دليل العبور مستقل عن الشدة');
   assert.equal(gate(infoBoundary, 'GATE_3_DEMONSTRABLE_IMPACT').pass, true, 'الأثر المذكور ملموس بمقياسه لا بشدته');
   assert.equal(infoBoundary.isValid, true, '7/7 تُحصَّل بالمساند السبعة المحسوبة لا بالشدة');
 
   // وأثر مُبهَم بلا متجه ضرر + حدّ مبيَّن → GATE_3 وحدها تسقط
-  const vague = v().evaluateFinding(finding({ impact: 'This may possibly be a problem in theory.' }), { inScope: true });
+  const vague = v().evaluateFinding(finding({ impact: 'This may possibly be a problem in theory.' }), ctx());
   assert.equal(gate(vague, 'GATE_3_DEMONSTRABLE_IMPACT').pass, false, 'ادعاء متردد/عام يبقى أثرًا');
   assert.equal(gate(vague, 'GATE_6_BOUNDARY_BYPASS').pass, true, 'سجل الحدود لا يتأثر بصياغة الأثر');
 });
@@ -114,7 +117,7 @@ test('D1.4: جدول الأصناف يحكم عبور الحدود — لا صن
     }
   };
   for (const [name, extra] of Object.entries(cases)) {
-    const result = v().evaluateFinding(finding(extra), { inScope: true });
+    const result = v().evaluateFinding(finding(extra), ctx());
     assert.equal(gate(result, 'GATE_6_BOUNDARY_BYPASS').pass, false, `${name}: قُبل بلا دليل حدود صالح`);
     const failed = result.failedGates.find(g => g.id === 'GATE_6_BOUNDARY_BYPASS');
     assert.ok(failed && typeof failed.reason === 'string' && failed.reason.length > 8, `${name}: رفض بلا تعليل`);
@@ -128,7 +131,7 @@ test('D1.4: جدول الأصناف يحكم عبور الحدود — لا صن
     artifact: { ...artifact, producedBy: 'VulnEngine.detectSsrf' },
     safeTesting: { ...safeTesting, attestedBy: 'VulnEngine.detectSsrf' }
   });
-  assert.equal(gate(v().evaluateFinding(ssrf, { inScope: true }), 'GATE_6_BOUNDARY_BYPASS').pass, true);
+  assert.equal(gate(v().evaluateFinding(ssrf, ctx()), 'GATE_6_BOUNDARY_BYPASS').pass, true);
 });
 
 test('D1.4: الأثر يُحاكم بمضمونه — لا بطوله ولا بكلمة سحرية', () => {
@@ -141,7 +144,7 @@ test('D1.4: الأثر يُحاكم بمضمونه — لا بطوله ولا ب
     'كذب بالنوع': 42
   };
   for (const [name, impact] of Object.entries(rejected)) {
-    const result = v().evaluateFinding(finding({ impact }), { inScope: true });
+    const result = v().evaluateFinding(finding({ impact }), ctx());
     assert.equal(gate(result, 'GATE_3_DEMONSTRABLE_IMPACT').pass, false, `${name}: قُبل كأثر ملموس`);
   }
   for (const impact of [
@@ -149,7 +152,7 @@ test('D1.4: الأثر يُحاكم بمضمونه — لا بطوله ولا ب
     'Double-spending of coupons is possible: balances are decremented after redemption completes.',
     'Full database compromise and authentication bypass follow from the unparameterised query.'
   ]) {
-    const result = v().evaluateFinding(finding({ impact }), { inScope: true });
+    const result = v().evaluateFinding(finding({ impact }), ctx());
     assert.equal(gate(result, 'GATE_3_DEMONSTRABLE_IMPACT').pass, true, `أثر ملموس رُفض: ${impact.slice(0, 28)}…`);
   }
 });
@@ -163,7 +166,7 @@ test('D1.4: المُنتِجون يصرّحون بحدودهم — كل finding 
     assert.ok(f.boundary && typeof f.boundary === 'object', `${f.vulnClass}: بلا سجل حدود`);
     assert.ok(typeof f.boundary.from === 'string' && f.boundary.from.trim() !== '', `${f.vulnClass}: from غائب`);
     assert.notEqual(f.boundary.from, f.boundary.to, `${f.vulnClass}: طرفان متماثلان`);
-    const result = new SevenGateValidator().evaluateFinding(f, { inScope: true });
+    const result = new SevenGateValidator().evaluateFinding(f, ctx('testdomain.com'));
     assert.equal(
       gate(result, 'GATE_6_BOUNDARY_BYPASS').pass,
       true,
@@ -179,7 +182,7 @@ test('D1.4: المُنتِجون يصرّحون بحدودهم — كل finding 
 
 test('D1.4: الجسر يعيد الحساب ويسمّي البوابة الساقطة — وقاعدة 7/7 محفوظة للطرفين', () => {
   const bridge = new NexaEvidenceBridge();
-  const noBoundary = bridge.certifyFinding(finding({ boundary: undefined }), 'api.example.com');
+  const noBoundary = bridge.certifyFinding(finding({ boundary: undefined }), 'api.example.com', { gateContext: ctx() });
   assert.equal(noBoundary.certified, false);
   assert.equal(noBoundary.signature, undefined);
   assert.ok(
@@ -187,11 +190,11 @@ test('D1.4: الجسر يعيد الحساب ويسمّي البوابة الس�
     'الرفض لم يسمّ GATE_6: ' + JSON.stringify(noBoundary.reasons)
   );
 
-  const complete = bridge.certifyFinding(finding(), 'api.example.com');
+  const complete = bridge.certifyFinding(finding(), 'api.example.com', { gateContext: ctx() });
   assert.equal(complete.verified, true, 'المدخل الكامل يجب أن يُقبل: ' + JSON.stringify(complete.reasons));
   assert.equal(complete.gateScore, '7/7_PASSED');
   assert.equal(
-    bridge.certifyFinding(structuredClone(finding()), 'api.example.com').findingDigest,
+    bridge.certifyFinding(structuredClone(finding()), 'api.example.com', { gateContext: ctx() }).findingDigest,
     complete.findingDigest,
     'الحقول الجديدة كسرت حتمية §6.3'
   );

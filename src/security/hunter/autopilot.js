@@ -52,7 +52,10 @@ export class AutopilotEngine {
     const rawFindings = this.vulnEngine.scanSurface(surface);
 
     // Step 4: 7-Question Gate Validation
-    const triage = this.validator.filterValidFindings(rawFindings, { inScope: true });
+    // D1.5 (DI-13): سجل النطاق مشتق من إعداد recon نفسه — لا `{ inScope: true }` مكتوبًا.
+    // يُستعمل في الموضعين (التصفية والإيصال) حتى لا يختلف «مسموح بالصيد» عن «مسموح بالتصديق».
+    const gateContext = { scope: this.reconAgent.scopeRecord(target) };
+    const triage = this.validator.filterValidFindings(rawFindings, gateContext);
 
     // Step 5: Exploit Chaining
     const chains = this.chainBuilder.synthesizeChains(triage.validated);
@@ -60,7 +63,7 @@ export class AutopilotEngine {
     // Step 6: Cryptographic NEXA Certification
     const certifiedFindings = triage.validated.map(f => ({
       ...f,
-      receipt: this.evidenceBridge.certifyFinding(f, target)
+      receipt: this.evidenceBridge.certifyFinding(f, target, { gateContext })
     }));
 
     // Step 7: Report Generation

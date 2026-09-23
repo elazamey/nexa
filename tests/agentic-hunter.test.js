@@ -64,6 +64,8 @@ test('Agentic Hunter: VulnEngine detects IDOR, SSRF, CORS, SQLi, and Race condit
   assert.equal(race.vulnClass, 'RACE_CONDITION_TOCTOU');
 });
 
+// D1.5 (DI-13): سياق النطاق سجلٌّ لا حكم — المُقيِّم يعيد مطابقته، ولا يُهدى الترخيص بغيابه
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
 test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/7 gate compliance', () => {
   const validator = new SevenGateValidator();
 
@@ -94,7 +96,7 @@ test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/
     },
   };
 
-  const gateResult = validator.evaluateFinding(validFinding, { inScope: true });
+  const gateResult = validator.evaluateFinding(validFinding, ctx());
   assert.equal(gateResult.isValid, true);
   assert.equal(gateResult.score, '7/7');
   assert.equal(gateResult.status, 'APPROVED_FOR_REPORT');
@@ -236,7 +238,7 @@ test('Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 an
     },
   };
 
-  const receipt = bridge.certifyFinding(finding, 'api.example.com');
+  const receipt = bridge.certifyFinding(finding, 'api.example.com', { gateContext: ctx() });
   assert.ok(receipt.signature);
   assert.ok(receipt.findingDigest);
   assert.ok(receipt.artifactDigest);

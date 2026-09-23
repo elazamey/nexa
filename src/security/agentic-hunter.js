@@ -116,13 +116,17 @@ export class AgenticBugHunter {
   }
 
   _generateReport() {
+    // D1.5 (DI-13): جولة المصدر المحلي تُرخَّص بجذرها الصريح — الأصل الذي يُطابق هو file
+    // كل finding، فلا يستعير finding عن /etc/passwd ترشيح هذه الشجرة.
+    const gateContext = { scope: { target: this.targetDir, allow: [this.targetDir], deny: [] } };
+
     // Validate findings with the 7-Gate Validator
-    const triage = this.validator.filterValidFindings(this.findings);
+    const triage = this.validator.filterValidFindings(this.findings, gateContext);
 
     // Cryptographically certify validated findings
     const certifiedFindings = triage.validated.map(f => ({
       ...f,
-      receipt: this.evidenceBridge.certifyFinding(f, this.targetDir)
+      receipt: this.evidenceBridge.certifyFinding(f, this.targetDir, { gateContext })
     }));
 
     const summary = {

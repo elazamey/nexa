@@ -38,14 +38,9 @@ jobs:
           echo "✅ S9 Invariant Check Passed: Zero unsafe dynamic execution found in packages/."
         fi
 
-    - name: Scan for Exposed Secret Patterns
+    - name: Scan for Exposed Secret Patterns (SEC-NEXT-03 contract scanner)
       run: |
-        echo "🔍 Scanning repository for accidental private keys or secret exposures..."
-        KEY_FOUND=$(grep -rn --include="*.js" --include="*.mjs" --include="*.json" -E "BEGIN (PRIVATE|RSA|EC) KEY|nexa:key:priv:" packages/ tools/ || true)
-        if [ -n "$KEY_FOUND" ]; then
-          echo "❌ Security Alert: Private Key pattern detected in files!"
-          echo "$KEY_FOUND"
-          exit 1
-        else
-          echo "✅ Secret Exposure Scan Passed: Zero private key material exposed."
-        fi
+        echo "🔍 Running contract secret scanner (docs/sec-next-03-secret-scanner-contract.ar.md)..."
+        # لا whitelist مسارات أعمى: الاستثناء بالتلخيص القانوني مربوطًا بالمسار المُعلَن
+        # في tools/secret-fixtures.registry.json (exit 0 clean / 1 violations / 2 registry error).
+        node tools/nexa-secret-scan.mjs

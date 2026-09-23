@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: D1.11/§4.1: المستودع الحقيقي نظيف وكل fixtures مُصرَّح بها
+ok 1 - D1.11/§4.1: المستودع الحقيقي نظيف وكل fixtures مُصرَّح بها
+  ---
+  duration_ms: 31.089415
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.2: مادة مفتاح جديدة داخل نسخة ملف الـ fixtures نفسه تُلتقط
+ok 2 - D1.11/§4.2: مادة مفتاح جديدة داخل نسخة ملف الـ fixtures نفسه تُلتقط
+  ---
+  duration_ms: 101.3683
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.3: تلخيص مُعلَن في مسار مختلف = FIXTURE_OUTSIDE_REGISTERED_PATH
+ok 3 - D1.11/§4.3: تلخيص مُعلَن في مسار مختلف = FIXTURE_OUTSIDE_REGISTERED_PATH
+  ---
+  duration_ms: 1.765033
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.4: nexa:key:priv: المجرّد خامل، والملزوم BOUND_PRIV_URN
+ok 4 - D1.11/§4.4: nexa:key:priv: المجرّد خامل، والملزوم BOUND_PRIV_URN
+  ---
+  duration_ms: 1.435809
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.5: سجل مفقود أو فاسد أو مكرر = فشل مغلق (لا فحص بلا سجل)
+ok 5 - D1.11/§4.5: سجل مفقود أو فاسد أو مكرر = فشل مغلق (لا فحص بلا سجل)
+  ---
+  duration_ms: 39.339751
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.6: القيد المتقادم انتهاك — السجل لا يتقادم صامتًا (R5)
+ok 6 - D1.11/§4.6: القيد المتقادم انتهاك — السجل لا يتقادم صامتًا (R5)
+  ---
+  duration_ms: 1.446794
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.7: security-scan.yml يستدعي الفاحص التعاقدي ولا يحوي grep الأعمى
+ok 7 - D1.11/§4.7: security-scan.yml يستدعي الفاحص التعاقدي ولا يحوي grep الأعمى
+  ---
+  duration_ms: 0.249061
+  type: 'test'
+  ...
+# Subtest: D1.11/§4.8: CLI على الجذر الحقيقي = خروج 0 وverdict clean
+ok 8 - D1.11/§4.8: CLI على الجذر الحقيقي = خروج 0 وverdict clean
+  ---
+  duration_ms: 117.764945
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 374.725187

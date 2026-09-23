@@ -1,0 +1,16 @@
+# D1.3 — عزل الإصلاح: تعطيل البوابة السابعة وحدها (pass: safeTesting.pass → pass: true)
+# gates-computed: 5 من 6 حمراء؛ وفي نفس الوقت كل ملف تحقق آخر أخضر
+# (النتيجة المقيسة على الشجرة نفسها، لا استنتاج)
+# pass 16 # fail 0 <- artifact-reader.test.js
+# pass 10 # fail 0 <- agentic-hunter.test.js
+# pass 2 # fail 0 <- d1.4-gate3-gate6-collapse.test.js
+# pass 2 # fail 0 <- d1.5-scope-context-trust.test.js
+# pass 2 # fail 0 <- d1.6-hunt-memory-fail-open.test.js
+# pass 2 # fail 0 <- d1.7-inline-detectors-coupling.test.js
+# pass 1 # fail 0 <- d1.13-env-reference.test.js
+
+# وتشغيل حارس D1.3 مع شلّ حاجزها:
+# tests 8
+# pass 3
+# fail 5
+# نصّ TAP الكامل لذلك التشغيل في d1.3-red.tap (نفس الأرقام: 8 اختبارات / 3 نجاح / 5 فشل)

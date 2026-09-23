@@ -1,4 +1,5 @@
 import { ArtifactReader } from './artifact-reader.js';
+import { evaluateSafeTestingRecord } from './safe-testing.js';
 
 /**
  * SevenGateValidator - 7-Question Strict Finding Gate & 4-Gate Triage
@@ -6,6 +7,9 @@ import { ArtifactReader } from './artifact-reader.js';
  *
  * GATE_2_REPRODUCIBILITY تُقيَّم عبر ArtifactReader المستقل فقط (عقد قارئ الـ artifact
  * v0.3 §5.1): locator نصي وحده لا يكفي — يلزم artifact صالح البنية.
+ * GATE_7_SAFE_TESTING_COMPLIANCE (D1.3 / DI-07) كانت `pass: true` حرفيًا؛ صارت تُحسب من
+ * سجل سلوك الاختبار مربوطًا بمنتج الدليل نفسه (`safe-testing.js`) — غياب السجل رفضٌ مُعلَّل.
+ * لا بوابة هنا بقيمة pass حرفية؛ وأي رفض يحمل سبب في failedGates.
  */
 export class SevenGateValidator {
   constructor(options = {}) {
@@ -26,6 +30,12 @@ export class SevenGateValidator {
    * Evaluates a candidate finding through the 7-Question Gate
    */
   evaluateFinding(finding, context = {}) {
+    // الدليل يُقرأ مرة واحدة: صلاحيته تُغذّي GATE_2، ومنتِجه يربط شهادة GATE_7 به (D1.3)
+    const artifactOutcome = this.artifactReader.validate(finding.artifact);
+    const safeTesting = evaluateSafeTestingRecord(
+      finding.safeTesting !== undefined ? finding.safeTesting : context.safeTesting,
+      artifactOutcome.artifact
+    );
     const checks = [
       {
         id: 'GATE_1_SCOPE',
@@ -36,7 +46,7 @@ export class SevenGateValidator {
         id: 'GATE_2_REPRODUCIBILITY',
         question: 'Is the vulnerability directly reproducible with deterministic steps?',
         // §5.1: المرور الحصري عبر artifact يجتاز القارئ المستقل — لا مجرد locator نصي
-        pass: this.artifactReader.validate(finding.artifact).valid
+        pass: artifactOutcome.valid
       },
       {
         id: 'GATE_3_DEMONSTRABLE_IMPACT',
@@ -61,7 +71,9 @@ export class SevenGateValidator {
       {
         id: 'GATE_7_SAFE_TESTING_COMPLIANCE',
         question: 'Was the verification conducted non-destructively without service disruption?',
-        pass: true
+        // D1.3 (DI-07): محسوبة من سجلّ سلوك الاختبار، لا من حرف true مهدى
+        pass: safeTesting.pass,
+        reason: safeTesting.reason
       }
     ];
 
@@ -75,7 +87,7 @@ export class SevenGateValidator {
       status: isValid ? 'APPROVED_FOR_REPORT' : 'REJECTED_AT_GATE',
       // المساند السبعة كما حُسبت فعليًا — يستخدمها جسر الشهادة في قاعدة 7/7 (§10.10)
       checks: checks.map(c => ({ id: c.id, question: c.question, pass: c.pass === true })),
-      failedGates: checks.filter(c => !c.pass),
+      failedGates: checks.filter(c => !c.pass).map(c => ({ id: c.id, question: c.question, reason: c.reason || null })),
       verdict: isValid 
         ? 'Finding passed all 7 validation gates. Ready for submission.'
         : `Finding killed by ${checks.filter(c => !c.pass).map(c => c.id).join(', ')}.`

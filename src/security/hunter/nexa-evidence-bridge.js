@@ -106,8 +106,13 @@ export class NexaEvidenceBridge {
         evaluation.checks.length === 7 &&
         evaluation.checks.every(c => c.pass === true);
       if (!evaluation.isValid || evaluation.score !== '7/7' || !checksOk) {
+        // D1.3: الرفض يسمّي البوابات الساقطة وأسبابها — «لم تكتمل» بلا سبب ليس تعليلًا (§10.9)
+        const gateDetail = (Array.isArray(evaluation.failedGates) ? evaluation.failedGates : [])
+          .map(g => `${g && g.id}${g && g.reason ? `: ${g.reason}` : ''}`)
+          .join(' | ');
         reasons.push(
-          `NEXA-E-GATE: إعادة التقييم المستقلة لم تحقق 7/7 محسوبة (النتيجة الفعلية: ${evaluation.score})`
+          `NEXA-E-GATE: إعادة التقييم المستقلة لم تحقق 7/7 محسوبة (النتيجة الفعلية: ${evaluation.score})` +
+            (gateDetail ? ` — ${gateDetail}` : '')
         );
       }
 

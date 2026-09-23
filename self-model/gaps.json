@@ -85,22 +85,32 @@
       "sources": [
         "A02"
       ],
-      "current": "البوابة السابعة تكتب pass:true حرفيًا لكل finding (seven-gate-validator.js:56)",
+      "current": "البوابة السابعة تكتب `pass: true` حرفيًا لكل finding (seven-gate-validator.js:64 في الشجرة الحالية)؛ الجسر يعيد التقييم بنفسه فيُصدِر 7/7 على بوابة لم يُجب عنها أحد",
       "required": "البوابة تُحسب من دليل اختبار آمن فعلي (مثل safeTesting مستنبط من artifact/سياق)، لا قرار ثابت (DI-07)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/gates-computed.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.3-red.tap (الحارس 5 من 6 حمراء والمُعيد 2/2 قبل الإصلاح) → d1.3-green.tap (6/6)؛ d1.3-inversion.txt: شلّ البوابة وحدها يُحمرّ tests/gates-computed.test.js وحده ويبقي D1.2 (16) والصيد (10) ومُعيدات D1.4–D1.7 خضراء",
         "criteria": [
-          "GATE_7 تفشل لـ finding بلا دليل اختبار آمن وتمر لدليل صالح",
-          "لا بوابة في evaluateFinding بقيمة pass حرفية",
-          "قاعدة 7/7 تبقى محفوظة"
+          "GATE_7 تفشل لكل finding بلا سجل اختبار آمن — والسبب معلن في failedGates.reason — وتمرّ لسجل صالح مربوط",
+          "لا بوابة في evaluateFinding بقيمة pass حرفية: يُقرأ مصدر المُقيِّم سطرًا سطرًا ويُرفض أي `pass: true|false`",
+          "الشهادة العامة لا تكفي: attestedBy يجب أن يساوي artifact.producedBy المنقّح بالقارئ المستقل",
+          "الإقرار بالضرر (serviceDisrupted / destructiveAction / causedOutage) يُلغي السجل ولو مع true مجاور",
+          "لا حقل لحظي في السجل — الحمولة تبقى حتمية (§6.3): certifyFinding مرتين على نفس المدخلات يعطي نفس findingDigest",
+          "قاعدة 7/7 محفوظة من طرفين: المُقيِّم يرفض، والجسر يعيد الحساب ويسمّي البوابات الساقطة في reasons",
+          "المُنتِج الحقيقي يوقّع شهادته: VulnEngine يرفق السجل عند مواضع إنتاج الـ artifacts الثلاثة؛ ومن لا يملك سجلًا يُرفض (لا شهادة مُهداة)",
+          "لا توسيع: لا تغيير في packages/ ولا spec/، ولا إعادة تصميم لسلسلة البوابات — البوابة صارت محسوبة فقط"
         ]
       },
-      "verification": null,
+      "verification": "tests/gates-computed.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T01:15:00Z",
+      "ticket_status": "closed 2026-09-23 — GATE_7 محسوبة من سجلّ سلوك مربوط بمنتِج الدليل؛ لا بوابة بقيمة pass حرفية في المُقيِّم؛ فشل مُعلَّل من الطرفين (المُقيِّم والجسر)",
+      "follow_ups": [
+        "الكواشف inline في agentic-hunter لا تحمل artifacts ولا سجلات: مرفوضة اليوم عند GATE_2/GATE_7؛ تُزوَّد بدليلها وشهادتها في D1.7",
+        "tools/bughunter.mjs validate يبقى مثالًا مرفوعًا عمداً (fixture بلا artifact ولا سجل) — مخرجاته تقول REJECTED_AT_GATE وتسمّي الآن السبب",
+        "السجل يصرّح به المُنتِج: ربطه بمنتِج الدليل يمنع إعادة الاستخدام، لكنه يبقى شهادة لا سجلًا مُستقلًا — تشديد أدلّى (سجل جولة موقّع أو دائم) يُترك لتذكرة قائمة بذاتها إن طُلب"
+      ]
     },
     {
       "id": "D1.4",

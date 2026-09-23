@@ -80,7 +80,14 @@ test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/
       locator: 'endpoint:/api/v1/billing/101',
       evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
       producedBy: 'VulnEngine.detectIdor'
-    }
+    },
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
   };
 
   const gateResult = validator.evaluateFinding(validFinding, { inScope: true });
@@ -210,7 +217,14 @@ test('Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 an
       locator: 'endpoint:/api/v1/billing/101',
       evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
       producedBy: 'VulnEngine.detectIdor'
-    }
+    },
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
   };
 
   const receipt = bridge.certifyFinding(finding, 'api.example.com');

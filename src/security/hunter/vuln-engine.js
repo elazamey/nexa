@@ -141,6 +141,13 @@ export class VulnEngine {
               method: ep.method || 'ANY'
             },
             producedBy: 'VulnEngine.detectIdor'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectIdor'
           }
         });
       }
@@ -159,6 +166,13 @@ export class VulnEngine {
               method: ep.method || 'ANY'
             },
             producedBy: 'VulnEngine.detectRaceCondition'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectRaceCondition'
           }
         });
       }
@@ -179,6 +193,13 @@ export class VulnEngine {
               sink: p.sink || 'unknown'
             },
             producedBy: 'VulnEngine.detectSsrf'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectSsrf'
           }
         });
       }

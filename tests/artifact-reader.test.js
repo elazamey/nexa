@@ -39,6 +39,13 @@ function validFinding(overrides = {}) {
     cwe: 'CWE-639',
     endpoint: '/api/v1/billing/101',
     artifact: validArtifact(),
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
     ...overrides
   };
 }
@@ -218,7 +225,14 @@ test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest
     cwe: 'CWE-639',
     description: 'Direct object reference permits unauthorized invoice access',
     severity: 'HIGH',
-    title: 'IDOR in Billing API'
+    title: 'IDOR in Billing API',
+    // D1.3: السجل المطلوب — بمفاتيح مرتّبة عكس القالب، ليظل هذا الاختبار يقيس ترتيب المفاتيح
+    safeTesting: {
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor',
+      noServiceDisruption: true,
+      nonDestructive: true
+    }
   };
   const c = bridge.certifyFinding(reordered, 'api.example.com');
   assert.equal(c.findingDigest, a.findingDigest, 'canonicalization يجب أن يمحو أثر ترتيب المفاتيح');

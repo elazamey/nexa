@@ -20,12 +20,12 @@
     "tree_state": "D1.12 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 633,
-    "pass": 633,
+    "tests": 637,
+    "pass": 637,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 633 = 629 − 5 (known-gaps/d1.12 حُذف) + 6 (tests/count-claims-sync.test.js)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 637 = 633 (إغلاق D1.12) + 6 (tests/gates-computed.test.js) − 2 (known-gaps/d1.3 حُذف في تغيير الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -69,6 +69,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.12 (P1-A/O04): ادعاءات الأعداد صارت مقروءة من القياس لا من نص حرفي — محقق النشر يقرأ # tests/# pass/# fail من تشغيل واحد ويرفض أي فشل أو انكماش تحت الأرضية المسجلة، والخطط موسومة HISTORICAL RECORD بتاريخها، وREADME/SECURITY يحيلان إلى live_measurement هذا، وحارس المزامنة لم يعد يثبّت 545؛ 633/633 أخضر (629 − 5 known-gaps/D1.12 حُذف + 6 tests/count-claims-sync.test.js)؛ npm run metrics كان أحمر (Measured 632 ≠ Documented 545) وصار أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.3 (P0-D / A02 / DI-07): GATE_7 صارت محسوبة — سجلّ سلوك اختبار مربوط بـ artifact.producedBy في src/security/hunter/safe-testing.js، والغياب رفضٌ مُعلَّل من المُقيِّم ومن الجسر؛ لا pass حرفي في المُقيِّم (يُفحص من مصدره سطرًا سطرًا)؛ حتمية §6.3 محفوظة (لا حقل لحظي)؛ 637/637 أخضر"
     }
   ],
   "post_d1_2": {
@@ -151,5 +155,31 @@
       "publish-v0.1.plan.json / publish-v0.2.plan.json: وسم HISTORICAL RECORD بتاريخ الخطة، بلا مسّ بأرقامها الموقّعة"
     ],
     "docs_note": "README: أُزيلت ثلاث صيغ ادعاء (سطر 2026-09-20، و«Latest verification»، و«Latest verify») وصار القياس مُحالًا إلى live_measurement. SECURITY.md: فقرة «Latest verify: 392/2 of 394» استُبدلت بما تقيسه CI، وصُحِّح ادعاء H2/H3 (كان يقول «still fail» وهو أخضر منذ 2026-09-22)"
+  },
+  "d1.3_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.3 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 637,
+    "pass": 637,
+    "fail": 0,
+    "breakdown": "633 بعد D1.12 + 6 (tests/gates-computed.test.js) − 2 (مُعيد known-gaps/d1.3 حُذف في تغيير الإغلاق)؛ قوالب D1.2 في tests/artifact-reader.test.js وtests/agentic-hunter.test.js قُوِّيت بسجلّ آمن (لا تليين لأي assert)",
+    "red_evidence": "self-model/evidence/d1.3-red.tap (5 من 6 حمراء مع المُعيد 2/2) + d1.3-red-summary.txt (اللقطة الأصلية على bd76194 قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.3-green.tap (6/6 على الكود النهائي)",
+    "inversion_evidence": "d1.3-inversion.txt — شلّ البوابة وحدها (pass: safeTesting.pass → pass: true) يُحمرّ tests/gates-computed.test.js وحده (5 من 6) ويبقي: artifact-reader 16/16، agentic-hunter 10/10، ومُعيدات D1.4/D1.5/D1.6/D1.7 خضراء — أي أن الحارس يخصّ D1.3 ولا يمسك غيرها",
+    "tools_changed": [
+      "src/security/hunter/safe-testing.js (جديد)",
+      "src/security/hunter/seven-gate-validator.js",
+      "src/security/hunter/nexa-evidence-bridge.js (تسمية البوابات الساقطة في reasons)",
+      "src/security/hunter/vuln-engine.js (سجل سلوك عند مواضع إنتاج الـ artifacts الثلاثة)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-07 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 637)",
+      "docs/repository-audit-2026-09-22.ar.md §O9"
+    ],
+    "residual": "الشهادة يصرّح بها المُنتِج؛ الرقابة الحالية هي الربط بمنتِج الدليل + البنية + النفي الصريح. سجلّ جولة مستقل (موقّع/دائم) متروك عمدًا لتذكرة قائمة بذاتها",
+    "side_effects_restored": []
   }
 }

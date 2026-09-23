@@ -408,3 +408,52 @@ README دون SECURITY.md ⇒ اختبار التطابق مع السجل؛ نز
 **بوابة الإغلاق**: `npm test` 633/633، `npm run metrics` أخضر بـ`exit 0`، `npm run verify`
 أخضر، `git diff --check` نظيف، `git status --short` نظيف بعد Commit، وفجوة واحدة مغلقة
 بـ`enforced:true` و`verification: tests/count-claims-sync.test.js` وحذف مُعيدها في نفس التغيير.
+
+### O9. سجل إغلاق D1.3 (P0-D / A02 / DI-07) — البوابة السابعة صارت تُجاب (2026-09-23)
+
+**الداء كما ظهر في الكود الحالي، لا كما صيغ في التقرير.** السطر 64 من
+`seven-gate-validator.js` يكتب `pass: true` للبوابـة «هل أُجري التحقق بغير إضرار وبلا قطع
+خدمة؟». ما لم يقله النص: الضرر يتجاوز finding واحدًا — لأن `NexaEvidenceBridge.certifyFinding`
+يُعيد التقييم **بنفسه** (§6.1) ثم يشترط 7/7 (§10.10). بوابة مُهداة واحدة كانت إذن تُغلّق
+قاعدة الشهادة كلها: القارئ المستقل يجتاز، والسادسة تُحكم بالشدة، والسابعة لا تُسأل.
+
+**العقد**:
+
+```text
+GATE_7 pass ⇔ ∃ سجلّ { nonDestructive:true, noServiceDisruption:true,
+                       method:<معرّف>, attestedBy == artifact.producedBy (نسخة القارئ المنقّحة) }
+                   ∧ لا إقرار بالضرر (serviceDisrupted|destructiveAction|causedOutage)
+الغياب/النصّ/شهادة عامة واحدة لكل الكواشف → رفض مُعلَّل (§10.9)، لا تمرير
+```
+
+ثلاث قرارات تصميمية مُوثَّقة هنا:
+1. **الربط لا الوجود**: `attestedBy` يجب أن يساوي منتِج الدليل بعد تنقيح القارئ — وإلا صارت
+   شهادة واحدة في السياق تغطي كل finding، وهو «حكم مرفق» بلبوس دليل. لا يُمسّ عقد الـ artifact:
+   §3.3 يمنع حقول الحكم الذاتي داخل artifact، فالسجل على الـ finding والقارئ يبقى حكمه الوحيد
+   على الدليل (DI-05 لم يُلْمَس).
+2. **لا حقول لحظية**: السجل يدخل الحمولة القانونية الموقّعة؛ `observedAt` كان سيكسر حتمية
+   §6.3 التي يحميها D1.2. الصدق في الربط لا في الختم الزمني.
+3. **الرفض يسمّي**: `failedGates[].reason` ورسالة الجسر صارت تُعدّد البوابات الساقطة وأسبابها؛
+   «لم تكتمل 7/7» بلا سبب ليس تعليلًا.
+
+**المُنتِجون يوقّعون على سلوكهم حيث هو معروف**: `VulnEngine.scanSurface` يرفق السجل عند مواضع
+إنتاج الـ artifacts الثلاثة (`method: 'surface-model-analysis'` — لا يمرّر حركة شبكة أصلًا).
+ومن لا يملك سجلًا يُرفض: الكواشف inline في `agentic-hunter.js` ما زالت تُنتج findings بلا
+artifact، فترفضها GATE_2 وترفضها GATE_7 — وهذا أمانة لا عطلًا؛ تُزوَّد بدليلها وشهادتها في D1.7.
+
+**القوالب قُوِّيت لا Assertions لِينت**: قالب D1.2 في `tests/artifact-reader.test.js` (وبناه
+المعاد ترتيبه) وقالبا `tests/agentic-hunter.test.js` اكتسبا سجلًا صالحًا مربوطًا؛ لا assert
+حُذف أو خُفِّف. الحتمية بقيت مفحوصة: نفس finding → نفس `findingDigest` قبل وبعد.
+
+**العزل (الخاصية التي تطلبها التذاكر فردًا فردًا)**: إرجاع `pass: true` وحده في المُقيِّم —
+بقي كل شيء آخر مُصلحة — يُحمرّ `tests/gates-computed.test.js` وحده (5 من 6) ويبقي
+`tests/artifact-reader.test.js` 16/16، `tests/agentic-hunter.test.js` 10/10، ومُعيدات
+D1.4/D1.5/D1.6/D1.7 خضراء. الدليل: `self-model/evidence/d1.3-inversion.txt`؛ والأحمر
+نفسه: `d1.3-red.tap` (مع `d1.3-red-summary.txt` لقططة الشجرة غير المُصلحة) مقابل
+`d1.3-green.tap` (6/6).
+
+**بوابة الإغلاق**: `npm test` 637/637، `npm run metrics` أخضر (والوثائق تُطابق السجل:
+`live_measurement.tests = 637`)، `npm run verify` أخضر، `git diff --check` نظيف،
+`git diff --stat -- packages/ spec/` فارغ — لا سطر في النواة. DI-07 مُقلَبة إلى enforced
+وجدول الملخص مُحدَّث؛ `gaps.json` تُشير حيًا إلى `tests/gates-computed.test.js`؛ ومُعيد
+known-gaps/D1.3 حُذف في نفس التغيير.

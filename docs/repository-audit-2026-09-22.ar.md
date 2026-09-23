@@ -197,3 +197,82 @@
 قواعد ملزمة لهذه التذاكر (نفس نمط D1.x): إغلاق = اختبار انعكاس في `tests/`
 خارج known-gaps + `enforced:true` + `verification` + `closed_at` في التغيير نفسه؛
 مُعيد الإنتاج يُزال في تغيير الإغلاق نفسه؛ أي حارس يُعدَّل يُوثَّق سبب تعديله هنا.
+
+---
+
+### O6. سجل إغلاق D1.10 (P0-B) — أربع طبقات على حدود الخادم (2026-09-23)
+
+جدول O5 أعلاه **لقطة تسجيل** لا لوحة حالة؛ الفهرس الحي هو `self-model/gaps.json`.
+لذلك لم تُعدَّل خلايا «الحالة» في O5 (ملحق append-only، و§§0–7 خارج النطاق)،
+ولا يُعَدّ ذلك فجوة موثقة معلّقة: كل صف يُقارن بـ `ticket_status` في الفهرس.
+
+**ما أُغلق** — سلسلة O02 كانت مفتوحة من طرفين في آن: لا هوية على النقل، ولا قرار
+موقَّع في الموافقة. الفاصل بينهما هو ما منع الخلط:
+
+| # | الطبقة | التنفيذ | الاختبار |
+|:--|:--|:--|:--|
+| 1 | هوية المحيط + جلسة SPA + CSRF | `tools/celia-perimeter-auth.mjs` | `tests/server-perimeter.test.js` (9) |
+| 2 | حد معدل (نافذة ثابتة) | `tools/celia-rate-limit.mjs` | `tests/server-rate-limit.test.js` (7) |
+| 3 | fail-fast إنتاجي + عقد Render | `tools/celia-startup-guard.mjs` + `render.yaml` | `tests/server-production-failfast.test.js` (6) |
+| 4 | عقد قرار الموافقة | `tools/celia-approval-http.mjs` + `tools/celia-operator.mjs` | `tests/server-approval-contract.test.js` (6) |
+
+**القرارات الحدودية الستة** (المسجَّلة هنا لأنها ما يجعل الإغلاق قابلًا للمراجعة):
+
+1. **حدود الجلسة**: `login → session id → Set-Cookie → middleware → req.nexaIdentity`.
+   الكوكي `HttpOnly; SameSite=Strict; Path=/` و`Secure` تحت `NODE_ENV=production`
+   أو `x-forwarded-proto=https`. لا سر قابل للوصول من JavaScript: المفتاح يُرسَل
+   مرة واحدة فقط، ولا استجابة (ولا HTML) تعيده. الجلسات مخزَّنة كبصمات sha256 بسقف
+   و TTL، لا كرموز خام.
+2. **CSRF**: `HttpOnly` ليس دفاع CSRF. كل `POST/PUT/PATCH/DELETE` بمصادقة كوكي
+   يستلزم إعادة رمـز `x-nexa-csrf` (double-submit؛ الرمز في كوكي مقروء للصفحة).
+   عميل الترويسة (المفتاح) معفى من فحص CSRF وحده، لا من الجدار. الواجهة تركّب
+   الرفيق في موضع واحد بدل 18 موضع استدعاء حتى لا يُنسى في أحدها.
+3. **حدود مفتاح المشغّل**: `Authorization: Bearer` أو `X-Nexa-Api-Key` فقط؛
+   المفتاح في query string مرفوض أصلًا (لا referer/سجل/history)، والمقارنة
+   sha256 ثم `timingSafeEqual` (زمن ثابت، لا وحي طول). لا `.env.example` هنا
+   (تذكرة D1.13)، ولا المفتاح في حزمة أمامية أو إعدادها.
+4. **حدود التفويض**: الترتيب تعاقدي —
+   `Authentication → Rate Limit → Authorization/CSRF → Policy → Approval → Execution`.
+   `authenticated ≠ authorized` و`approved ≠ authenticated`: لا مسار يقرأ وجود
+   الهوية كتفويض، ولا توقيع يشتري هوية. الدفتر (`packages/policy`) يبقى جذر ثقة
+   الموافقة؛ الطبقات الأربع لا تقرر شيئًا بدلًا منه.
+5. **عقد الموافقة**: `approve`/`deny` يستلزمان `approverKid` مصرَّحًا و`scope`
+   مصرَّحًا وتوقيعًا على `nexa:approval-decision:v1\n` + `canonicalBytes` لكل
+   الحقول؛ `consume` يفك الترميز فقط؛ `/sign` يوقّع ولا يمس الدفتر. الانعكاس
+   مُثبَّت: `approve {}` = 400 `NEXA_E_SCHEMA`، توقيع مفقود/موسَّع = 400
+   `NEXA_E_SIG`، kid أجنبي بتوقيع صحيح = 400 `NEXA_E_UNTRUSTED`، معرف مرمَّز صالح
+   = 200، ترميز مشوّه = 400.
+6. **الحد كدفاع لا كتفويض**: 429 مع `Retry-After` بعد المصادقة وقبل التنفيذ، مفتاح
+   الدلو قابل للضبط (`identity|ip|forwarded`) لأن عنوان الـ peer خلف proxy إجابة
+   خاطئة في الاتجاهين؛ `/healthz` والمسارات الساكنة خارج الحد (probe مقفول =
+   إعادة تدوير خدمة سليمة). لا اعتمادية جديدة، ولا اعتماد عليه لتأمين
+   `terminal/execute` — واختبار يثبّت أن الرفض تحت الميزانية يأتي من العقد لا من
+   الحد.
+
+**بوابة الإغلاق** (نجاح 622/622 وحده لا يُغلق شيئًا):
+
+- `npm test` 622/622، `npm run verify` أخضر، `git status` نظيف بلا استعادة يدوية.
+- أحمر قبل الإصلاح ثم أخضر بعده: `self-model/evidence/d1.10-red.tap`
+  (5/6 فشل — `approve {}` يعيد 200، `/sign` غير موجود، و`NEXA_E_APPROVAL_MISSING`
+  بدل فك الترميز) مقابل `d1.10-green.tap` (6/6). الاختبار الوحيد الأخضر في
+  الأحمر هو اختبار الوحدة للنقي الجديد — طبيعي: الحارس كان غائبًا.
+- إزالة كل حاجز تُثبت فعاليتها: تعطيل الجدار ⇒ 4 من 9 حمراء؛ تعطيل الحد ⇒ 4 من 7؛
+  تعطيل الحارس ⇒ 2 من 6. لا اختبار «زخرف».
+- `production` بلا مفتاح (أو فارغ/مسافات) = exit 1 قبل `listen`؛ بمفتاح خاطئ/مفقود
+  = 401؛ الإغراق = 429؛ `request → approve {} → terminal/execute` = **قرار DENY**
+  مسجَّل في `/api/v1/timeline` كـ `AUTHORIZATION_RESULT`، لا 401 مخبَّأ خلف الجدار.
+- بلا مفتاح (local/dev/test): كل اختبارات HTTP السابقة خضراء بلا تعديل، ومُعيد
+  D1.11 بقي أخضر المتوقَّع (إنتاج + mock يقلع ويخدم) بعد تمرير مفتاح تجريبي له.
+- النواة سليمة: لا سطر تغيَّر في `packages/{protocol,capability,policy,crypto,
+  evidence}` ولا في الـ vectors؛ عقد الموافقة أُصلح في السيرفر. الإصلاحات أربع
+  commits منفصلة قابلة للعكس، وكل طبقة «hook مضاف» لا تفكيك لـ
+  `celia-dashboard-server.mjs`.
+
+**ما لم يُفعَل عمدًا**: تفكيك `celia-dashboard-server.mjs` وتعريف الـ API العام
+يبقيان بوابةً قبل Phase 1 (انظر O3)؛ `creative/approve` خارج النطاق؛ سياسة أصل
+CORS لم تُمَس (`*` + same-origin عبر البروكسي، والكوكيز المقرونة بـ`*` ترفضها
+المتصفحات أصلًا)؛ حد حجم الجسم لمواضع `req.on('data')` القديمة والـ fingerprint
+المتاح في `/api/v1/authorizations/stats` مُسجَّلان كمتابعة في `gaps.json` تحت
+D1.10 (`follow_ups`)؛ ودوران `NEXA_OPERATOR_SEED` تحذير عند الإقلاع لا فشل —
+لأن البذرة المعلنة تجعل kid قابلًا للاشتقاق لأي مستنسخ، وهي مسؤولية المشغّل لا
+هذه التذكرة.

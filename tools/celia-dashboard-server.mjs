@@ -57,7 +57,15 @@ import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
 import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
 import { ApprovalLedger, isApprovalEligible, evaluateToolRequest, assertTargetStable, downgradeProvenance } from '../packages/policy/index.js';
-import { createIdentity } from '../packages/identity/index.js';
+import { createDashboardOperator } from './celia-operator.mjs';
+import {
+  ApprovalContractError,
+  parseApprovalRoute,
+  readSignProposal,
+  resolveApprovalConsumption,
+  resolveApprovalDecision,
+  signApprovalDecision,
+} from './celia-approval-http.mjs';
 import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
 import { MissionLog, UsageMeter } from '../packages/protocol/index.js';
 import { randomId } from '../packages/crypto/index.js';
@@ -179,7 +187,11 @@ const creativeRuns = new Map(); // creativeId → result (ring, max 20)
 // v13-1 Approval Protocol — the human seat in the loop (doc §10).
 // The dashboard operator is the only trusted approver in this deployment; the
 // approval log is a hash-chained, tamper-evident ledger (packages/policy).
-const dashboardOperator = createIdentity({ label: 'celia-dashboard-operator', seed: 'e5'.repeat(32) });
+// D1.10 layer 4: the seed is configurable (NEXA_OPERATOR_SEED) because the
+// published demo seed makes this kid derivable by anyone who can read the repo —
+// see tools/celia-operator.mjs. Identity of the *signer* no longer comes from the
+// request: the ledger only accepts a decision that names it and signs it.
+const dashboardOperator = createDashboardOperator({ env: process.env });
 const approvalLedger = new ApprovalLedger({ trustedApprovers: [dashboardOperator.kid] });
 
 // v13-2 Terminal — first REAL execution. The jail lives under the gitignored
@@ -804,8 +816,10 @@ const server = createServer(async (req, res) => {
       }));
       return;
     }
-    // Request context for downstream boundaries (rate limit, audit). Read-only:
-    // no route may treat its presence as an authorization decision.
+    // Request context for downstream boundaries (audit, forensics). Read-only,
+    // and inert by contract: no route may treat its presence as an authorization
+    // decision — the rate limit already charged this identity, and every gate
+    // still decides in-kernel on its own inputs.
     req.nexaIdentity = identity.context;
   }
 
@@ -1649,40 +1663,90 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume)$/.test(url.pathname) && req.method === 'POST') {
-    const [, , , , approvalId, verb] = url.pathname.split('/');
+  // === D1.10 layer 4 — approval decision contract (tools/celia-approval-http.mjs) ===
+  // `POST …/approve {}` used to become "the trusted operator approved this once"
+  // because the route filled in both the kid and the scope. It cannot any more:
+  // a decision must name its approver, state its scope and carry that approver's
+  // signature over the exact bytes. Absence of a decision is a DENY, not a
+  // default. `sign` is the human's signing hand (no ledger mutation); `consume`
+  // only decodes the id — spending an approval was never the granting one.
+  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume|sign)$/.test(url.pathname) && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
+      let route = null;
       try {
+        route = parseApprovalRoute(url.pathname);
         const args = JSON.parse(body || '{}');
-        // The human at this dashboard IS the trusted operator; a foreign approverKid is refused by the ledger.
-        const approverKid = args.approverKid ?? dashboardOperator.kid;
         let result;
         let eventType;
-        if (verb === 'approve') {
-          result = approvalLedger.approve({ approvalId, scope: args.scope ?? 'once', approverKid });
-          eventType = 'AUTHORIZATION_APPROVED';
-        } else if (verb === 'deny') {
-          result = approvalLedger.deny({ approvalId, approverKid, reason: args.reason ?? null });
-          eventType = 'AUTHORIZATION_DENIED';
-        } else {
-          result = approvalLedger.consume({
-            approvalId,
-            resource: args.resource,
-            action: args.action,
-            target: args.target,
-            missionId: args.missionId ?? null,
-          });
+        if (route.verb === 'consume') {
+          result = approvalLedger.consume(resolveApprovalConsumption(route, args));
           eventType = 'AUTHORIZATION_CONSUMED';
+        } else if (route.verb === 'sign') {
+          const proposal = readSignProposal(args);
+          const signed = signApprovalDecision({
+            operator: dashboardOperator,
+            approvalId: route.approvalId,
+            verb: proposal.verb,
+            scope: proposal.scope,
+            reason: proposal.reason,
+          });
+          // Hand back exactly what the decision route must echo. The ledger is
+          // untouched: a signature is an intention, not a grant.
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            ok: true,
+            approvalId: route.approvalId,
+            decision: proposal.verb,
+            scope: proposal.scope,
+            reason: proposal.reason,
+            approverKid: signed.approverKid,
+            signature: signed.signature,
+            // Which seed signed is an operational secret, not a client need: the
+            // boot warning (tools/celia-startup-guard.mjs) is where it is reported.
+            ledger: 'unchanged',
+          }));
+          return;
+        } else {
+          const decision = resolveApprovalDecision(route, args);
+          if (decision.verb === 'approve') {
+            result = approvalLedger.approve({
+              approvalId: decision.approvalId,
+              scope: decision.scope,
+              approverKid: decision.approverKid,
+            });
+            eventType = 'AUTHORIZATION_APPROVED';
+          } else {
+            result = approvalLedger.deny({
+              approvalId: decision.approvalId,
+              approverKid: decision.approverKid,
+              reason: decision.reason,
+            });
+            eventType = 'AUTHORIZATION_DENIED';
+          }
         }
         emitDagEvent(eventType, result);
-        if (verb === 'approve' || verb === 'deny') maybeResumeMissions(approvalId, verb);
+        if (route.verb === 'approve' || route.verb === 'deny') maybeResumeMissions(route.approvalId, route.verb);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, ...result }));
       } catch (e) {
-        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+        // A refusal is an authorization decision, so it belongs in the audit
+        // trail — not only in a 4xx the client may ignore. Deny first, answer after.
+        const code = e.code || (e instanceof ApprovalContractError ? 'NEXA_E_SCHEMA' : 'NEXA_E_INTERNAL');
+        emitDagEvent('AUTHORIZATION_RESULT', {
+          entry: 'authorizations:decision',
+          approvalId: route?.approvalId ?? null,
+          verb: route?.verb ?? null,
+          decision: 'DENY',
+          code,
+          reason: e.message,
+        });
+        const status = e instanceof ApprovalContractError
+          ? e.status
+          : (APPROVAL_BAD_CODES.includes(code) ? 400 : 500);
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code, error: e.message }));
       }
     });
     return;

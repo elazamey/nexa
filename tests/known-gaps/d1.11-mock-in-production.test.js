@@ -13,11 +13,12 @@ import { fileURLToPath } from 'node:url';
  * (spawn مستقل: الـ helper المشترك لا يمرر NODE_ENV، وهذا الاختبار يثبت
  *  سلوك الإقلاع تحت NODE_ENV=production تحديدًا.)
  *
- * تحديث D1.10 (طبقة 3): الإنتاج صار يرفض الإقلاع بلا NEXA_API_KEY، فبقاء هذا
- * المُعيد صالحًا إثباتِه يستلزم مفتاحًا تجريبيًا في البيئة وعلى الطلب — لا علاقة
- * له بالفجوة نفسها. ما يُختبر هنا ما زال هو: «production + mock://memory يقلع
- * ويخدم». حارس المحيط لا يبتلع D1.11 ولا يغلقها (انظر
- * tests/server-production-failfast.test.js — نفس الجملة معكوسة عمدًا).
+ * تحديث طبقة المحيط (P0-B، حارس الإقلاع tools/celia-startup-guard.mjs): الإنتاج
+ * صار يرفض الإقلاع بلا NEXA_API_KEY، فبقاء هذا المُعيد صالحًا إثباتُه يستلزم
+ * مفتاحًا تجريبيًا في البيئة وعلى الطلب — لا علاقة لذلك بالفجوة نفسها. ما يُختبر
+ * هنا ما زال هو: «production + mock://memory يقلع ويخدم». حارس المحيط لا يبتلع
+ * هذه الفجوة ولا يغلقها (قابلْ tests/server-production-failfast.test.js — نفس الجملة
+ * معكوسة عمدًا).
  */
 
 const PERIMETER_TEST_KEY = 'd1.11-reproducer-placeholder-key';

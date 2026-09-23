@@ -1,0 +1,134 @@
+TAP version 13
+# Subtest: D1.10.7/8: approve بجسم فارغ تُرفض، والسلسلة تنتهي بقرار تفويض DENY مسجَّلًا
+not ok 1 - D1.10.7/8: approve بجسم فارغ تُرفض، والسلسلة تنتهي بقرار تفويض DENY مسجَّلًا
+  ---
+  duration_ms: 331.515664
+  type: 'test'
+  location: '/home/user/nexa/tests/server-approval-contract.test.js:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    approve بجسم فارغ كانت تمنح APPROVED_ONCE
+
+    200 !== 400
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-approval-contract.test.js:49:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: D1.10.9: توقيع مفقود أو موقَّع بمفتاح أجنبي أو موسَّع عمدًا = DENY
+not ok 2 - D1.10.9: توقيع مفقود أو موقَّع بمفتاح أجنبي أو موسَّع عمدًا = DENY
+  ---
+  duration_ms: 302.999392
+  type: 'test'
+  location: '/home/user/nexa/tests/server-approval-contract.test.js:72:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    200 !== 400
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-approval-contract.test.js:81:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.10.8/10: معرف مرمَّز + قرار موقَّع = مسار التنفيذ القائم يعمل كما هو
+not ok 3 - D1.10.8/10: معرف مرمَّز + قرار موقَّع = مسار التنفيذ القائم يعمل كما هو
+  ---
+  duration_ms: 278.775692
+  type: 'test'
+  location: '/home/user/nexa/tests/server-approval-contract.test.js:123:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    404 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-approval-contract.test.js:133:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.10 layer 1+4: الجدار لا يُخفي الثغرة — موقَّع بلا مصرّح = 401، و{} مع المفتاح = قرار DENY
+not ok 4 - D1.10 layer 1+4: الجدار لا يُخفي الثغرة — موقَّع بلا مصرّح = 401، و{} مع المفتاح = قرار DENY
+  ---
+  duration_ms: 251.024942
+  type: 'test'
+  location: '/home/user/nexa/tests/server-approval-contract.test.js:179:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    200 !== 400
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-approval-contract.test.js:202:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.10.8: ترميز مشوّه = DENY، لا بحث في الدفتر بمعرّف غير مُفسَّر
+not ok 5 - D1.10.8: ترميز مشوّه = DENY، لا بحث في الدفتر بمعرّف غير مُفسَّر
+  ---
+  duration_ms: 279.187791
+  type: 'test'
+  location: '/home/user/nexa/tests/server-approval-contract.test.js:225:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'NEXA_E_APPROVAL_MISSING'
+    - 'NEXA_E_SCHEMA'
+              ^
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'NEXA_E_SCHEMA'
+  actual: 'NEXA_E_APPROVAL_MISSING'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-approval-contract.test.js:233:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.10 layer 4 (unit): العقد نقي — فك ترميز، نطاق، ومجال توقيع منفصل
+ok 6 - D1.10 layer 4 (unit): العقد نقي — فك ترميز، نطاق، ومجال توقيع منفصل
+  ---
+  duration_ms: 6.248541
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1566.356267

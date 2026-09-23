@@ -80,6 +80,48 @@ function installCsrfCompanion() {
   };
 }
 
+// === D1.10 layer 4: a decision is signed, never defaulted ===
+// The browser is the human's *signing hand*, not a key holder: it asks this
+// deployment's server to sign the decision the operator clicked (POST …/sign —
+// which mutates nothing), then submits that signature with an explicit approver
+// and an explicit scope. So no private key ships in this bundle, and no
+// `approve({})` can silently read as "the trusted operator approved once":
+// absence of a decision is a refusal, decided by the server-side contract.
+async function signApprovalDecision(approvalId, { decision, scope, reason }) {
+  const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/sign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      decision,
+      ...(scope ? { scope } : {}),
+      ...(reason ? { reason } : {}),
+    }),
+  });
+  const signed = await res.json().catch(() => ({}));
+  if (!res.ok || typeof signed.signature !== 'string') {
+    throw new Error(signed.error || `signing failed (${res.status})`);
+  }
+  return signed;
+}
+
+async function submitApprovalDecision(approvalId, verb, signed) {
+  const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/${verb}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      approverKid: signed.approverKid,
+      signature: signed.signature,
+      ...(verb === 'approve' ? { scope: signed.scope } : { reason: signed.reason ?? null }),
+    }),
+  });
+  return { status: res.status, body: await res.json().catch(() => ({ ok: false })) };
+}
+
+async function decideAndSubmit(approvalId, verb, { scope, reason } = {}) {
+  const signed = await signApprovalDecision(approvalId, { decision: verb, scope, reason });
+  return submitApprovalDecision(approvalId, verb, signed);
+}
+
 export default function NexaPerimeterGate() {
   const [session, setSession] = useState(null); // null = probing
   const [unreachable, setUnreachable] = useState(false);
@@ -524,9 +566,7 @@ function NexaDashboard() {
     if (!mission?.pending) return;
     try {
       setMissionBusy(true);
-      const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(mission.pending.approvalId)}/approve`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope: 'once' }),
-      }).then(r => r.json());
+      const { body: res } = await decideAndSubmit(mission.pending.approvalId, 'approve', { scope: 'once' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${res.ok ? '✅ Approved once — mission resuming…' : '✗ Approve failed: ' + (res.error || res.code)}`, ...prev].slice(0,30));
     } catch (e) {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Approve failed: ${e.message}`, ...prev].slice(0,30));
@@ -539,9 +579,7 @@ function NexaDashboard() {
     if (!mission?.pending) return;
     try {
       setMissionBusy(true);
-      await fetch(`/api/v1/authorizations/${encodeURIComponent(mission.pending.approvalId)}/deny`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'denied from dashboard' }),
-      });
+      await decideAndSubmit(mission.pending.approvalId, 'deny', { reason: 'denied from dashboard' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Denied from dashboard`, ...prev].slice(0,30));
     } catch (e) {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Deny failed: ${e.message}`, ...prev].slice(0,30));
@@ -553,10 +591,9 @@ function NexaDashboard() {
   const decideAuthorization = async (approvalId, verb, scope) => {
     try {
       setGovernBusy(true);
-      const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/${verb}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verb === 'approve' ? { scope: scope || 'once' } : { reason: 'denied from Approval Center' }),
-      }).then(r => r.json());
+      const { body: res } = await decideAndSubmit(approvalId, verb, verb === 'approve'
+        ? { scope: scope || 'once' }
+        : { reason: 'denied from Approval Center' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${res.ok ? (verb === 'approve' ? `✅ Approved (${res.scope})` : '⛔ Denied') + ` — ${String(approvalId).slice(-8)}` : '✗ ' + (res.error || res.code)}`, ...prev].slice(0,30));
       fetchGovernance();
       if (missionIdRef.current) refreshMission(missionIdRef.current);

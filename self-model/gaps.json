@@ -255,29 +255,63 @@
       "track": "P0-B",
       "severity": "critical",
       "area": "server",
-      "title": "مصادقة محيط للخادم HTTP + حد معدل (env-gated، مفتوح عند الغياب)",
+      "title": "مصادقة محيط للخادم HTTP (جلسة SPA + مفتاح مشغّل) + حد معدل + fail-fast إنتاجي + عقد قرار الموافقة",
       "sources": [
         "O02"
       ],
       "current": "سلسلة request→approve→terminal/execute مفتوحة بلا أي سر (approve تقبل approverKid الافتراضي بفحص سلسلة بلا توقيع)؛ rollback/create/missions بلا مصرّح؛ لا API key ولا rate limit على أي من ~110 مسارات",
-      "required": "طبقة محيط فقط (ليست بديل capability/policy/evidence): NEXA_API_KEY عبر env — غائب=سلوك اليوم (يبقي عميلَي Q3 أخضرين)، معرّف=مصادقة على كل /api/* + حد معدل بلا اعتماديات؛ production بلا مفتاح = fail-fast؛ العملاء المحصورون (SPA + اختبارات HTTP) يبقون أخضرين",
-      "enforced": false,
+      "required": "أربع طبقات منفصلة قابلة للعكس على حدود الخادم فقط: (1)tools/celia-perimeter-auth.mjs — مفتاح NEXA_API_KEY عبر Authorization/X-Nexa-Api-Key لعملاء الخادم فقط (بلا query string، مقارنة sha256+timingSafeEqual)، و SPA عبر جلسة/كوكي HttpOnly SameSite=Strict Path=/ (+Secure في الإنتاج) مع CSRF double-submit على كل حالة مُغيِّرة؛ (2)tools/celia-rate-limit.mjs — نافذة ثابتة بلا اعتماديات، مفتاحها الهوية (قابل للضبط: identity|ip|forwarded) و429+Retry-After بعد المصادقة وقبل التنفيذ؛ (3)tools/celia-startup-guard.mjs — production بلا مفتاح (أو فارغ) = exit 1 قبل listen؛ (4)tools/celia-approval-http.mjs — approve/deny يستلزمان approverKid مصرّحًا وscope مصرّحًا وتوقيعًا على nexa:approval-decision:v1+canonicalBytes، وconsume يفك الترميز فقط، و/sign يوقّع ولا يمنح. المحيط ≠ تفويض: لا تغيير في kernel (protocol/capability/policy/crypto/evidence/vectors) ولا في حارس D1.11 (mock://memory)",
+      "enforced": true,
       "reproducer": "test",
       "acceptance": {
-        "inversion_test": "tests/server-perimeter.test.js (مخطط)",
+        "inversion_test": "tests/server-approval-contract.test.js — أحمر قبل الإصلاح ثم أخضر (self-model/evidence/d1.10-red.tap: 5/6 fail، d1.10-green.tap: 6/6 pass). نجاح المجموعة وحده لا يُغلق السلسلة؛ الدليل هو انعكاس request → approve {} → terminal/execute إلى قرار DENY",
         "criteria": [
-          "مع NEXA_API_KEY: سلسلة request→approve بلا مفتاح تُرفض 401 ولا تنفذ شيئًا",
-          "مع المفتاح الصحيح: السلسلة تعمل كما اليوم (لا كسر سلوكي)",
-          "بلا المفتاح (محلي/اختبار): كل شيء كما اليوم — اختبارات HTTP الحالية خضراء بلا تعديل",
-          "حد المعدل يرفض الإغراق (429) ولا يخنق الاستخدام العادي للواجهة",
-          "لا تغيير في kernel: protocol/capability/policy/crypto/evidence/vectors خارج النطاق",
-          "عقد approve/deny/consume مثبّت: فك ترميز المعرف (raw وencoded يعملان) — علة اكتُشفت في مُعيد D1.10"
-        ]
+          "مع NEXA_API_KEY: request→approve{} بلا مفتاح = 401 (لا تنفيذ)؛ بالمفتاح الصحيح = نفس السلوك الوظيفي السابق",
+          "مفتاح المشغّل لا يظهر في أي حزمة/إعداد أمامي/استجابة، ولا يُقبل في query string؛ SPA لا يحمل سرًا: جلسة/كوكي HttpOnly فقط",
+          "الجلسة: HttpOnly + SameSite=Strict + Path=/ + Secure في الإنتاج/خلف https؛ الدخول مرة واحدة عبر POST /api/v1/session؛ لا HTML يُركَّب ولا polling/SSE قبل اكتمال الجلسة",
+          "كل POST/PUT/PATCH/DELETE بجلسة بلا x-nexa-csrf = مرفوض (HttpOnly ليس دفاع CSRF)؛ عميل الترويسة معفى من فحص CSRF لا من الجدار",
+          "الترتيب تعاقدي: Authentication → Rate Limit → Authorization → Policy → Executor؛ 429+Retry-After مع مفتاح دلو قابل للضبط، و/healthz والمسارات الساكنة خارج الحد",
+          "production بلا NEXA_API_KEY (فارغ/مسافات = مفقود) = exit 1 قبل listen؛ محلي/dev/test بلا تغيير — اختبارات HTTP الحالية خضراء بلا تعديل",
+          "approve {}: approverKid وscope وتوقيع مصرّحة — غياب القرار لا يُقرأ قرارًا؛ unsigned/wrong approver/scope-widening = DENY (400 من العقد/الدفتر لا من الجدار)",
+          "encoded approve ID صالح = PASS (فك ترميز، والخام والرمَّز يحلان إلى نفس المعرّف)؛ ترميز مشوّه = DENY",
+          "موافقة موقَّعة صالحة = مسار التنفيذ القائم يعمل كما هو (approve → consume/execute → حالة الآلة تحفظ single-use)",
+          "الموافقة الموقَّعة لا تعني هوية، والهوية لا تعني تفويضًا: signed + بلا مصرّح = 401، {} + بمصرّح = 400 DENY — الطبقتان مستقلتان ومثبتتان معًا",
+          "لا تغيير في kernel: protocol/capability/policy/crypto/evidence/vectors خارج النطاق؛ عقد الموافقة أُصلح في السيرفر لا في packages/policy",
+          "D1.11 تبقى مفتوحة عمدًا: الحارس لا يقرأ SUPABASE_*، ومُعيد D1.11 يُحدَّث (مفتاح تجريبي) ليظل إثبات «إنتاج+mock يقلع» قائمًا"
+        ],
+        "pre_condition": "يجب أن يفشل اختبار الانعكاس قبل الإصلاح (احمرار مُثبَّت في self-model/evidence/d1.10-red.tap)، لا أن يُكتب بعد الحل",
+        "closure": "إغلاق D1.10 في نفس التغيير الذي يحذف tests/known-gaps/d1.10-perimeter-open.test.js ويضع verification حيًا خارج known-gaps"
       },
-      "verification": null,
+      "verification": "tests/server-perimeter.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T00:55:00Z",
+      "ticket_status": "closed 2026-09-23 — أربع طبقات (perimeter/session/CSRF، rate limit، fail-fast، عقد الموافقة) بأربعة commits؛ انظر ملحق O في التقرير",
+      "layers": [
+        {
+          "layer": "1 perimeter+session+CSRF",
+          "impl": "tools/celia-perimeter-auth.mjs + hook في tools/celia-dashboard-server.mjs",
+          "test": "tests/server-perimeter.test.js"
+        },
+        {
+          "layer": "2 rate limit",
+          "impl": "tools/celia-rate-limit.mjs",
+          "test": "tests/server-rate-limit.test.js"
+        },
+        {
+          "layer": "3 production fail-fast",
+          "impl": "tools/celia-startup-guard.mjs (+ render.yaml)",
+          "test": "tests/server-production-failfast.test.js"
+        },
+        {
+          "layer": "4 approval decision contract",
+          "impl": "tools/celia-approval-http.mjs + tools/celia-operator.mjs",
+          "test": "tests/server-approval-contract.test.js"
+        }
+      ],
+      "follow_ups": [
+        "حد حجم جسم لطلبات POST في المسارات القديمة (نفس نمط req.on('data') بلا سقف) — خارج D1.10",
+        "دوران NEXA_OPERATOR_SEED: تحذير عند الإقلاع فقط الآن؛ الفصل الكامل لبصمة المشغّل عن /api/v1/authorizations/stats مؤجل"
+      ]
     },
     {
       "id": "D1.11",
@@ -433,5 +467,5 @@
       "ticket_status": "open"
     }
   ],
-  "updated_at": "2026-09-22T23:40:00Z"
+  "updated_at": "2026-09-23T00:55:00Z"
 }

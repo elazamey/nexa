@@ -244,12 +244,20 @@ network, no clock, no subprocesses and no files outside the repo.
 
 ```bash
 node --version     # >= 20
-npm test           # 113 tests, zero dependencies
+npm test           # zero dependencies — العدد المقيس في كتلة NEXA_METRICS أدناه لا في نصّ
 npm run demo       # end-to-end flow with a gate denial and a tamper check
 npm run report     # gate posture + protocol surface + inventory
 npm run vectors    # regenerate spec/vectors/*.json (pinned test vectors)
 node examples/hello-nexa.mjs
 ```
+
+## Environment variables (مرجع متغيرات البيئة)
+
+القراءة من `process.env` مقيَّدة بمرجع واحد: `docs/environment-reference.md` يسمّي كل متغير
+وقارئه وقيمته الافتراضية وأثره وصنفه (تشغيل/سرّ/وضع/إقرار/عزل اختبار)، و`tests/env-reference-sync.test.js`
+يكسر عند قراءة جديدة بلا توثيق، أو صفّ جامد، أو موقع قراءة غير مباشرة غير مُعلَن، أو سرّ بلغ حزمة
+المتصفح. لا `.env.example` في هذا المستودع عن قصد: القالب المودَع يدعو إلى إيداع سرّ فيه، وما يصل
+إلى JS المتصفح لم يعد سِرًّا — فالمرجع وثيقة لا قالب (D1.13 / O05).
 
 `examples/hello-nexa.mjs` is the whole protocol in ~40 lines, and
 `tests/example.test.js` executes it, so this README cannot drift from the code:
@@ -515,7 +523,7 @@ gates · namespaces · Ω error codes · cell states: `npm run posture` prints t
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 670
+- Total tests: 675
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

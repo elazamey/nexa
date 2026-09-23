@@ -1,0 +1,51 @@
+D1.13 INVERSION EVIDENCE — ستّ بارِعاء على المرجع؛ المقياس: حارس D1.13 يحمرّ وحده (قُيس بعد قلب السجل فصار حارس السجل أخضر مرجعًا)
+--- INVERSION A ---
+variant A applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION B ---
+variant B applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION C ---
+variant C applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION D ---
+variant D applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION E ---
+variant E applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION F ---
+variant F applied
+   # tests 6 # pass 5 # fail 1  -> env-reference-sync.test.js
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- post-restore ---
+# tests 6 # pass 6 # fail 0 restored rows=1 leak=0 tpl=0

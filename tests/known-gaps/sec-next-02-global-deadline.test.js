@@ -6,14 +6,14 @@ import { join } from 'node:path';
 import { judge, runTests } from '../../tools/celia-verify-runner.mjs';
 
 /**
- * known-gap SEC-NEXT-02 — verify-run has a per-file timeout but no global deadline.
+ * known-gap D1.9 (SEC-NEXT-02) — verify-run has a per-file timeout but no global deadline.
  * ⚠️ نجاح هذا الاختبار = إعادة إنتاج الفجوة الحالية، لا دليل سلامة.
  * يُزال هذا الملف في نفس تغيير إغلاق SEC-NEXT-02 (docs/agent-loop.md §9).
  */
 const SLOW = `import test from 'node:test';
 test('slow but under the per-file limit', () => new Promise(r => setTimeout(r, 400)));\n`;
 
-test('known-gap SEC-NEXT-02: three files each under the per-file timeout exceed it in total and still judge PASS', { timeout: 30_000 }, t => {
+test('known-gap D1.9 (SEC-NEXT-02): three files each under the per-file timeout exceed it in total and still judge PASS', { timeout: 30_000 }, t => {
   const dir = mkdtempSync(join(tmpdir(), 'nexa-sec-next-02-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const files = ['a', 'b', 'c'].map(n => { const f = join(dir, `${n}.test.mjs`); writeFileSync(f, SLOW); return f; });

@@ -205,8 +205,8 @@ tamper-proof. The boundary is tracked in two columns and must stay that way.
 | Forged summary + `process.exit(0)` before reporting | **PROVEN closed** (specific defensive rule) | RED reproduced: even junit showed the file as 1 pass; judge rule "testcase == input file ⇒ unreported ⇒ DENY" |
 | Real hanging test | **PROVEN closed** | real `spawnSync` `ETIMEDOUT`, no injected flag |
 | One bad file in a multi-file run | **PROVEN closed** | "poisons the whole run" |
-| **SEC-NEXT-01** Report-writer isolation — the test process runs as the same user and could in principle write the report file | **NOT VERIFIED** | random 16-byte destination in a private `mkdtemp` is obscurity, not a boundary; needs user/namespace/container isolation and an adversarial test that *fails to* tamper |
-| **SEC-NEXT-02** Global execution deadline — per-file timeout only | **NOT VERIFIED** | reproduced as an open gap in `tests/known-gaps/sec-next-02-global-deadline.test.js` |
+| **SEC-NEXT-01 / D1.10** Report-writer isolation — the test process runs as the same user and could in principle write the report file | **NOT VERIFIED** | random 16-byte destination in a private `mkdtemp` is obscurity, not a boundary; precondition reproduced in `tests/known-gaps/sec-next-01-report-writer-isolation.test.js` (test discovers the report path via `/proc/<ppid>/cmdline` and has write access); registered as D1.10; needs user/namespace/container isolation and an adversarial test that *fails to* tamper |
+| **SEC-NEXT-02 / D1.9** Global execution deadline — per-file timeout only | **NOT VERIFIED** | reproduced as an open gap in `tests/known-gaps/sec-next-02-global-deadline.test.js`; registered as D1.9 in `self-model/gaps.json` |
 
 Rule for closing either: the `process.exit(0)` finding showed that *a structured reporter
 is not a root of trust by itself*. Neither item becomes PROVEN because code exists or a

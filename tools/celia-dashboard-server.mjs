@@ -1232,7 +1232,10 @@ const server = createServer(async (req, res) => {
       } catch (e) {
         const status = e instanceof WorkspaceCommitError ? e.status : 500;
         res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: e instanceof WorkspaceCommitError ? e.code : 'COMMIT_EXECUTION_FAILED' }));
+        res.end(JSON.stringify({
+          ok: false, error: e instanceof WorkspaceCommitError ? e.code : 'COMMIT_EXECUTION_FAILED',
+          ...(e instanceof WorkspaceCommitError && e.reason ? { reason: e.reason } : {}),
+        }));
       }
     });
     return;
@@ -2756,7 +2759,7 @@ const server = createServer(async (req, res) => {
   <li><a href="/api/v1/workspace">/api/v1/workspace</a> — transactional workspaces (CoW)</li>
   <li>POST /api/v1/workspace/create — create workspace { taskId, evidenceRef }</li>
   <li>POST /api/v1/workspace/write — write file { workspaceId, path, content, evidenceRef }</li>
-  <li>POST /api/v1/workspace/commit — atomic commit { workspaceId, evidenceRef }</li>
+  <li>POST /api/v1/workspace/commit — atomic commit { workspaceId, targetRoot, changeSetHash, expectedBaseHash, authorization, evidence: { source, records } } — denied unless a configured verifier's REAL evidence yields PASS</li>
   <li>POST /api/v1/workspace/rollback — atomic rollback { workspaceId, evidenceRef }</li>
   <li><a href="/api/v1/creative/stats">/api/v1/creative/stats</a> — creative engine (AdForge mock provider, tool:creative.generate)</li>
   <li>POST /api/v1/creative/generate — { brand, product, audience, offer, channel, tone, variants, campaignId } → budget 4 per campaign, ttl 15m, channels [meta, instagram, tiktok, google]</li>

@@ -20,7 +20,9 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { canonicalBytes } from '../packages/ast/index.js';
 import { sha256Multihash } from '../packages/crypto/index.js';
-import { createWorkspaceCommitAuthorizer, denyCommit, WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
+import { createWorkspaceCommitAuthorizer, denyCommit, WorkspaceCommitError, workspaceCommitResource } from './celia-workspace-commit-auth.mjs';
+import { assertKid } from '../packages/ast/index.js';
+import { assessClaim, EVIDENCE_SOURCES } from './verification-gate.mjs';
 
 import { createCommitConsumptionStore } from './celia-commit-consumption-store.mjs';
 
@@ -236,13 +238,56 @@ export function inspectWorkspaceCommit(input) {
   return captureOrDeny(input).descriptor;
 }
 
+/**
+ * Verification gate (docs/agent-loop.md): a COMMIT is the DELIVER stage and is
+ * reachable only from a PASS verdict. The proposer's own word is never evidence;
+ * PASS needs a verified chain signed by a configured verifier key (never the
+ * committer itself) whose HANDLER_RESULT/ALLOW is bound to this exact change set.
+ * No verifier configured => no COMMIT. Runs after authorization, before any I/O.
+ */
+const denyVerification = (code, reason) => {
+  const error = new WorkspaceCommitError(403, code);
+  error.reason = reason;
+  throw error;
+};
+function createVerificationGate(verification) {
+  if (verification === undefined) return () => denyCommit('COMMIT_VERIFICATION_UNCONFIGURED');
+  if (verification === null || typeof verification !== 'object' || Array.isArray(verification)
+      || Object.keys(verification).some(key => key !== 'verifiers')
+      || !Array.isArray(verification.verifiers) || verification.verifiers.length === 0) {
+    throw new Error('COMMIT verification must be { verifiers: [kid, ...] }');
+  }
+  for (const kid of verification.verifiers) assertKid(kid);
+  const verifiers = new Set(verification.verifiers);
+  return function verify(input, subject) {
+    const evidence = input.evidence;
+    if (evidence === null || typeof evidence !== 'object' || Array.isArray(evidence)
+        || Object.keys(evidence).some(key => !['source', 'records'].includes(key))
+        || !EVIDENCE_SOURCES.includes(evidence.source) || !Array.isArray(evidence.records)) {
+      denyVerification('COMMIT_VERIFICATION_BLOCKED', 'evidence must be { source: "mock"|"real", records: [...] }');
+    }
+    const verdict = assessClaim({ claim: { subject, proposer: subject }, records: evidence.records, source: evidence.source });
+    if (verdict.verdict !== 'PASS') denyVerification(`COMMIT_VERIFICATION_${verdict.verdict}`, verdict.reason);
+    const record = verdict.evidence;
+    if (!verifiers.has(record.actor)) denyVerification('COMMIT_VERIFICATION_BLOCKED', 'evidence signer is not a configured verifier');
+    if (record.resource !== workspaceCommitResource(input) || record.detail?.changeSetHash !== input.changeSetHash) {
+      denyVerification('COMMIT_VERIFICATION_BLOCKED', 'evidence is not bound to this workspace and change set');
+    }
+    return { verifier: record.actor, evidenceHash: record.hash, evidenceSeq: record.seq };
+  };
+}
+
 export function createWorkspaceCommitter({ root, workspacePort, config = {}, stateDirectory = process.env.CELIA_COMMIT_STATE_DIR }) {
   const base = resolve(root);
   const store = createCommitConsumptionStore({ directory: stateDirectory, targetRoot: workspaceCommitRoot(base), root: base });
-  const authorize = createWorkspaceCommitAuthorizer(config, { consumeDurably: envelope => store.consume(envelope) });
+  const { verification, ...authConfig } = config;
+  const authorize = createWorkspaceCommitAuthorizer(authConfig, { consumeDurably: envelope => store.consume(envelope) });
+  const verify = createVerificationGate(verification);
   return function commit(input) {
-    // No filesystem read/write before identity, capability and policy succeed.
+    // No filesystem read/write before identity, capability, policy AND the
+    // verification gate succeed. AI proposes; the verifier's evidence decides.
     const authorization = authorize(input);
+    const verified = verify(input, authorization.subject);
     if (recoveryRequiredRoots.has(base)) throw new WorkspaceCommitError(503, 'COMMIT_RECOVERY_REQUIRED');
     if (input.targetRoot !== workspaceCommitRoot(base)) denyCommit('COMMIT_ROOT_MISMATCH');
     const workspace = workspacePort._workspaces.get(input.workspaceId);
@@ -312,6 +357,7 @@ export function createWorkspaceCommitter({ root, workspacePort, config = {}, sta
       targetRoot: input.targetRoot, changeSetHash: input.changeSetHash, expectedBaseHash: input.expectedBaseHash,
       subject: authorization.subject, capabilityId: authorization.capabilityId, rule: authorization.rule,
       authorizationRef: authorization.authorizationRef,
+      verification: verified,
     };
   };
 }

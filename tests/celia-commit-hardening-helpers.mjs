@@ -13,6 +13,7 @@ import { workspaceCommitConstraints, workspaceCommitIntent, workspaceCommitResou
 import { workspaceWriteIntent, workspaceWriteResource } from '../tools/celia-workspace-write-auth.mjs';
 
 import { initializeCommitConsumptionStore } from '../tools/celia-commit-consumption-store.mjs';
+import { verifierEvidence } from './celia-verification-helpers.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const childScript = fileURLToPath(new URL('./fixtures/celia-commit-hardening-child.mjs', import.meta.url));
@@ -103,9 +104,10 @@ export async function hardeningFixture(t, { fault, provision = true, configured 
   const issuer = createIdentity({ label: 'hardening-issuer' });
   const caller = createIdentity({ label: 'hardening-principal' });
   const audience = createIdentity({ label: 'hardening-audience' });
+  const verifier = createIdentity({ label: 'hardening-verifier' });
   const common = { audience: audience.kid, capabilityIssuers: [issuer.kid] };
   const writeConfig = { ...common, rules: [{ id: 'stage', effect: 'ALLOW', resource: 'workspace:*', actions: ['write'], subjects: [caller.kid] }] };
-  const commitConfig = { ...common, rules: [{ id: 'apply', effect: 'ALLOW', resource: 'workspace_commit:*', actions: ['commit'], subjects: [caller.kid] }] };
+  const commitConfig = { ...common, rules: [{ id: 'apply', effect: 'ALLOW', resource: 'workspace_commit:*', actions: ['commit'], subjects: [caller.kid] }], verification: { verifiers: [verifier.kid] } };
   if (provision) initializeCommitConsumptionStore({ directory: stateDirectory, root, targetRoot: workspaceCommitRoot(root) });
   boundary = await startBoundary(root, writeConfig, commitConfig, configured ? stateDirectory : undefined, fault);
   const workspaceId = 'ws_hardening_fixture';
@@ -141,7 +143,7 @@ export async function hardeningFixture(t, { fault, provision = true, configured 
       sender: caller, to: audience.kid, type: 'CALL', capability: capability.id, ttlSeconds: 300,
       body: { resource: capability.resource, action: 'commit', args: workspaceCommitIntent(descriptor), capability },
     });
-    return { ...descriptor, authorization };
+    return { ...descriptor, authorization, evidence: verifierEvidence({ verifier, subject: caller.kid, input: descriptor }) };
   }
   const request = freshRequest();
   return {

@@ -45,7 +45,7 @@ asserts two invariants: `AUTHORIZE` precedes `IMPLEMENT`, and `VERIFY` precedes 
 | OBSERVE / EVIDENCE | `EvidenceLog`, `verifyEvidenceChain`, signed receipts | `packages/evidence` |
 | TEST / RETEST | `npm test`, `npm run verify` | `tests/`, `package.json` |
 | VERIFY | `assessClaim()` — PASS / FAIL / BLOCKED | `tools/verification-gate.mjs` |
-| DELIVER | never implicit; requires explicit operator authority | `docs/celia-workspace-commit-contract.ar.md` |
+| DELIVER | **enforced**: `createWorkspaceCommitter` denies unless the gate returns `PASS` | `tools/celia-workspace-commit-port.mjs` |
 
 ## 2. Who decides
 
@@ -131,3 +131,24 @@ const verdict = assessClaim({
 
 Anything the agent *says* (`asserted: true`) is carried along for the record and
 ignored by the decision.
+
+## 7. Enforcement at COMMIT (DELIVER)
+
+The gate is not advisory. `createWorkspaceCommitter({ config })` requires
+`config.verification = { verifiers: [kid, ...] }` and every COMMIT request must carry
+`evidence: { source: 'real', records: [...] }`. After identity, capability, policy and
+exact-state checks pass — and **before any filesystem I/O** — the committer calls
+`assessClaim()` and additionally requires that the winning `HANDLER_RESULT/ALLOW` record:
+
+* is signed by a configured verifier (never the committing principal),
+* names `resource = workspace_commit:<hash>` of this request,
+* carries `detail.changeSetHash` equal to the request's change set.
+
+| Denial code | Meaning |
+| --- | --- |
+| `COMMIT_VERIFICATION_UNCONFIGURED` | no verifier configured → no COMMIT possible |
+| `COMMIT_VERIFICATION_BLOCKED` | missing / mock / self-signed / unbound / stranger-signed evidence |
+| `COMMIT_VERIFICATION_FAIL` | verifier recorded DENY, or the chain was tampered |
+
+Pinned by `tests/celia-workspace-commit-auth.test.js` ("verification gate: …") at the
+real HTTP boundary, with root/staging/event state asserted unchanged on every denial.

@@ -44,7 +44,7 @@ DELIVER       commit / PR / deploy، فقط عند التصريح    → Release
 | OBSERVE / EVIDENCE | `EvidenceLog` و`verifyEvidenceChain` وإيصالات موقّعة | `packages/evidence` |
 | TEST / RETEST | `npm test` و`npm run verify` | `tests/`, `package.json` |
 | VERIFY | `assessClaim()` — PASS / FAIL / BLOCKED | `tools/verification-gate.mjs` |
-| DELIVER | لا يحدث ضمنيًا أبدًا؛ يتطلب تصريحًا صريحًا من المشغّل | `docs/celia-workspace-commit-contract.ar.md` |
+| DELIVER | **مُنفَذ**: `createWorkspaceCommitter` يرفض ما لم تُرجع البوابة `PASS` | `tools/celia-workspace-commit-port.mjs` |
 
 ## 2. من يقرّر
 
@@ -126,3 +126,24 @@ const verdict = assessClaim({
 ```
 
 كل ما *يقوله* الوكيل (`asserted: true`) يُحمَل للتوثيق فقط ويُتجاهَل في القرار.
+
+## 7. الإنفاذ عند COMMIT (مرحلة DELIVER)
+
+البوابة ليست استشارية. `createWorkspaceCommitter({ config })` يتطلب
+`config.verification = { verifiers: [kid, ...] }`، وكل طلب COMMIT يجب أن يحمل
+`evidence: { source: 'real', records: [...] }`. بعد نجاح فحوص الهوية والـcapability
+والـpolicy والحالة الدقيقة — و**قبل أي I/O على نظام الملفات** — يستدعي المنفّذ
+`assessClaim()` ويشترط إضافةً أن سجل `HANDLER_RESULT/ALLOW` الفائز:
+
+* موقّع من محقّق مُهيّأ (وليس المبدأ المُرسِل للـCOMMIT أبدًا)،
+* يسمّي `resource = workspace_commit:<hash>` الخاص بهذا الطلب،
+* يحمل `detail.changeSetHash` مساويًا لمجموعة التغييرات في الطلب.
+
+| كود الرفض | المعنى |
+| --- | --- |
+| `COMMIT_VERIFICATION_UNCONFIGURED` | لا محقّق مُهيّأ → لا COMMIT ممكن |
+| `COMMIT_VERIFICATION_BLOCKED` | دليل مفقود / mock / موقّع ذاتيًا / غير مربوط / من مفتاح غريب |
+| `COMMIT_VERIFICATION_FAIL` | المحقّق سجّل DENY، أو السلسلة عُدِّلت |
+
+مثبّت بالاختبارات في `tests/celia-workspace-commit-auth.test.js` ("verification gate: …")
+عند حدود HTTP الحقيقية، مع التأكد أن الجذر والـstaging وسجل الأحداث لم تتغير عند كل رفض.

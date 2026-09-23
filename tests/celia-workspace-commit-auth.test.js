@@ -11,6 +11,7 @@ import { workspaceWriteIntent, workspaceWriteResource } from '../tools/celia-wor
 import { workspaceCommitIntent, workspaceCommitResource, workspaceCommitConstraints } from '../tools/celia-workspace-commit-auth.mjs';
 import { inspectWorkspaceCommit, workspaceCommitRoot } from '../tools/celia-workspace-commit-port.mjs';
 import { snapshot, startIsolatedServer } from './celia-workspace-auth-helpers.mjs';
+import { verifierEvidence } from './celia-verification-helpers.mjs';
 
 const options = { timeout: 25_000 };
 const changed = (a, b) => [...new Set([...a.keys(), ...b.keys()])].filter(key => a.get(key) !== b.get(key)).sort();
@@ -30,12 +31,14 @@ async function fixture(t, { rules, issuers, crossWorkspace = false } = {}) {
   const caller = createIdentity({ label: 'commit-caller-a' });
   const callerB = createIdentity({ label: 'commit-caller-b' });
   const audience = createIdentity({ label: 'commit-audience' });
+  const verifier = createIdentity({ label: 'commit-verifier' });
   const f = await startIsolatedServer(t, {
     audience: audience.kid, capabilityIssuers: [issuer.kid],
     rules: [{ id: 'stage', effect: 'ALLOW', resource: 'workspace:*', actions: ['write'], subjects: [caller.kid, callerB.kid] }],
   }, {
     audience: audience.kid, capabilityIssuers: issuers ?? [issuer.kid],
     rules: rules ?? [{ id: 'commit-approved-state', effect: 'ALLOW', resource: 'workspace_commit:*', actions: ['commit'], subjects: [caller.kid] }],
+    verification: { verifiers: [verifier.kid] },
   });
   async function stageWrite(workspace, path, content) {
     const input = { workspaceId: workspace.workspaceId, path, content };
@@ -83,9 +86,9 @@ async function fixture(t, { rules, issuers, crossWorkspace = false } = {}) {
       body: { action: 'commit', resource: workspaceCommitResource(input), args: workspaceCommitIntent(input), ...(token ? { capability: token } : {}) },
       ...overrides,
     });
-    return { ...input, authorization };
+    return { ...input, authorization, evidence: verifierEvidence({ verifier, subject: caller.kid, input }) };
   }
-  return { ...f, issuer, caller, callerB, audience, a, b, describe, capability, signed, stageWrite, workspaces: b ? [a, b] : [a] };
+  return { ...f, issuer, caller, callerB, audience, verifier, a, b, describe, capability, signed, stageWrite, workspaces: b ? [a, b] : [a] };
 }
 
 async function denied(f, request, status = 403, code) {
@@ -140,6 +143,62 @@ test('commit auth: exact approved bytes and base yield only the intended root mu
   assert.equal(event.payload.changeSetHash, request.changeSetHash);
   assert.equal(event.payload.expectedBaseHash, request.expectedBaseHash);
   assert.equal(event.payload.rule, 'commit-approved-state');
+  assert.equal(response.body.verification.verifier, f.verifier.kid);
+  assert.equal(response.body.verification.evidenceHash, request.evidence.records[1].hash);
+});
+
+// Verification gate (docs/agent-loop.md): a fully authorized COMMIT — valid identity,
+// capability, policy and exact state — is still DENIED unless a non-proposer verifier
+// recorded REAL evidence for this change set. MOCK ≠ REAL ≠ EVIDENCE, enforced.
+test('verification gate: authorized COMMIT with no evidence is denied (self-assertion is not evidence)', options, async t => {
+  const f = await fixture(t);
+  const { evidence, ...request } = f.signed();
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_BLOCKED');
+});
+
+test('verification gate: mock evidence is denied even when otherwise perfect', options, async t => {
+  const f = await fixture(t);
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: f.verifier, subject: f.caller.kid, input: f.describe(), source: 'mock' });
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_BLOCKED');
+});
+
+test('verification gate: evidence signed by the committer itself is denied (AI is not its own judge)', options, async t => {
+  const f = await fixture(t);
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: f.caller, subject: f.caller.kid, input: f.describe() });
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_BLOCKED');
+});
+
+test('verification gate: evidence from an unconfigured verifier key is denied', options, async t => {
+  const f = await fixture(t);
+  const stranger = createIdentity({ label: 'not-a-verifier' });
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: stranger, subject: f.caller.kid, input: f.describe() });
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_BLOCKED');
+});
+
+test('verification gate: a verifier DENY (test failed) makes COMMIT FAIL', options, async t => {
+  const f = await fixture(t);
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: f.verifier, subject: f.caller.kid, input: f.describe(), decision: 'DENY' });
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_FAIL');
+});
+
+test('verification gate: a tampered evidence chain (DENY edited to ALLOW) is FAIL, not PASS', options, async t => {
+  const f = await fixture(t);
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: f.verifier, subject: f.caller.kid, input: f.describe(), decision: 'DENY' });
+  request.evidence.records[1].decision = 'ALLOW';
+  request.evidence.records[1].kind = 'HANDLER_RESULT';
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_FAIL');
+});
+
+test('verification gate: evidence for a different change set does not transfer', options, async t => {
+  const f = await fixture(t);
+  const request = f.signed();
+  request.evidence = verifierEvidence({ verifier: f.verifier, subject: f.caller.kid, input: { ...f.describe(), changeSetHash: workspaceCommitRoot(f.root) } });
+  await denied(f, request, 403, 'COMMIT_VERIFICATION_BLOCKED');
 });
 
 test('commit auth: anonymous is 401 and signed identity without capability is 403', options, async t => {

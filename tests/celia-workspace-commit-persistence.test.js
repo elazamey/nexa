@@ -38,7 +38,7 @@ test('H1 persistence: disk consumption survives ABA/restart; old grant denied, f
   assert.equal(record.nonce, f.request.authorization.nonce);
   assert.equal(record.authorizationRef, sha256Multihash(canonicalBytes(f.request.authorization)));
   assert.deepEqual(record.grants, [{ id: f.request.authorization.cap, maxUses: 1 }]);
-  const { authorization, ...scope } = f.request;
+  const { authorization, evidence: _evidence, ...scope } = f.request;
   assert.deepEqual(record.scope, scope);
   assert.deepEqual(JSON.parse(readFileSync(join(f.stateDirectory, 'head.json'), 'utf8')), { count: 1, hash: record.hash });
   assert.equal(lstatSync(f.stateDirectory).mode & 0o777, 0o700);
@@ -62,7 +62,7 @@ test('H1 persistence: disk consumption survives ABA/restart; old grant denied, f
   assert.deepEqual(journal(f), records, 'denials must not add a successful reservation');
 
   const fresh = f.freshRequest();
-  const { authorization: freshAuthorization, ...freshScope } = fresh;
+  const { authorization: freshAuthorization, evidence: _freshEvidence, ...freshScope } = fresh;
   assert.deepEqual(freshScope, scope);
   assert.notEqual(freshAuthorization.cap, authorization.cap);
   assert.equal((await f.commitRequest(fresh)).outcome, 'ALLOW');

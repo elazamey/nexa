@@ -1,0 +1,106 @@
+# D1.18 INVERSION EVIDENCE — اثنتا عشرة نسخة؛ المقياس: حارس D1.18 يحمرّ وحده
+الأسوار المجاورة: CI (D1.16، 6) · المرايا (D1.15، 6) · edge-rag (4) · سجل الفجوات (5) · الوثائق (6).
+الأسماء محضوفة من 38 حرفًا (حرفًا لا بايتًا) حتى لا تُبتر تتمة UTF-8 كما حدث في نسخة أولى من هذا الملف.
+--- INVERSION P1 ---
+   # tests 7 # pass 5 # fail 2 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: النشر يثبّت الداشبورد من القفل، بلا in · كل أمر يناديه النشر يؤول إلى شيء موجود
+--- INVERSION P2 ---
+   # tests 7 # pass 5 # fail 2 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: النشر يثبّت الداشبورد من القفل، بلا in · كل أمر يناديه النشر يؤول إلى شيء موجود
+--- INVERSION P3 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: تكافؤ النشر مع CI — نفس القفل ونفس maj
+--- INVERSION P4 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: الترتيب والبيانات — hunter قبل البناء،
+--- INVERSION P5 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: الأدوار معلنة بلا انزلاق — PRs لـ ci.y
+--- INVERSION P6 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: الأدوار معلنة بلا انزلاق — PRs لـ ci.y
+--- INVERSION P7 ---
+   # tests 7 # pass 5 # fail 2 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: النشر يثبّت الداشبورد من القفل، بلا in · لا تثبيت في الجذر، والتبرير مقيس لا مو
+--- INVERSION P8 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: كل أمر يناديه النشر يؤول إلى شيء موجود
+--- INVERSION P9 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: الترتيب والبيانات — hunter قبل البناء،
+--- INVERSION P10 ---
+   # tests 7 # pass 5 # fail 2 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: النشر يثبّت الداشبورد من القفل، بلا in · كل أمر يناديه النشر يؤول إلى شيء موجود
+--- INVERSION P11 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: لا تثبيت في الجذر، والتبرير مقيس لا مو
+--- INVERSION P12 ---
+   # tests 7 # pass 6 # fail 1 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0 -> edge-rag.test.js
+   # tests 5 # pass 5 # fail 0 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: تكافؤ النشر مع CI — نفس القفل ونفس maj
+--- post-restore ---
+# tests 34 # pass 34 # fail 0
+
+أمانة القياس: (1) أول محاولة لـ P8 استبدلت النص داخل تعليق (replace بلا مرساة سطر) فلم تُحمرّ شيئًا — التعليقات ليست
+شيفرة، وهذا بعينه ما يفرضه الحارس؛ أُعيدت الصياغة بمرساة سطر الخطوة فاحمرّ الاختبار السابع. (2) النسخ الاثنتا عشرة
+قِيست بعد تصحيح مسار نسخ البيانات (../data → data/*) لا قبله، لأن الغلط كان في الشيفرة المفحوصة فأي قياس قبله يقيس
+شجرةً أخرى؛ والحارس صار يحلّ المسارات على القرص فلا تعود نسخة «لا أثر لها» ممكنة بالخطأ.

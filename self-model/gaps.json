@@ -641,7 +641,43 @@
         "`llm_vectors:'2/2 BLOCKED'` له قياس فعل (npm run audit/vectors) — يمكن تحويله إلى قراءة بدل حرف"
       ],
       "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
+    },
+    {
+      "id": "D1.18",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "النشر يُبنى من اعتماديات مختلفة عمّا فحصه CI: ‏deploy-pages يثبّت الداشبورد بلا قفل، و«npm ci || npm install» في الجذر يبتلع فشله ويكتب قفلًا لا يريده المشروع",
+      "current": "deploy-pages.yml يثبّت الداشبورد بـ npm ci داخل dashboard/ على نفس قفل CI بلا أي || وبدون خطوة تثبيت جذر؛ والبناء يعمل داخل dashboard/ بمسارات نسبية بعد hunter مباشرة؛ والحارس يربط التكافؤ (قفل واحد، نفس node major، الترتيب، البيانات، الصلاحيات، الأدوار)",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "criteria": [
+          "وظيفة النشر تثبّت الداشبورد من القفل: خطوة واحدة `npm ci` مع `working-directory: dashboard` (أو `npm --prefix dashboard ci`)، ولا `install` عائم ولا `|| npm install` في أي خطوة",
+          "لا خطوة تثبيت في الجذر: قِيس على نسخة `git archive` نظيفة أن hunter والبناء يعملان بلا root/node_modules، وأن node_modules الجذر مزرعة روابط @nexa فقط (15 سطرًا، 8KB) وقفل الجذر بلا أي حزمة خارجية",
+          "تكافؤ معلن ومقيس: `cache-dependency-path` في deploy-pages وci.yml يشير إلى dashboard/package-lock.json نفسه، والملف موجود، والقفل يثبّت react 18 وvite 5 فعلًا، وmajor لـ node واحد في المسارين (22)",
+          "الترتيب والبيانات: خطوة hunter قبل البناء، والبناء يُنشئ dist/data وينسخ ../data/* إليه، والرفع من dashboard/dist — الموقع المنشور يحمل بيانات لا هيكلًا فارغًا",
+          "الأدوار بلا انزلاق: النشر على push(main)+workflow_dispatch وبلا pull_request (PRs ملك ci.yml منذ D1.16)، permissions مطابقة لـ {contents:read, pages:write, id-token:write} حرفيًا، وconcurrency محفوظ",
+          "كل أمر يناديه النشر يؤول إلى موجود: npm run <script> في package.json المناسب، وnode <file> موجود على القرص — لا اسم مكسور في YAML يعمل على main فقط",
+          "الحارس يقرأ الشيفرة لا التعليقات (سطر # لا يبني خطوة) وقاؤه المستهدف مُختبَر على الملفين: لا Tabs، خطوات مقروءة بأسمائها وكتلها، وworking-directory مقروء"
+        ],
+        "inversion_test": "self-model/evidence/d1.18-red.tap (المُعيد 2 من 2 أخضر-كإثبات بعد أن صِيغ بالقياس لا بالتذكرة) → d1.18-green.tap (الحارس 7 من 7)؛ d1.18-inversion.txt باثنتي عشرة نسخة: استرجاع install العائم مع || ⇒ 2 من 7؛ || على خطوة القفل وحدها ⇒ 2 (و7)؛ node-version 18.x في النشر ⇒ 1 (تكافؤ)؛ قلب ترتيب hunter/البناء ⇒ 1 (الترتيب)؛ pull_request في on النشر ⇒ 1 (الأدوار)؛ contents: write ⇒ 1 (الصلاحيات)؛ إعادة خطوة تثبيت جذر ⇒ 2 (و3)؛ مسار hunter وهمي ⇒ 1 (الأوامر تؤول)؛ حذف mkdir dist/data ⇒ 1 (البيانات)؛ تعليق ينتحل خطوة التثبيت ⇒ 2 (و7)؛ اعتمادية معلنة في workspace ⇒ 1 (التبرير)؛ cache-dependency-path إلى قفل الجذر ⇒ 1 (التكافؤ). المجاورون خضر في الاثنتي عشرة: CI (6)، المرايا (6)، edge-rag (4)، السجل (5)، الوثائق (6)؛ والاستعادة كاملة. ملحق أمانة: أول محاولة لمسار hunter استبدلت داخل تعليق فلم تُحمرّ شيئًا — إعادة الصياغة بمرساة سطر الخطوة هي التي قاست"
+      },
+      "verification": "tests/deploy-ci-parity.test.js",
+      "opened_at": "2026-09-24T03:40:00Z",
+      "required": "أن يُنشر ما فُحص حرفيًا: تثبيت الداشبورد من dashboard/package-lock.json في CI وفي النشر معًا، وبلا || يبتلع فشل القفل، وبلا خطوة تثبيت جذر لا يستهلكها أحد. لا يمسّ النشر الفعلي ولا GitHub Pages نفسه، ولا يقرّر ترقية vite (ذلك D1.19).",
+      "closed_at": "2026-09-24T04:25:00Z",
+      "ticket_status": "enforced — ما يُنشر هو ما فُحص: قفل واحد للداشبورد في CI والنشر، ولا fallback يبتلع الفشل",
+      "follow_ups": [
+        "metrics.yml يشغّل npm test على PRs بعد أن غطّاه ci.yml، ويعمل npm install في الجذر وهو no-op مقيس — إلغاء التكرار وتفعيل cache (القفل موجود) تذكرة مستقلة",
+        "تعليق metrics.yml:34-36 يقول إن setup-node يحتاج قفلًا و«NEXA ships without one by design» — قِيس أن package-lock.json متتبَّع في الجذر (3467B، 31 عقدة، صفر حزمة خارجية): العبارة خاطئة، وتصحيحها وثائقي بحت لا يغيّر سلوكًا",
+        "npm audit لمسار الداشبورد غير مفحوص في أي workflow؛ قِيست 4 advisory (vite fs.deny bypass high ≤6.4.2، esbuild/vite dev-server moderate ×3) على vite 5.4.21 — الإغلاق يحتاج قرار ترقية vite كبرى أو عتبة + استثناء معلن، وهي D1.19 المقترحة",
+        "deploy-pages لا يعمل sync:assets:check؛ غير كافٍ اليوم لأن ci.yml يعمل على push لكل فرع بما فيه main، لكنه يصير لازمًا لو فُرع النشر أو أُضيفت يدوية workflow_dispatch على شجرة غير مفحوصة"
+      ]
     }
   ],
-  "updated_at": "2026-09-24T02:55:00Z"
+  "updated_at": "2026-09-24T04:25:00Z"
 }

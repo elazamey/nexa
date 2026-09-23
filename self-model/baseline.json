@@ -20,12 +20,12 @@
     "tree_state": "D1.12 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 637,
-    "pass": 637,
+    "tests": 641,
+    "pass": 641,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 637 = 633 (إغلاق D1.12) + 6 (tests/gates-computed.test.js) − 2 (known-gaps/d1.3 حُذف في تغيير الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 641 = 637 (إغلاق D1.3) + 4 (مُعيد known-gaps/d1.17 — تسجيل الفجوة بلا إصلاح؛ عدد الاختبارات يظن حتى الإغلاق عند حذفه أو نقله إلى الحارس الدائم)"
   },
   "frozen_claims": {
     "tests_545": {

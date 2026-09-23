@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "5d505b82e61e7afe2328263831394bed805e55ff",
-    "tree_state": "D1.13 closure worktree (measured before the closure commit)",
+    "commit": "13f568d63074cc7bb5483e09d2674222055e3a5b",
+    "tree_state": "D1.14 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 675,
-    "pass": 675,
+    "tests": 679,
+    "pass": 679,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 675 = 670 (إغلاق D1.17) + 1 (اختبار ثانٍ أُضيف إلى مُعيد D1.13 نفسه بعد ذلك القياس) + 6 (tests/env-reference-sync.test.js) − 2 (مُعيد D1.13 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 679 = 675 (إغلاق D1.13) + 1 (سطر أُضيف إلى مُعيد D1.14 بعد ذلك القياس) + 5 (tests/docs-index-sync.test.js) − 2 (مُعيد D1.14 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -101,6 +101,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.13 (P1-B / O05): مرجع متغيرات البيئة صار وثيقة إلزامية بحارس مزامنة (675/675) — لا .env.example بالقرار المُجمَّد، ولا سرّ يصل إلى الحزمة الأمامية"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.14 (P1-C / O06): docs/README.md فهرس مُلزَم بالاتجاهين مع أصناف وحارس يمنع الوثيقة اليتيمة والحذف بلا أرشفة؛ 679/679 أخضر"
     }
   ],
   "post_d1_2": {
@@ -329,7 +333,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-23T23:55:00Z",
+  "updated_at": "2026-09-24T00:45:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -357,5 +361,19 @@
     "green_evidence": "self-model/evidence/d1.13-green.tap (6 من 6) + d1.13-suite.txt (675/675/0)",
     "inversion_evidence": "d1.13-inversion.txt — ستّ نسخ (قراءة بلا صفّ، صفّ جامد، حذف صفّ، موقع process.env[key] جديد، عودة .env.example، VITE_*API_KEY في jsx) وكلّها تحمرّ الواحدَ الوحيد من الحارس دون سواه؛ post-restore 6 من 6",
     "note": "الشكل المُغلَف: لا قالب env (قرار §3 المُجمَّد) بل docs/environment-reference.md إلزامي بحارس مزامنة. أُصلح عرضًا عدد جامد في README («113 tests») إلى إحالة الكتلة المقيسة — من فئة D1.12 لا D1.13، فسُجّل هنا لا تحت التذكرة"
+  },
+  "d1.14_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.14 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 679,
+    "pass": 679,
+    "fail": 0,
+    "breakdown": "675 بعد D1.13 + 1 (سطر معاداة إضافي) + 5 (حارس الفهرس) − 2 (مُعيد D1.14 المحذوف)",
+    "red_evidence": "self-model/evidence/d1.14-red.tap (2 من 2 خضراء-كإثبات عند 13f568d)",
+    "green_evidence": "self-model/evidence/d1.14-green.tap (5 من 5، مع الانحرافات في d1.14-inversion.txt) + d1.14-suite.txt (679/679/0)",
+    "inversion_evidence": "d1.14-inversion.txt — خمس نسخ: وثيقة بلا صفّ ⇒ 1 من 5؛ حذف بلا أرشفة ⇒ 2 من 5؛ صنف غير معلَن ⇒ 1؛ إسناد إلى حارس غير موجود ⇒ 1؛ اقتلاع «لا حذف» من المقدمة ⇒ 1. حراس docs/gaps/evidence-frozen/count-claims خضراء في الخمس (19 اختبارًا). الأخطاء الأمانة في السجل: git rm فشل أولًا لأن المُعيد كان معدَّلًا محليًا (استُعمل -f)، والحارس رُوجع مرّتين ليطبّع أسماء المجلدات ويحلّ المسارات النسبية إلى docs/ بدل مطالبة الفهرس بمسارات جذرية زائفة",
+    "note": "لا انحراف في عدد موثَّق: الفهرس يُحيل الأرقام إلى live_measurement/npm run metrics ولا ينسخ رقمًا، ويصنّف السجلّات (331/331، 415، 428، 100%) تاريخيةً لا حالة. صُحِّح عرضيًا قالب commit في CONTRIBUTING («113 pass») إلى إحالة عدد الجولة، وأُضيفت قاعدة مساهمة رقم 10"
   }
 }

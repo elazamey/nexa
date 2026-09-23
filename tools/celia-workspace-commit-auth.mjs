@@ -23,7 +23,7 @@ export function workspaceCommitConstraints({ workspaceId, targetRoot, changeSetH
 }
 
 export function createWorkspaceCommitAuthorizer(config = {}, { consumeDurably } = {}) {
-  if (!object(config) || Object.keys(config).some(key => !['audience', 'capabilityIssuers', 'rules'].includes(key))) {
+  if (!object(config) || Object.keys(config).some(key => !['audience', 'capabilityIssuers', 'rules', 'verification'].includes(key))) {
     throw new Error('Invalid COMMIT authorization configuration');
   }
   const { audience, capabilityIssuers = [], rules = [] } = config;
@@ -44,7 +44,9 @@ export function createWorkspaceCommitAuthorizer(config = {}, { consumeDurably } 
     } catch { throw new WorkspaceCommitError(401, 'COMMIT_IDENTITY_INVALID'); }
     if (!audience || envelope.to !== audience) denyCommit('COMMIT_AUDIENCE_DENIED');
     if (envelope.body.action !== 'commit') denyCommit('COMMIT_OPERATION_DENIED');
-    if (Object.keys(input).some(key => !['workspaceId', 'targetRoot', 'changeSetHash', 'expectedBaseHash', 'authorization'].includes(key))
+    // `evidence` is carried, not signed into the intent: it is judged separately
+    // by the verification gate against trusted verifier keys (see commit port).
+    if (Object.keys(input).some(key => !['workspaceId', 'targetRoot', 'changeSetHash', 'expectedBaseHash', 'authorization', 'evidence'].includes(key))
         || typeof input.workspaceId !== 'string' || !/^ws_[A-Za-z0-9_-]{1,160}$/.test(input.workspaceId)
         || ![input.targetRoot, input.changeSetHash, input.expectedBaseHash].every(value => typeof value === 'string' && HASH.test(value))) {
       throw new WorkspaceCommitError(400, 'COMMIT_INPUT_INVALID');

@@ -3,6 +3,42 @@
 All notable changes to NEXA are recorded here. The format follows Keep a Changelog,
 and the project uses semantic versioning once it leaves `0.x`.
 
+## [Unreleased] — 2026-09-23 — Verification gate enforced at COMMIT; `celia verify-run`
+
+### Added
+
+* **Agent loop protocol** (`docs/agent-loop.md`, `docs/agent-loop.ar.md`) — the 16-stage
+  loop with an explicit `AUTHORIZE` stage and `DIAGNOSE → REPAIR → RETEST` cycle, the
+  three verdicts `PASS / FAIL / BLOCKED`, and the rule **MOCK ≠ REAL ≠ EVIDENCE**.
+* **Verification gate** (`tools/verification-gate.mjs`) — `assessClaim()` judges a claim
+  against a verified evidence chain. Self-asserted, mock-only, self-signed, unbound or
+  missing evidence is `BLOCKED`; a DENY or tampered chain is `FAIL`; only an
+  independently-signed real `HANDLER_RESULT/ALLOW` is `PASS`.
+* **`celia verify-run`** (`tools/celia-verify-run.mjs`, `tools/celia-verify-runner.mjs`,
+  `npm run verify-run -- …`) — runs real tests in a subprocess and signs the outcome
+  with the verifier key as evidence bound to one exact commit descriptor. A failing
+  run produces DENY evidence, never silence. Never commits, never grants capability.
+  The judge reads the **runner's** junit report from a private destination file — never
+  the test's stdout — so forged `# pass` output, `process.exit(0)` before reporting, and
+  real `ETIMEDOUT` hangs all yield DENY (pinned in `tests/verify-run.test.js`).
+* Tests: `tests/verification-gate.test.js` (10), `tests/verify-run.test.js` (9, real
+  subprocess → evidence → real COMMIT, incl. forged-stdout and real-timeout attacks), 8 gate tests in
+  `tests/celia-workspace-commit-auth.test.js` / `…-h2.test.js` at the real boundary.
+
+### Changed (breaking, fail-closed)
+
+* **COMMIT requires verified evidence** (`tools/celia-workspace-commit-port.mjs`) —
+  `createWorkspaceCommitter` now needs `config.verification = { verifiers: [kid…] }`
+  and every request must carry `evidence: { source: 'real', records }`. The gate runs
+  after identity/capability/policy/state checks and **before any filesystem I/O**; the
+  winning record must be signed by a configured verifier (never the committing
+  principal) and bound to this `workspace_commit:<hash>` and `changeSetHash`. Denials:
+  `COMMIT_VERIFICATION_UNCONFIGURED`, `COMMIT_VERIFICATION_BLOCKED`,
+  `COMMIT_VERIFICATION_FAIL` (403, `reason` included). A deployment whose
+  `CELIA_WORKSPACE_COMMIT_AUTH` lacks `verification` denies every COMMIT until a
+  verifier key is configured.
+* README cycle line replaced with the real loop.
+
 ## [Unreleased] — 2026-09-22 — H3 external-writer protection at the COMMIT write point
 
 ### Changed

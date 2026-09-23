@@ -11,6 +11,7 @@ import { createTransactionalWorkspacePort } from '../tools/celia-workspace-port.
 import { createWorkspaceCommitter, inspectWorkspaceCommit, workspaceCommitRoot } from '../tools/celia-workspace-commit-port.mjs';
 import { workspaceCommitIntent, workspaceCommitResource, workspaceCommitConstraints } from '../tools/celia-workspace-commit-auth.mjs';
 import { initializeCommitConsumptionStore } from '../tools/celia-commit-consumption-store.mjs';
+import { verifierEvidence } from './celia-verification-helpers.mjs';
 import { snapshot } from './celia-workspace-auth-helpers.mjs';
 import { hardeningFixture } from './celia-commit-hardening-helpers.mjs';
 
@@ -32,17 +33,17 @@ async function fixture(t, entries) {
   }
   fs.writeFileSync(join(root, 'untouched.txt'), 'unrelated\n');
   initializeCommitConsumptionStore({ directory: stateDirectory, root, targetRoot: workspaceCommitRoot(root) });
-  const issuer = createIdentity({ label: 'h2-test-issuer' }), caller = createIdentity({ label: 'h2-test-caller' }), audience = createIdentity({ label: 'h2-test-audience' });
-  const config = { audience: audience.kid, capabilityIssuers: [issuer.kid], rules: [{ id: 'h2-test-grant', effect: 'ALLOW', resource: 'workspace_commit:*', actions: ['commit'], subjects: [caller.kid] }] };
+  const issuer = createIdentity({ label: 'h2-test-issuer' }), caller = createIdentity({ label: 'h2-test-caller' }), audience = createIdentity({ label: 'h2-test-audience' }), verifier = createIdentity({ label: 'h2-test-verifier' });
+  const config = { audience: audience.kid, capabilityIssuers: [issuer.kid], rules: [{ id: 'h2-test-grant', effect: 'ALLOW', resource: 'workspace_commit:*', actions: ['commit'], subjects: [caller.kid] }], verification: { verifiers: [verifier.kid] } };
   function request() {
     const { targetRoot, changeSetHash, expectedBaseHash } = inspectWorkspaceCommit({ root, workspaceId });
     const scope = { workspaceId, targetRoot, changeSetHash, expectedBaseHash };
     const token = mintCapability({ issuer, subject: caller.kid, resource: workspaceCommitResource(scope), actions: ['commit'], constraints: workspaceCommitConstraints(scope), caveats: { max_uses: 1, max_depth: 0 } });
     const authorization = buildEnvelope({ sender: caller, to: audience.kid, type: 'CALL', capability: token.id, body: { resource: token.resource, action: 'commit', args: workspaceCommitIntent(scope), capability: token } });
-    return { ...scope, authorization };
+    return { ...scope, authorization, evidence: verifierEvidence({ verifier, subject: caller.kid, input: scope }) };
   }
-  const newCommitter = () => createWorkspaceCommitter({ root, workspacePort: port, config, stateDirectory });
-  return { root, staging, stateDirectory, request, newCommitter, commit: newCommitter() };
+  const newCommitter = (override = config) => createWorkspaceCommitter({ root, workspacePort: port, config: override, stateDirectory });
+  return { root, staging, stateDirectory, config, request, newCommitter, commit: newCommitter() };
 }
 function inject(method, wrapper, run) {
   const original = fs[method]; fs[method] = wrapper(original); syncBuiltinESMExports();
@@ -140,4 +141,15 @@ test('H2 recovery: restores original permission bits when the operating system c
   }, () => assert.throws(() => f.commit(req), { code: 'ENOSPC' }));
   assert.equal(fired, true); assertRestored(f, before, staged);
   assert.equal(fs.lstatSync(join(f.root, 'a.txt')).mode & 0o7777, 0o4640);
+});
+
+test('verification gate: a committer with no verifier configured denies every COMMIT before any I/O', async t => {
+  const f = await fixture(t, [['a.bin', Buffer.from([1, 2, 3]), Buffer.from([4, 5, 6])]]);
+  const { verification, ...unverified } = f.config;
+  const commit = f.newCommitter(unverified);
+  const before = snapshot(f.root);
+  assert.throws(() => commit(f.request()), { code: 'COMMIT_VERIFICATION_UNCONFIGURED', status: 403 });
+  assert.deepEqual(snapshot(f.root), before);
+  // The same request passes through a committer that has the verifier configured.
+  assert.equal(f.commit(f.request()).ok, true);
 });

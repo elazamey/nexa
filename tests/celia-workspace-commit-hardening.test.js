@@ -21,7 +21,7 @@ test('COMMIT H1: a consumed authorization stays denied after restart even when t
   // deny replay. Restore only base bytes so that H1 measures consumed authority,
   // NOT accidental protection from stale hashes or a missing workspace record.
   f.restoreBase();
-  const { authorization, ...approvedDescriptor } = f.request;
+  const { authorization, evidence: _evidence, ...approvedDescriptor } = f.request;
   assert.deepEqual(f.describe(), approvedDescriptor);
   const sameProcess = await f.commit();
   assert.equal(sameProcess.outcome, 'DENY', 'control: consumed grant must already fail in the old process');

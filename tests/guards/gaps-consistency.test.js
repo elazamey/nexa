@@ -22,11 +22,14 @@ function knownGapFiles() {
   return fs.readdirSync(KNOWN_GAPS_DIR).filter(f => f.endsWith('.test.js'));
 }
 
+// Whole-id match: "D1.1" must not match inside "D1.10".
+const mentions = (content, id) => new RegExp(`(^|[^\\d.])${id.replace('.', '\\.')}(?![\\d])`).test(content);
+
 function knownGapContent(id) {
   const hits = [];
   for (const f of knownGapFiles()) {
     const content = fs.readFileSync(path.join(KNOWN_GAPS_DIR, f), 'utf8');
-    if (content.includes(id)) hits.push(f);
+    if (mentions(content, id)) hits.push(f);
   }
   return hits;
 }
@@ -87,7 +90,7 @@ test('Guard D1.1/gaps: لا ملفات known-gaps يتيمة ولا لفجوات
   const allIds = gaps.gaps.map(g => g.id);
   for (const f of knownGapFiles()) {
     const content = fs.readFileSync(path.join(KNOWN_GAPS_DIR, f), 'utf8');
-    const referenced = allIds.filter(id => content.includes(id));
+    const referenced = allIds.filter(id => mentions(content, id));
     assert.ok(referenced.length > 0, `${f}: لا يشير إلى أي فجوة (يتيم)`);
     for (const id of referenced) {
       assert.ok(openIds.includes(id),

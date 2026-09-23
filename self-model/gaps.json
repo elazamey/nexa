@@ -219,6 +219,55 @@
       "opened_at": "2026-09-22T22:15:00Z",
       "closed_at": null,
       "ticket_status": "open — محجوبة بـ D1.2"
+    },
+    {
+      "id": "D1.9",
+      "area": "methodology",
+      "title": "SEC-NEXT-02: سقف زمني كلي لتشغيل verify-run متعدد الملفات",
+      "sources": [],
+      "current": "celia-verify-runner يطبّق مهلة لكل ملف فقط؛ عدة ملفات كلٌّ دون المهلة قد تتجاوز أي سقف كلي والحكم يبقى PASS",
+      "required": "سقف كلي للتشغيل؛ تجاوزه → DENY مع تسجيل السبب في دليل المحقّق",
+      "enforced": false,
+      "reproducer": "test",
+      "blocked_by": [],
+      "acceptance": {
+        "inversion_test": "tests/verify-run.test.js (مخطط)",
+        "criteria": [
+          "N ملفات كل منها دون المهلة الفردية ومجموعها فوق السقف الكلي → judge=false وGATE_BLOCKED/DENY",
+          "السبب global deadline exceeded يظهر في detail.reasons",
+          "يُحذف ملف known-gaps في نفس التغيير"
+        ],
+        "pre_condition": "اختبار الانعكاس يفشل قبل التغيير",
+        "closure": "في نفس تغيير الإغلاق"
+      },
+      "verification": null,
+      "opened_at": "2026-09-23T00:00:00Z",
+      "closed_at": null,
+      "ticket_status": "open — NOT VERIFIED (docs/agent-loop.md §9)"
+    },
+    {
+      "id": "D1.10",
+      "area": "methodology",
+      "title": "SEC-NEXT-01: عزل كاتب تقرير الاختبار عن العملية الخاضعة للاختبار",
+      "sources": [],
+      "current": "تقرير junit يُكتب إلى مسار عشوائي داخل mkdtemp خاص، لكن عملية الاختبار تعمل بنفس المستخدم ويمكنها نظريًا كتابته",
+      "required": "حدّ عزل حقيقي (مستخدم/namespace/container) بحيث لا تستطيع عملية الاختبار تعديل قناة النتيجة الموثوقة",
+      "enforced": false,
+      "reproducer": "test",
+      "blocked_by": [],
+      "acceptance": {
+        "inversion_test": "(مخطط) اختبار عدائي يحاول كتابة/استبدال ملف التقرير ويُثبت فشله",
+        "criteria": [
+          "المحاولة العدائية تُنفَّذ فعلًا وتفشل عبر حدود العزل لا عبر الإخفاء",
+          "لا ادعاء أن JUnit غير قابل للتلاعب"
+        ],
+        "pre_condition": "لا يوجد",
+        "closure": "في نفس تغيير الإغلاق"
+      },
+      "verification": null,
+      "opened_at": "2026-09-23T00:00:00Z",
+      "closed_at": null,
+      "ticket_status": "open — NOT VERIFIED (docs/agent-loop.md §9)"
     }
   ],
   "updated_at": "2026-09-22T22:45:00Z"

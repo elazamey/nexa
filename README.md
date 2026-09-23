@@ -21,8 +21,14 @@ Every decision — ALLOW or DENY — is written to a hash-chained evidence log a
 comes back with a signed receipt you can verify later, without the log.
 
 ```text
-INSPECT -> CREATE -> TEST -> VERIFY -> REPORT
+INSPECT -> PLAN -> AUTHORIZE -> IMPLEMENT -> EXECUTE -> TEST
+        -> (DIAGNOSE -> REPAIR -> RETEST)* -> REVIEW -> VERIFY -> EVIDENCE -> DELIVER
 ```
+
+The agent is never its own judge: a claim becomes `PASS` only through a verified,
+independently-signed, real-runtime evidence chain — **MOCK ≠ REAL ≠ EVIDENCE**.
+See [`docs/agent-loop.md`](docs/agent-loop.md) ([عربي](docs/agent-loop.ar.md)) and
+`tools/verification-gate.mjs` (`PASS` / `FAIL` / `BLOCKED`).
 
 * **Signed, not asserted.** Key ids *contain* their public key
   (`nexa:key:ed25519:z6Mk…`), so identity is checkable offline with no registry.
@@ -509,7 +515,7 @@ not the one it can assert:
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 545
+- Total tests: 613
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

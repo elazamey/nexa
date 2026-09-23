@@ -17,15 +17,15 @@
   "live_measurement": {
     "date": "2026-09-24",
     "commit": "41226003898bf896083b5ccf95283e0ac025d729",
-    "tree_state": "D1.28 closure worktree (قِيست قبل commit الإغلاق)",
+    "tree_state": "D1.26 closure worktree (قِيست قبل commit الإغلاق)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 727,
-    "pass": 727,
+    "tests": 732,
+    "pass": 732,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 727 = 725 (D1.28 مسجَّلة) + 4 (tests/rate-limit-audit-sink.test.js) − 2 (مُعيد D1.28 حُذف في الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 732 = 727 (إغلاق D1.28) + 7 (tests/secret-scan-allowlist.test.js) − 2 (مُعيد D1.26 حُذف في الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -173,6 +173,16 @@
       "suite": {
         "tests": 727,
         "pass": 727,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T12:25:00Z",
+      "event": "D1.26 مغلقة — بوابة مادة المفاتيح تفرّق، والحمر الدائم على main انتهى",
+      "detail": "أُضيف tools/check-secret-scan-allowlist.mjs + self-model/secret-scan-allowlist.json (مسار/سبب/مالك/تاريخ؛ الميت والمحذوف = فشل)؛ خطوة Scan for Exposed Secret Patterns صارت نداءً واحدًا بلا || true. الحارس tests/secret-scan-allowlist.test.js (7) يقيس الشجرة rc=0 والثلاث مواد المستثناة، ويسرب مادة في نسخة فينهي rc=1، ويوسّع النمط على كاشف فيحمرّ.",
+      "suite": {
+        "tests": 732,
+        "pass": 732,
         "fail": 0
       }
     }
@@ -403,7 +413,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-24T11:20:00Z",
+  "updated_at": "2026-09-24T12:25:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -530,5 +540,20 @@
     "inversions": "self-model/evidence/d1.28-inversion.txt (I1 حذف النداء يُحمِرّ الحارس وحده 3؛ I3 خام، I4 ابتلاع، I5 محتويات دلو، I6 تصريح كاذب، I7 فصل الوصلة — كل واحدة يمسكها الحارس؛ I2 إفراط عمدي يمسك الحارس أوله ثم تتبعه جيرانه لأن الوصلة حقيقية حتى الشاشة)",
     "method": "مرسى الطفرة يجب أن يكون فريدًا: أول محاولة لـ I3 استبدلت bucket: id في مسار القبول لا في سطر التحقيق فخرج قياس أخضر كاذبًا؛ أعيد بالكتلة كاملة بعد تثبيت count==1",
     "untouched": "packages/ وspec/ وvectors؛ لا قائمة أنواع DAG في docs/ فكان الدخول الجديد بلا انجراف توثيق"
+  },
+  "d1.26_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.26 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 732,
+    "pass": 732,
+    "fail": 0,
+    "breakdown": "727 + 7 (حارس البوابة والفاحص) − 2 (مُعيد فجوة معلّقة حُذف في نفس commit)",
+    "red_evidence": "self-model/evidence/d1.26-red.tap (6 من 7 قبل الوصل؛ الأحمر هو سطر الربط وحده — الفاحص كان جاهزًا)",
+    "green_evidence": "self-model/evidence/d1.26-green.tap (7/7 بعد وصل security-scan.yml بالفاحص)",
+    "inversions": "self-model/evidence/d1.26-inversion.txt (J1..J7؛ الجيران deploy-ci-parity 7، workflow-consumer-truth، workflow-overlap 6، gaps-consistency لم يمسّهم شيء في أي طفرة)",
+    "method": "القرار في سكربت واحد يناديه الـ workflow نداءً واحدًا بلا && ولا ||: القياس المحلي هو قياس CI. المادة تُحتسب بـ ≥200 حرف base64 بعد علامة PEM، وبـ ≥64 بعد nexa:key:priv: — فالتوثيق وسطر الكاشف لا يُحتسبان",
+    "untouched": "tools/google-fixtures.mjs لم يُنقل ولم يُحرَّر؛ packages/ وspec/ وvectors سليمة؛ لا حذف فحص"
   }
 }

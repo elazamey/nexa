@@ -34,7 +34,11 @@ test('known-gap D1.27: نظافتان صُرِفتا في حراس هذه الج
   }
   assert.ok(/if \(\/runCommand/.test(section), 'فحص npm test داخل internalCommands لم يعد if — أعِد القراءة');
   // (ب) مقارنة أمر الـ workflow تُزيل التنصيص ولا تهربه بـ replace
-  const d26 = read('tests/known-gaps/d1.26-secret-gate-always-red.test.js');
-  assert.match(d26, /split\('"'\)\.join\(''\)/, 'لم تُستخدم إزالة التنصيص في مقارنة الأمر');
-  assert.ok(!/replace\([^\n]*\\\\"/.test(d26), 'رجع الهروب بـ replace في المُعيد — استعمل split/join');
+  // (ب) لا هروب تنصيص بـ replace في حراس tests/: هذه عادة مطابقة نصّ ممرَّرة، والإزالة أصدق.
+  // كان هذا البند يقرأ مُعيد تذكرةٍ أخرى فانكسر عند إغلاق تلك؛ المسح العام هنا لا يعتمد على ملف يُذاب في تغيير إغلاق غيره (قاعدة الدفتر: الحراس لا يقرؤون بعضهم).
+  for (const f of fs.readdirSync(path.join(ROOT, 'tests')).filter((x) => x.endsWith('.test.js'))) {
+    const t = read(path.join('tests', f));
+    assert.ok(!/\.replace\(\s*\/[^/\n]*\/[gimsuy]*\s*,\s*["'][^"']*\\"/.test(t),
+      `${f}: replace يستبدل بـ backslash-quote — أزل التنصيص بـ split/join بدل الهروب`);
+  }
 });

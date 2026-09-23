@@ -887,7 +887,7 @@
         "O08"
       ],
       "title": "بوابة «Scan for Exposed Secret Patterns» في security-scan.yml حمراء دائمًا: ثلاثة مفاتيح fixture ومطابقة الكاشف لنفسه تُفشل كل push وPR على main",
-      "current": "مفتوحة",
+      "current": "مغلقة — البوابة تفرّق: مادة مفتاح تُحتسب، وسطر كاشف أو توثيق لا يُحتسبان، والاستثناء ملف في المستودع",
       "notes": "مقيس بـ gh (الوظيفة fail على main في آخر تشغيلين: 35794166206 و35710930174) ثم محليًا بأمر الـ workflow نفسه: أربع مطابقات — tools/google-fixtures.mjs:29-31 (ثلاثة PEM كاملة) وpackages/cells/celia/synthesis/src/anthropic-constitutional.js:136 (الكاشف يطابق نصّه 'nexa:key:priv:'). رأس الملف يقول إنها throwaway test keys with a known private half، أي ليست أسرارًا حقيقية؛ والكيانات DER صالحة (PKCS#8 RSA، 1217 بايت). المستودع عام (gh: isPrivate=false) فمنشورًا معروف أصلًا. العطب في البوابة لا في الـ fixture:exit 1 بلا تمييز بين تسريب حقيقي وضجيج دائم.",
       "required": "أن تُفرّق البوابة بين تسريب و fixture، معلَنًا في المستودع لا في نصّ الـ workflow وحده؛ وألّا يُثبَّت نجاحها بحذف الفحص. القرار المطلوب: قائمة استثناء بمسار + سبب + رقم advisory/PR، أو نقل الـ fixtures إلى مسار خارج نطاق الفحص، وتضييق نمط الكاشف فلا يبتلع نصّه الذاتي.",
       "acceptance": {
@@ -899,10 +899,17 @@
           "الملف المُعاد في tests/known-gaps/d1.26-… يُحذف في نفس commit الإغلاق، ونسخة gh تُظهر الوظيفة خضراء على main"
         ]
       },
-      "enforced": false,
-      "reproducer": "test",
-      "verification": null,
-      "opened_at": "2026-09-24T09:10:00Z"
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/secret-scan-allowlist.test.js",
+      "opened_at": "2026-09-24T09:10:00Z",
+      "closed_at": "2026-09-24T12:25:00Z",
+      "ticket_status": "enforced — بوابة الأسرار صارت قرارًا يفرّق؛ لا حمر دائم على main ولا إسكات: tools/check-secret-scan-allowlist.mjs + self-model/secret-scan-allowlist.json",
+      "follow_ups": [
+        "الخطوة S9 في security-scan.yml ما زالت capture-then-decide بنمط $(grep … || true)؛ ليس ابتلاعَ قرار (يُتبع بـ exit 1) لكنها تُرحّب بالنمط نفسه — تُحوَّل إلى الفاحص نفسه إن وسِّعت تغطيته",
+        "node --test في هذه الوظيفة يعمل بلا --import ./tests/bootstrap.mjs (يبني بيئة أقل من npm test)؛ يظل أخضر لأن security.test.js لا يحتاج المتغيرات، لكنه انزلاق محتمل لتغيير لاحق",
+        "لا قائمة أنواع DAG في docs/؛ لو وُثّقت فRATE_LIMIT_REJECTED (من D1.28) لازم لها"
+      ]
     },
     {
       "id": "D1.27",
@@ -914,7 +921,7 @@
       ],
       "title": "تنبيهات الفحص الساكن بلا مصافحة معلنة: فرعان من أربعة على نمط مُراجَع في tools/celia-perimeter-auth.mjs يُبقيان كل PR أحمر",
       "current": "مفتوحة",
-      "notes": "مقيس من PR #29: gh api check-runs/107161367785/annotations أعطى أربعة failure — اثنان نظافة في حراس هذه الجلسة (صُحّبا في نفس الجولة: متغيّر حلقة غير مستعمل، وهروب تنصيص بـ replace)، واثنان على tools/celia-perimeter-auth.mjs:76 (»Password … hashed insecurely« على timingSafeEqual(sha256(presented), sha256(expected))) و:102 («property name to write to depends on a user-provided value» على كتابة الكوكيز). الاثنان الأخيران مطبَّلة بالقياس: المفتاح المشترك ليس كلمة مرور مخزّنة فتقوية KDF بلا معنى مع مقارنة متساوية الوقت، والكتابة على Object.create(null) مع حجب __proto__/constructor لا تصل نموذجًا. API القائمة الكاملة مرفوض (403 لصلاحية الـ token) فالقياس من annotations فقط.",
+      "notes": "مقيس من PR #29: gh api check-runs/107161367785/annotations أعطى أربعة failure — اثنان نظافة في حراس هذه الجلسة (صُحّبا في نفس الجولة: متغيّر حلقة غير مستعمل، وهروب تنصيص بـ replace)، واثنان على tools/celia-perimeter-auth.mjs:76 (»Password … hashed insecurely« على timingSafeEqual(sha256(presented), sha256(expected))) و:102 («property name to write to depends on a user-provided value» على كتابة الكوكيز). الاثنان الأخيران مطبَّلة بالقياس: المفتاح المشترك ليس كلمة مرور مخزّنة فتقوية KDF بلا معنى مع مقارنة متساوية الوقت، والكتابة على Object.create(null) مع حجب __proto__/constructor لا تصل نموذجًا. API القائمة الكاملة مرفوض (403 لصلاحية الـ token) فالقياس من annotations فقط. — ملاحظة بنية للمُعيد: بنده (ب) كان يقرأ ملف مُعيد تذكرة أخرى فانهزم عند إغلاق تلك؛ الحراس لا يقرؤون بعضهم",
       "required": "مصافحة قابلة للمراجعة لا إسكاتًا أعمى: سجلّ في المستودع يسمّي الـ query ids والملف والسبب والمالك، أو تعطيل محلي للـ query بنمط يفهمه الأداة؛ ويُبقى على فشل البوابة أمام أي تنبيه جديد غير مُصافَح.",
       "acceptance": {
         "criteria": [
@@ -963,5 +970,5 @@
       ]
     }
   ],
-  "updated_at": "2026-09-24T11:20:00Z"
+  "updated_at": "2026-09-24T12:25:00Z"
 }

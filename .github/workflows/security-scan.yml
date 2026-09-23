@@ -38,14 +38,10 @@ jobs:
           echo "✅ S9 Invariant Check Passed: Zero unsafe dynamic execution found in packages/."
         fi
 
+    # D1.26: كان الفحص grep حرفيًا على BEGIN…KEY|nexa:key:priv: فيُحمِرّ دائمًا بأربع مطابقات
+    # لا تُفرّق: ثلاثة PEM معلَّنة throwaway في tools/google-fixtures.mjs وسطر كاشف يطابق نصّه
+    # في packages/cells/celia/synthesis/src/anthropic-constitutional.js. الآن يقرّر سكربت واحد،
+    # يُجرى محليًا كما في CI، والاستثناء ملفٌ في المستودع: self-model/secret-scan-allowlist.json
+    # (مسار + سبب + مالك + تاريخ؛ المدخل الميت أو على مسار محذوف = فشل). بلا || وبلا || true.
     - name: Scan for Exposed Secret Patterns
-      run: |
-        echo "🔍 Scanning repository for accidental private keys or secret exposures..."
-        KEY_FOUND=$(grep -rn --include="*.js" --include="*.mjs" --include="*.json" -E "BEGIN (PRIVATE|RSA|EC) KEY|nexa:key:priv:" packages/ tools/ || true)
-        if [ -n "$KEY_FOUND" ]; then
-          echo "❌ Security Alert: Private Key pattern detected in files!"
-          echo "$KEY_FOUND"
-          exit 1
-        else
-          echo "✅ Secret Exposure Scan Passed: Zero private key material exposed."
-        fi
+      run: node tools/check-secret-scan-allowlist.mjs

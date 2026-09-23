@@ -40,9 +40,11 @@ finding عارٍ من artifact في مسار الاعتماد.
 - المصدر: A03 (`seven-gate-validator.js:31`) — المرجع التعاقدي: §5.1 — الحالة: **enforced** (D1.2)
 
 ### DI-06 — مسند مستقل لكل بوابة
-البوابات السبع سبعة مساند دلالية متمايزة؛ لا بوابتان بنفس الشرط (انهيار GATE_3/GATE_6
-الحالي يعني أن «السبعة» فعليًا خمسة).
-- المصدر: A09 (`seven-gate-validator.js:36,55-57`) — الحالة: **open** (D1.4)
+البوابات السبع سبعة مساند دلالية متمايزة؛ لا بوابتان بنفس الشرط. GATE_3 تُحكم من مضمون
+ادعاء الأثر (`impact-evidence.js`: متجه ضرر مسمّى، طول كافٍ، لا صياغة احتمال) وGATE_6 من سجل
+عبور حدّ (`boundary-evidence.js`: `{from,to,kind}` مقيَّد بجدول الأصناف)؛ ولاهما يقرأ
+`severity` — رفع الشدة لم يعد يفتح بوّابتين برفعة قلم.
+- المصدر: A09 (`seven-gate-validator.js:36,55-57` عند التسجيل) — الحالة: **enforced** (D1.4، 2026-09-23؛ التحقق الحيّ في `tests/gate-boundary-vs-impact.test.js`)
 
 ### DI-07 — لا بوابة بقرار ثابت
 كل بوابة تُحسب من مدخلاتها. كانت GATE_7 تكتب `pass: true` حرفيًا — سؤال بلا مُجيب، وقاعدة
@@ -108,6 +110,7 @@ finding عارٍ من artifact في مسار الاعتماد.
 |:---|:---|
 | enforced عبر D1.2 (تحقق حي في `tests/artifact-reader.test.js` — أُغلقت 2026-09-22) | DI-02, DI-03, DI-04, DI-05, DI-08, DI-09, DI-10, DI-11, DI-12 |
 | enforced عبر D1.3 (تحقق حي في `tests/gates-computed.test.js` — أُغلقت 2026-09-23) | DI-07 |
-| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-06, DI-13, DI-14, DI-15, DI-16, DI-17 |
+| enforced عبر D1.4 (تحقق حي في `tests/gate-boundary-vs-impact.test.js` — أُغلقت 2026-09-23) | DI-06 |
+| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-13, DI-14, DI-15, DI-16, DI-17 |
 
 **العدد الكلي: 17 assertion** (يُفحص آليًا في `tests/guards/docs-consistency.test.js`).

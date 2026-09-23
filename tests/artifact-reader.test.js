@@ -38,6 +38,11 @@ function validFinding(overrides = {}) {
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
     endpoint: '/api/v1/billing/101',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: validArtifact(),
     // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
     safeTesting: {
@@ -150,11 +155,14 @@ test('D1.2/§6.1: رفض صريح بلا توقيع عند غياب artifact (A0
 
 test('D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7/7)', () => {
   const bridge = new NexaEvidenceBridge();
-  // artifact صالح لكن صنف never-submit يُسقط GATE_5 → 6/7
+  // artifact صالح لكن صنف never-submit يُسقط GATE_5. عدد البوابات الساقطة غير مثبَّت هنا
+  // عمدًا: منذ D1.4 يسقط مع GATE_6 أيضًا (الصنف المعلوماتي لا يعبر حدًّا)، فالتعليق على
+  // «7/7 أو لا» هو ما تختبره هذه الحالة — لا حساب السقوط الذي يخصّ تذكرة أخرى.
   const finding = validFinding({ vulnClass: 'MISSING_CSP_HEADER' });
   const outcome = bridge.certifyFinding(finding, 'api.example.com');
   assert.equal(outcome.certified, false);
-  assert.equal(outcome.gateScore, '6/7');
+  assert.notEqual(outcome.gateScore, '7/7');
+  assert.ok(outcome.reasons.some(r => /GATE_5/.test(String(r))), 'الرفض لم يسمّ GATE_5');
   assert.ok(outcome.reasons.some(r => String(r).includes('NEXA-E-GATE')));
   assert.equal(outcome.signature, undefined);
 });
@@ -162,7 +170,9 @@ test('D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7
 test('D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gateCheck مزوَّر لا ينفع', () => {
   const bridge = new NexaEvidenceBridge();
   const finding = validFinding({
-    severity: 'LOW', // GATE_3/GATE_6 تسقطان فعليًا
+    // الإسقاط الحقيقي هنا بغياب الدليل (GATE_2/GATE_7) — شرط لا يتغيّر بتغيير بوابة أخرى
+    artifact: undefined,
+    boundary: undefined,
     gateCheck: { isValid: true, score: '7/7', status: 'APPROVED_FOR_REPORT', checks: [] } // تزوير مرفق
   });
   const outcome = bridge.certifyFinding(finding, 'api.example.com');
@@ -232,7 +242,10 @@ test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest
       attestedBy: 'VulnEngine.detectIdor',
       noServiceDisruption: true,
       nonDestructive: true
-    }
+    },
+    vulnClass: 'IDOR_BOLA',
+    boundary: { kind: 'authorization', to: 'object owned by another principal', from: 'authenticated caller' },
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.'
   };
   const c = bridge.certifyFinding(reordered, 'api.example.com');
   assert.equal(c.findingDigest, a.findingDigest, 'canonicalization يجب أن يمحو أثر ترتيب المفاتيح');

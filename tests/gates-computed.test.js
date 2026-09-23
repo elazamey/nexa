@@ -38,7 +38,8 @@ const baseFinding = (extra = {}) => ({
   vulnClass: 'IDOR_BOLA',
   endpoint: '/api/v1/billing/101',
   description: 'Direct object reference permits unauthorized invoice access',
-  impact: 'Tenant isolation breach',
+  impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+  boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
   cwe: 'CWE-639',
   artifact,
   ...extra

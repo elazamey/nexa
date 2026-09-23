@@ -1,5 +1,7 @@
 import { ArtifactReader } from './artifact-reader.js';
 import { evaluateSafeTestingRecord } from './safe-testing.js';
+import { evaluateImpactDemonstration } from './impact-evidence.js';
+import { evaluateBoundaryEvidence } from './boundary-evidence.js';
 
 /**
  * SevenGateValidator - 7-Question Strict Finding Gate & 4-Gate Triage
@@ -36,6 +38,10 @@ export class SevenGateValidator {
       finding.safeTesting !== undefined ? finding.safeTesting : context.safeTesting,
       artifactOutcome.artifact
     );
+    // D1.4 (DI-06): مسندان مستقلان — الأثر من مضمون الادعاء، والحدود من سجلّ {from,to,kind}
+    // مقيَّد بجدول الأصناف. لا شدة في أيٍّ منهما: رفع severity كان يفتح البوابتين معًا.
+    const impact = evaluateImpactDemonstration(finding);
+    const boundary = evaluateBoundaryEvidence(finding);
     const checks = [
       {
         id: 'GATE_1_SCOPE',
@@ -51,7 +57,9 @@ export class SevenGateValidator {
       {
         id: 'GATE_3_DEMONSTRABLE_IMPACT',
         question: 'Does the finding demonstrate concrete security or financial impact?',
-        pass: ['CRITICAL', 'HIGH', 'MEDIUM'].includes(finding.severity)
+        // D1.4: مضمون الادعاء لا ترتيبه — متجه ضرر مسمّى، بلا صياغة احتمال
+        pass: impact.pass,
+        reason: impact.reason
       },
       {
         id: 'GATE_4_POC_EVIDENCE',
@@ -66,7 +74,9 @@ export class SevenGateValidator {
       {
         id: 'GATE_6_BOUNDARY_BYPASS',
         question: 'Does this exploit cross an actual tenant, authorization, or process boundary?',
-        pass: finding.severity === 'CRITICAL' || finding.severity === 'HIGH' || finding.severity === 'MEDIUM'
+        // D1.4: سجلّ حدود مقيَّد بالصنف، لا مرآة لـ GATE_3
+        pass: boundary.pass,
+        reason: boundary.reason
       },
       {
         id: 'GATE_7_SAFE_TESTING_COMPLIANCE',

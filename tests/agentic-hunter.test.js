@@ -74,7 +74,11 @@ test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/
     endpoint: '/api/v1/billing/101',
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
-    impact: 'Tenant isolation breach',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: {
       kind: 'pattern-trace',
       locator: 'endpoint:/api/v1/billing/101',
@@ -212,6 +216,11 @@ test('Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 an
     type: 'IDOR_BOLA',
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: {
       kind: 'pattern-trace',
       locator: 'endpoint:/api/v1/billing/101',

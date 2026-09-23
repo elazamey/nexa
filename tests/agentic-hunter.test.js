@@ -64,6 +64,8 @@ test('Agentic Hunter: VulnEngine detects IDOR, SSRF, CORS, SQLi, and Race condit
   assert.equal(race.vulnClass, 'RACE_CONDITION_TOCTOU');
 });
 
+// D1.5 (DI-13): سياق النطاق سجلٌّ لا حكم — المُقيِّم يعيد مطابقته، ولا يُهدى الترخيص بغيابه
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
 test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/7 gate compliance', () => {
   const validator = new SevenGateValidator();
 
@@ -74,16 +76,27 @@ test('Agentic Hunter: SevenGateValidator filters false positives and enforces 7/
     endpoint: '/api/v1/billing/101',
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
-    impact: 'Tenant isolation breach',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: {
       kind: 'pattern-trace',
       locator: 'endpoint:/api/v1/billing/101',
       evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
       producedBy: 'VulnEngine.detectIdor'
-    }
+    },
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
   };
 
-  const gateResult = validator.evaluateFinding(validFinding, { inScope: true });
+  const gateResult = validator.evaluateFinding(validFinding, ctx());
   assert.equal(gateResult.isValid, true);
   assert.equal(gateResult.score, '7/7');
   assert.equal(gateResult.status, 'APPROVED_FOR_REPORT');
@@ -205,15 +218,27 @@ test('Agentic Hunter: NexaEvidenceBridge signs verified findings with Ed25519 an
     type: 'IDOR_BOLA',
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: {
       kind: 'pattern-trace',
       locator: 'endpoint:/api/v1/billing/101',
       evidence: { detector: 'detectIdor', matched: 'id-like path with authRequired' },
       producedBy: 'VulnEngine.detectIdor'
-    }
+    },
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
   };
 
-  const receipt = bridge.certifyFinding(finding, 'api.example.com');
+  const receipt = bridge.certifyFinding(finding, 'api.example.com', { gateContext: ctx() });
   assert.ok(receipt.signature);
   assert.ok(receipt.findingDigest);
   assert.ok(receipt.artifactDigest);

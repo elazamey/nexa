@@ -1,0 +1,74 @@
+D1.17 INVERSION EVIDENCE — خمس بارِعاء تُعطَّل على حدة؛ المقياس: حارس D1.17 يحمرّ وحده، والأسوار (D1.10/D1.11) لا يمسّها شيء
+--- INVERSION A ---
+variant A applied
+  # tests 7 # pass 4 # fail 3 <- served-telemetry-honesty.test.js
+  # tests 9 # pass 9 # fail 0 <- server-perimeter.test.js
+  # tests 7 # pass 7 # fail 0 <- server-rate-limit.test.js
+  # tests 6 # pass 6 # fail 0 <- server-production-failfast.test.js
+  <- celia-workspace-commit-endpoint.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION B ---
+variant B applied
+  # tests 7 # pass 5 # fail 2 <- served-telemetry-honesty.test.js
+  # tests 9 # pass 9 # fail 0 <- server-perimeter.test.js
+  # tests 7 # pass 7 # fail 0 <- server-rate-limit.test.js
+  # tests 6 # pass 6 # fail 0 <- server-production-failfast.test.js
+  <- celia-workspace-commit-endpoint.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION C ---
+variant C applied
+  # tests 7 # pass 6 # fail 1 <- served-telemetry-honesty.test.js
+  # tests 9 # pass 9 # fail 0 <- server-perimeter.test.js
+  # tests 7 # pass 7 # fail 0 <- server-rate-limit.test.js
+  # tests 6 # pass 6 # fail 0 <- server-production-failfast.test.js
+  <- celia-workspace-commit-endpoint.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION D ---
+variant D applied
+  # tests 7 # pass 5 # fail 2 <- served-telemetry-honesty.test.js
+  # tests 9 # pass 9 # fail 0 <- server-perimeter.test.js
+  # tests 7 # pass 7 # fail 0 <- server-rate-limit.test.js
+  # tests 6 # pass 6 # fail 0 <- server-production-failfast.test.js
+  <- celia-workspace-commit-endpoint.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION E ---
+variant E applied
+  # tests 7 # pass 6 # fail 1 <- served-telemetry-honesty.test.js
+  # tests 9 # pass 9 # fail 0 <- server-perimeter.test.js
+  # tests 7 # pass 7 # fail 0 <- server-rate-limit.test.js
+  # tests 6 # pass 6 # fail 0 <- server-production-failfast.test.js
+  <- celia-workspace-commit-endpoint.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- post-restore ---
+# tests 7
+# pass 7
+# fail 0
+anchors: servedStatus=1 fallback=0 frontend=1
+
+SUPPLEMENT (يُصحّح سطرًا فارغًا أعلاه: اسم ملف لم يكن موجودًا — celia-workspace-commit-endpoint.test.js)
+1) قائمة الأسوار الصحيحة على الشجرة المُصلَّحة (بلا انحراف):
+   # tests 7 # pass 7 # fail 0  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 7 # pass 7 # fail 0  -> server-rate-limit.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 8 # pass 8 # fail 0  -> server-startup-guard.test.js
+   # tests 3 # pass 3 # fail 0  -> celia-workspace-commit-http.test.js
+   # tests 19 # pass 19 # fail 0  -> celia-workspace-commit-auth.test.js
+   # tests 3 # pass 3 # fail 0  -> celia-workspace-commit-hardening.test.js
+   # tests 1 # pass 1 # fail 0  -> celia-workspace-http.test.js
+   # tests 16 # pass 16 # fail 0  -> celia-workspace-write-auth.test.js
+   # tests 3 # pass 3 # fail 0  -> test-output-isolation.test.js
+2) نفس القائمة مع انحراف A (جواب محفوظ عند تعذر القياس):
+variant A applied
+   # tests 7 # pass 4 # fail 3  -> served-telemetry-honesty.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+   # tests 7 # pass 7 # fail 0  -> server-rate-limit.test.js
+   # tests 6 # pass 6 # fail 0  -> server-production-failfast.test.js
+   # tests 8 # pass 8 # fail 0  -> server-startup-guard.test.js
+   # tests 3 # pass 3 # fail 0  -> celia-workspace-commit-http.test.js
+   # tests 19 # pass 19 # fail 0  -> celia-workspace-commit-auth.test.js
+   # tests 3 # pass 3 # fail 0  -> celia-workspace-commit-hardening.test.js
+   # tests 1 # pass 1 # fail 0  -> celia-workspace-http.test.js
+   # tests 16 # pass 16 # fail 0  -> celia-workspace-write-auth.test.js
+   # tests 3 # pass 3 # fail 0  -> test-output-isolation.test.js
+   restored ok: fallback=0 servedStatus=1

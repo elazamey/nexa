@@ -11,7 +11,8 @@
  *   → http://localhost:3001 (API) + http://localhost:5173 (Vite frontend)
  * 
  * API:
- *   GET  /api/celia/state — returns { thinking, evidence, memory, status }
+ *   GET  /api/celia/state — returns { thinking, evidence, memory, status (measured via
+ *          check-posture), claims (labelled prose, never a measurement) }
  *   POST /api/celia/run-demo — runs celia-demo and returns new state
  *   GET  /api/celia/evidence — evidence chain
  *   GET  /api/celia/memory — memory digests
@@ -41,6 +42,9 @@ import { createVectorSupabasePort } from './celia-vector-port.mjs';
 import { NexaGovernedMemoryEngine } from '../packages/cells/celia/memory/src/governed-engine.js';
 import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
 import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
+import { createPerimeter, HEALTH_ROUTE, SESSION_ROUTE, unauthorizedPayload } from './celia-perimeter-auth.mjs';
+import { createRateLimiter, sendTooManyRequests, rateLimitHeaders } from './celia-rate-limit.mjs';
+import { assertProductionPerimeter, assertProductionPersistence, operatorSeedWarning, resolvePersistenceBackend } from './celia-startup-guard.mjs';
 import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
 import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
@@ -54,7 +58,15 @@ import { CeliaSingularityKernel } from '../packages/cells/celia/singularity/src/
 import { CeliaOmegaKernel } from '../packages/cells/celia/omega/src/celia-omega-kernel.js';
 import { createCreativePort, CREATIVE_RESOURCE, CREATIVE_CHANNELS } from './celia-creative-port.mjs';
 import { ApprovalLedger, isApprovalEligible, evaluateToolRequest, assertTargetStable, downgradeProvenance } from '../packages/policy/index.js';
-import { createIdentity } from '../packages/identity/index.js';
+import { createDashboardOperator } from './celia-operator.mjs';
+import {
+  ApprovalContractError,
+  parseApprovalRoute,
+  readSignProposal,
+  resolveApprovalConsumption,
+  resolveApprovalDecision,
+  signApprovalDecision,
+} from './celia-approval-http.mjs';
 import { createTerminalPort, canonicalTarget } from './celia-terminal-port.mjs';
 import { MissionLog, UsageMeter } from '../packages/protocol/index.js';
 import { randomId } from '../packages/crypto/index.js';
@@ -89,6 +101,37 @@ const MIME = {
   '.map': 'application/json'
 };
 
+// === D1.10 / P0-B layer 1 — HTTP perimeter identity (authN, never authZ) ======
+// NEXA_API_KEY is an OPERATOR/CLI credential. The browser SPA authenticates with
+// a session cookie instead, so the key can never appear in a bundle, a Vite env
+// var, an HTML response or a URL. Missing key ⇒ the wall is down (documented
+// local/dev/test behaviour); production without a key refuses to start (layer 3).
+// Nothing here grants a capability: every gate is still enforced in-kernel.
+const perimeter = createPerimeter({
+  env: process.env,
+  onAudit: (entry) => emitDagEvent(entry.type, entry),
+});
+
+// === D1.10 / P0-B layer 2 — rate limit (defence in depth, never authorization).
+// Fixed window per identity (per peer for unauthenticated traffic). It bounds
+// credential-guessing and flood cost only; every gate decision stays in-kernel.
+const rateLimit = createRateLimiter({
+  env: process.env,
+  onAudit: (entry) => emitDagEvent(entry.type, entry),
+});
+
+// === D1.10 / P0-B layer 3 — production does not boot with an open wall ========
+// Ahead of every other initialisation (no jail directory, no ledger, no listen):
+// an unconfigured production deployment must die at the moment of the omission,
+// not after it has served mutating traffic. Local/dev/test are untouched.
+const startup = assertProductionPerimeter({ env: process.env, required: perimeter.required });
+if (!startup.ok) {
+  // The code leads the line: an operator (and CI grep) reads one token, not prose.
+  console.error(`[nexa] ${startup.code}: startup refused`);
+  console.error(`[nexa] ${startup.message}`);
+  process.exitCode = 1;
+  process.exit(1);
+}
 // Trusted operator configuration, never derived from request headers/body.
 // Missing configuration denies every workspace write; invalid config stops startup.
 const authorizeWorkspaceWrite = createWorkspaceWriteAuthorizer(
@@ -99,11 +142,41 @@ const authorizeWorkspaceWrite = createWorkspaceWriteAuthorizer(
 export const dagEventEmitter = new EventEmitter();
 dagEventEmitter.setMaxListeners(50);
 
-// v0.5 — Semantic Memory Port (mock by default, real Supabase if env set)
-const vectorPort = createVectorSupabasePort({
-  url: process.env.SUPABASE_URL || 'mock://memory',
-  key: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || 'mock-key'
+// v0.5 — Semantic Memory Port (mock by default, real Supabase if env set).
+// D1.11: the values come from the same resolver the startup guard inspects, so the
+// guard cannot be checking a different backend than the one this process got.
+const persistence = resolvePersistenceBackend({ env: process.env });
+const vectorPort = createVectorSupabasePort({ url: persistence.url, key: persistence.key });
+
+// === D1.11 / P0-C — production does not claim continuity it does not have ====
+// The port's own verdict (_isMock === false) is the only admissible evidence: a
+// real-looking SUPABASE_URL with a silent mock fallback is precisely the state
+// this guard exists to refuse. Runs before any filesystem write and long before
+// listen(); dev/test keep today's behaviour untouched.
+const persistenceStartup = assertProductionPersistence({
+  env: process.env,
+  backend: persistence,
+  realBackend: vectorPort._isMock === false,
 });
+if (!persistenceStartup.ok) {
+  console.error(`[nexa] ${persistenceStartup.code}: startup refused`);
+  console.error(`[nexa] ${persistenceStartup.message}`);
+  process.exitCode = 1;
+  process.exit(1);
+}
+if (persistenceStartup.warning) console.warn(`[nexa] ${persistenceStartup.warning}`);
+// Advisory only, and after every fatal check: a process that is about to refuse
+// should not also be lectured about key hygiene in the same breath.
+const seedWarning = operatorSeedWarning(process.env);
+if (seedWarning) console.warn(`[nexa] ${seedWarning}`);
+// Every honesty label below is derived from the port, never from the env shape.
+const memoryHonesty = vectorPort._isMock === false
+  ? { component: 'memory', mode: 'LIVE', detail: `pgvector backend via ${persistence.source}` }
+  : {
+    component: 'memory',
+    mode: 'DEMO',
+    detail: 'mock://memory — in-process only, lost on restart, not shared across replicas',
+  };
 
 // v0.5 Governed Memory Engine — Self-Evolving Agent OS (no pgvector needed)
 const governedEngine = new NexaGovernedMemoryEngine({ maxNodes: 500, ownerKid: 'nexa:governed:api:v0.5' });
@@ -144,7 +217,11 @@ const creativeRuns = new Map(); // creativeId → result (ring, max 20)
 // v13-1 Approval Protocol — the human seat in the loop (doc §10).
 // The dashboard operator is the only trusted approver in this deployment; the
 // approval log is a hash-chained, tamper-evident ledger (packages/policy).
-const dashboardOperator = createIdentity({ label: 'celia-dashboard-operator', seed: 'e5'.repeat(32) });
+// D1.10 layer 4: the seed is configurable (NEXA_OPERATOR_SEED) because the
+// published demo seed makes this kid derivable by anyone who can read the repo —
+// see tools/celia-operator.mjs. Identity of the *signer* no longer comes from the
+// request: the ledger only accepts a decision that names it and signs it.
+const dashboardOperator = createDashboardOperator({ env: process.env });
 const approvalLedger = new ApprovalLedger({ trustedApprovers: [dashboardOperator.kid] });
 
 // v13-2 Terminal — first REAL execution. The jail lives under the gitignored
@@ -564,7 +641,7 @@ async function seedGovernedMemory() {
     await governedEngine.registerStrategy({
       taskIntent: 'parallel DAG execution',
       condition: { maxParallel: 3, speculative: true },
-      strategyDAG: { nodes: [{ id: 'discover' }, { id: 'inspect', parallel: true }, { id: 'verify', critical: true }], maxParallel: 3, pasteSaving: '48.5%' },
+      strategyDAG: { nodes: [{ id: 'discover' }, { id: 'inspect', parallel: true }, { id: 'verify', critical: true }], maxParallel: 3, pasteSaving: 'claim — not measured by this build' },
       evidenceRef: 'evidence:dag-v0.4',
       confidence: 0.95
     });
@@ -584,7 +661,8 @@ async function seedGovernedMemory() {
     });
     await governedEngine.registerBelief({
       belief: 'Tool registry default deny + evidence_ref + allow-list + RLS + digest-only is required (defense in depth)',
-      condition: { gates: '6 CLOSED', tests: '314/314' },
+      // D1.17: شرط الاعتقاد لا يحمل أرقامًا مروَّاة — القياس وحده يُحال إليه
+      condition: { posture: 'measured by `node tools/check-posture.mjs` (see /api/posture)' },
       evidenceRef: 'evidence:belief-v0.5',
       confidence: 0.9
     });
@@ -610,8 +688,8 @@ async function seedSemanticMemory() {
     { content: 'Memory is digest-only, never raw content, with RLS, evidence-bound.', meta: { type: 'policy', tier: 'semantic' } },
     { content: 'Tool registry default deny, allow-listed paths, 9 tools including semantic recall.', meta: { type: 'policy', tier: 'working' } },
     { content: 'SSE stream provides real-time DAG visualization, heartbeat 15s.', meta: { type: 'architecture', tier: 'working' } },
-    { content: 'Speculative execution PASTE 48.5% latency saved, maxParallel 3.', meta: { type: 'architecture', tier: 'working' } },
-    { content: 'Security gates 6 CLOSED, 314 tests, 2 LLM vectors BLOCKED.', meta: { type: 'security', tier: 'episodic' } },
+    { content: 'Speculative execution (PASTE) starts B while A runs with maxParallel 3; the latency saving is a claim, not measured by this server.', meta: { type: 'architecture', tier: 'working' } },
+    { content: 'Security gate closure is measured by `node tools/check-posture.mjs`; this server serves that reading and never a memorised count.', meta: { type: 'security', tier: 'episodic' } },
     { content: 'Glassmorphism dashboard: HUD + Telemetry + Arena, Tailwind + lucide-react, 55KB gzip.', meta: { type: 'ui', tier: 'working' } },
     { content: 'Supabase pgvector 384d embeddings, cosine similarity, Top-12 RAG for planner.', meta: { type: 'architecture', tier: 'semantic' } },
     { content: 'Evidence chain hash-chained, signed receipts, ledger records every message.', meta: { type: 'policy', tier: 'semantic' } },
@@ -637,6 +715,57 @@ export function emitDagEvent(type, payload) {
 }
 
 // Mock data — in production, read from Supabase port
+// D1.17 (O09 / قياس مخدوم): الحالة المخدومة تُقرأ من قياس الجوار نفسه الذي يستعمله
+// /api/v1/system/status. عيّنة قصيرة العمر (TTL) لأن اللوحة تُستطلع بالتكرار، و`measured_at`
+// يصرّح بوقت العيّنة. عند تعذّر القياس تُخدَم حالة بلا عدد — لا قيمة احتياطية.
+const POSTURE_SAMPLE_TTL_MS = 2_000;
+let postureSample = null;
+
+function measurePosture() {
+  const now = Date.now();
+  if (postureSample && now - postureSample.at < POSTURE_SAMPLE_TTL_MS) return postureSample;
+  let sample;
+  try {
+    const out = execSync('node tools/check-posture.mjs', { cwd: root, encoding: 'utf8' });
+    const metrics = {};
+    for (const line of String(out).split('\n')) {
+      const parsed = /^NEXA_METRIC ([a-z_]+)=(\d+)$/.exec(line);
+      if (parsed) metrics[parsed[1]] = Number(parsed[2]);
+    }
+    sample = Number.isInteger(metrics.closed_gates)
+      ? { ok: true, metrics, at: now }
+      : { ok: false, code: 'NEXA-POSTURE-UNMEASURABLE', reason: 'posture check returned no measured closed_gates', at: now };
+  } catch (e) {
+    sample = { ok: false, code: 'NEXA-POSTURE-UNAVAILABLE', reason: `posture check failed: ${e.message}`, at: now };
+  }
+  postureSample = sample;
+  return sample;
+}
+
+function servedStatus() {
+  const sample = measurePosture();
+  if (!sample.ok) {
+    return {
+      measurement: 'node tools/check-posture.mjs',
+      measurement_error: `${sample.code}: ${sample.reason}`
+    };
+  }
+  const m = sample.metrics;
+  return {
+    gates: `${m.closed_gates} CLOSED`,
+    gated_namespaces: m.gated_namespaces,
+    gated_actions: m.gated_actions,
+    omega_gate_stages: m.omega_gate_stages,
+    attack_categories: m.attack_categories,
+    kernel_modules: m.kernel_modules,
+    omega_error_codes: m.omega_error_codes,
+    membrane_steps: m.membrane_steps,
+    cell_states: m.cell_states,
+    measurement: 'node tools/check-posture.mjs',
+    measured_at: new Date(sample.at).toISOString()
+  };
+}
+
 let mockState = {
   thinking: {
     model: 'grok-2',
@@ -659,13 +788,16 @@ let mockState = {
     { id: '2', tier: 'semantic', digest: 'sha256:789xyz...', owner_kid: 'nexa:key:ed25519:z6MkCelia...', evidence_ref: '9a8b7c6d', created_at: new Date().toISOString() },
     { id: '3', tier: 'working', digest: 'sha256:qwerty...', owner_kid: 'nexa:key:ed25519:z6MkCelia...', evidence_ref: '1a2b3c4d', created_at: new Date().toISOString() },
   ],
-  status: {
-    gates: '6 CLOSED',
-    tests: '314/314',
-    promotion: '5/5 READY',
-    llm_vectors: '2/2 BLOCKED',
+  // D1.17 (O09): ما يُخدَم هنا قراءة لا حروف — تُحدَّث الكتلة من القياس عند كل طلب.
+  // لا tests ولا promotion: هذا السيرفر لا يقيس الاختبارات ولا الترقية، وحذف الادعاء
+  // أولى من وسمه برقم قديم (قرار المالك 2026-09-23؛ لا baseline عبر الشبكة).
+  status: servedStatus(),
+  // النثر الوصفي معلَّق صراحةً: ادّعاء قدرة لا تليمترية (D1.12/D1.17 — رقم بلا قياس رواية)
+  claims: {
+    kind: 'claim',
+    note: 'descriptive claims below are not measurements and are not verified by any check',
     version: 'v0.8-ultimate',
-    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Astrocytic Neuromodulators mood auto, Holomorphic Cauchy-Riemann no hallucinations, Molecular DNA A-T-C-G PCR microsecond, Holographic wave interference photonic speed, Morphic Resonance phase frequency zero bandwidth + 16 DSLs 50-70% saving + Z3 100% proof + WASM + Egress zero-trust',
+    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Tensor Field Gradient',
     memoryEngine: 'Poincaré Hyperbolic O(log N) + Molecular DNA A-T-C-G + Morphic Resonance + Governed State Machine + 15 Engines Unified'
   },
   semanticMemory: [],
@@ -685,7 +817,12 @@ const server = createServer(async (req, res) => {
   // CORS for Vite dev server
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Content-Type only until D1.10: header-token clients now need to present a
+  // credential on the same route set, so the preflight must allow those two
+  // headers. Origin policy is deliberately untouched (SPA is same-origin behind
+  // the Vite/Render proxy; '*' + Credentials is rejected by browsers anyway, so
+  // no cross-origin document can ride a session cookie).
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Nexa-Api-Key');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -695,6 +832,81 @@ const server = createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
+
+  // Liveness probe for the platform (Render health check) — answers with no
+  // secret, no state read and no policy touch. Must stay ahead of the wall:
+  // a failing health probe is what gets a service recycled, and a 401 on the
+  // health path reads as "the app is down" to the orchestrator.
+  if (url.pathname === HEALTH_ROUTE) {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, service: 'nexa-dashboard', authRequired: perimeter.required }));
+    return;
+  }
+
+  // --- D1.10 layer 1: identity. Order is contractual: session route → wall →
+  // rate limit → CSRF → routes. Authenticated ≠ authorized: passing this point
+  // only names the caller; every gate below still decides on its own.
+  if (url.pathname === SESSION_ROUTE) {
+    // A login attempt has no identity yet, so it is charged to the peer address,
+    // and this is the one route where a small budget genuinely matters: it is
+    // the credential-guessing surface. The status probe (GET) is exempt — it is
+    // the SPA's "may I mount?" read, and a limiter there would show a login form
+    // to an operator who simply refreshed too often.
+    if (String(req.method).toUpperCase() === 'POST') {
+      const loginBudget = rateLimit.consume(rateLimit.keyFor(req, { kind: 'login' }), {
+        limit: rateLimit.loginMax,
+      });
+      if (!loginBudget.ok) {
+        sendTooManyRequests(res, loginBudget);
+        return;
+      }
+    }
+    await perimeter.handleSession(req, res, url);
+    return;
+  }
+  // The wall covers the API surface only. The SPA shell (HTML/JS/CSS) has to
+  // load before a session exists — otherwise the login form could never render
+  // — and static files carry no state and no data.
+  if (url.pathname.startsWith('/api/')) {
+    const identity = perimeter.authenticate(req, url);
+    // Layer 2 sits between authentication and authorization: a key is charged to
+    // the identity that reached it, and failed identity to the peer at the (much
+    // smaller) login budget. 429 therefore outranks 401 when both apply — the
+    // 401 path must not stay an unlimited credential oracle.
+    const budget = rateLimit.consume(rateLimit.keyFor(req, { context: identity.context }), {
+      limit: identity.ok ? rateLimit.max : rateLimit.loginMax,
+    });
+    if (!budget.ok) {
+      sendTooManyRequests(res, budget);
+      return;
+    }
+    for (const [name, value] of Object.entries(rateLimitHeaders(budget))) {
+      res.setHeader(name, value);
+    }
+    if (!identity.ok) {
+      res.writeHead(identity.status, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'WWW-Authenticate': 'Bearer realm="nexa-perimeter"',
+      });
+      res.end(JSON.stringify(unauthorizedPayload()));
+      return;
+    }
+    if (!perimeter.csrfOk(req, identity.context)) {
+      res.writeHead(403, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify({
+        ok: false,
+        code: 'NEXA_E_CSRF',
+        error: 'session-authenticated state change requires the x-nexa-csrf header',
+      }));
+      return;
+    }
+    // Request context for downstream boundaries (audit, forensics). Read-only,
+    // and inert by contract: no route may treat its presence as an authorization
+    // decision — the rate limit already charged this identity, and every gate
+    // still decides in-kernel on its own inputs.
+    req.nexaIdentity = identity.context;
+  }
 
   // === SSE Endpoint for DAG Stream (v0.4) ===
   if (url.pathname === '/api/v1/dag-stream') {
@@ -785,6 +997,8 @@ const server = createServer(async (req, res) => {
 
   // API routes
   if (url.pathname === '/api/celia/state') {
+    // D1.17: تُعاد قراءة القياس عند الطلب — ما يخدمه operator هو ما يقيسه السيرفر الآن
+    mockState.status = servedStatus();
     mockState.thinking.timestamp = new Date().toISOString();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(mockState));
@@ -822,6 +1036,7 @@ const server = createServer(async (req, res) => {
     } catch (e) {
       console.log('[dashboard-server] demo failed', e.message);
     }
+    mockState.status = servedStatus();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(mockState));
     return;
@@ -1418,6 +1633,8 @@ const server = createServer(async (req, res) => {
         { component: 'approvals', mode: 'LIVE', detail: 'hash-chained ledger, human decisions' },
         { component: 'evidence', mode: 'LIVE', detail: 'hash-chained logs, verifiable offline' },
         { component: 'creative', mode: 'DEMO', detail: `mock provider (${creativePort.stats().provider}), deterministic` },
+        // D1.11: continuity is stated, not assumed — the label follows the port.
+        memoryHonesty,
         { component: 'desktop', mode: 'DEMO', detail: 'canvas simulation — no VNC in this sandbox' },
       ],
       usage: usageMeter.summaryAll(),
@@ -1536,40 +1753,90 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume)$/.test(url.pathname) && req.method === 'POST') {
-    const [, , , , approvalId, verb] = url.pathname.split('/');
+  // === D1.10 layer 4 — approval decision contract (tools/celia-approval-http.mjs) ===
+  // `POST …/approve {}` used to become "the trusted operator approved this once"
+  // because the route filled in both the kid and the scope. It cannot any more:
+  // a decision must name its approver, state its scope and carry that approver's
+  // signature over the exact bytes. Absence of a decision is a DENY, not a
+  // default. `sign` is the human's signing hand (no ledger mutation); `consume`
+  // only decodes the id — spending an approval was never the granting one.
+  if (/^\/api\/v1\/authorizations\/[^/]+\/(approve|deny|consume|sign)$/.test(url.pathname) && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
+      let route = null;
       try {
+        route = parseApprovalRoute(url.pathname);
         const args = JSON.parse(body || '{}');
-        // The human at this dashboard IS the trusted operator; a foreign approverKid is refused by the ledger.
-        const approverKid = args.approverKid ?? dashboardOperator.kid;
         let result;
         let eventType;
-        if (verb === 'approve') {
-          result = approvalLedger.approve({ approvalId, scope: args.scope ?? 'once', approverKid });
-          eventType = 'AUTHORIZATION_APPROVED';
-        } else if (verb === 'deny') {
-          result = approvalLedger.deny({ approvalId, approverKid, reason: args.reason ?? null });
-          eventType = 'AUTHORIZATION_DENIED';
-        } else {
-          result = approvalLedger.consume({
-            approvalId,
-            resource: args.resource,
-            action: args.action,
-            target: args.target,
-            missionId: args.missionId ?? null,
-          });
+        if (route.verb === 'consume') {
+          result = approvalLedger.consume(resolveApprovalConsumption(route, args));
           eventType = 'AUTHORIZATION_CONSUMED';
+        } else if (route.verb === 'sign') {
+          const proposal = readSignProposal(args);
+          const signed = signApprovalDecision({
+            operator: dashboardOperator,
+            approvalId: route.approvalId,
+            verb: proposal.verb,
+            scope: proposal.scope,
+            reason: proposal.reason,
+          });
+          // Hand back exactly what the decision route must echo. The ledger is
+          // untouched: a signature is an intention, not a grant.
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            ok: true,
+            approvalId: route.approvalId,
+            decision: proposal.verb,
+            scope: proposal.scope,
+            reason: proposal.reason,
+            approverKid: signed.approverKid,
+            signature: signed.signature,
+            // Which seed signed is an operational secret, not a client need: the
+            // boot warning (tools/celia-startup-guard.mjs) is where it is reported.
+            ledger: 'unchanged',
+          }));
+          return;
+        } else {
+          const decision = resolveApprovalDecision(route, args);
+          if (decision.verb === 'approve') {
+            result = approvalLedger.approve({
+              approvalId: decision.approvalId,
+              scope: decision.scope,
+              approverKid: decision.approverKid,
+            });
+            eventType = 'AUTHORIZATION_APPROVED';
+          } else {
+            result = approvalLedger.deny({
+              approvalId: decision.approvalId,
+              approverKid: decision.approverKid,
+              reason: decision.reason,
+            });
+            eventType = 'AUTHORIZATION_DENIED';
+          }
         }
         emitDagEvent(eventType, result);
-        if (verb === 'approve' || verb === 'deny') maybeResumeMissions(approvalId, verb);
+        if (route.verb === 'approve' || route.verb === 'deny') maybeResumeMissions(route.approvalId, route.verb);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, ...result }));
       } catch (e) {
-        res.writeHead(APPROVAL_BAD_CODES.includes(e.code) ? 400 : 500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, code: e.code || 'NEXA_E_INTERNAL', error: e.message }));
+        // A refusal is an authorization decision, so it belongs in the audit
+        // trail — not only in a 4xx the client may ignore. Deny first, answer after.
+        const code = e.code || (e instanceof ApprovalContractError ? 'NEXA_E_SCHEMA' : 'NEXA_E_INTERNAL');
+        emitDagEvent('AUTHORIZATION_RESULT', {
+          entry: 'authorizations:decision',
+          approvalId: route?.approvalId ?? null,
+          verb: route?.verb ?? null,
+          decision: 'DENY',
+          code,
+          reason: e.message,
+        });
+        const status = e instanceof ApprovalContractError
+          ? e.status
+          : (APPROVAL_BAD_CODES.includes(code) ? 400 : 500);
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, code, error: e.message }));
       }
     });
     return;
@@ -2719,6 +2986,20 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // D1.15: النسخة الساكنة الموازية صارت legacy معلَنًا. كانت dashboard/public/index.html،
+  // أي الاسم والمسار نفسهما اللذان يبنيهما Vite — فتُخدَم من مسار خاص وتُوسم غير إنتاجية.
+  if (url.pathname === '/dashboard-static.html' || url.pathname === '/static') {
+    const legacyPath = resolve(root, 'dashboard/legacy/static-dashboard.html');
+    if (existsSync(legacyPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'X-Nexa-Page': 'legacy-static (not the production build)' });
+      res.end(readFileSync(legacyPath, 'utf8'));
+      return;
+    }
+    res.writeHead(410, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('legacy static dashboard moved: dashboard/legacy/static-dashboard.html (D1.15)\n');
+    return;
+  }
+
   if (url.pathname === '/rag_core.js') {
     const jsPath = resolve(root, 'dashboard/public/rag_core.js');
     if (existsSync(jsPath)) {
@@ -2913,5 +3194,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
   console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 501/501, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
+  {
+    const boot = servedStatus();
+    console.log(`   Gates: ${boot.gates ?? 'not measured'} (measured: ${boot.measurement})`);
+    if (boot.measurement_error) console.log(`   Gates: NOT MEASURED — ${boot.measurement_error}`);
+    console.log('   Tests / promotion: not measured by this process — see `npm test` and the release ceremony (D1.17)');
+    console.log('   Engine: descriptive claim, not a measurement (see /api/celia/state → claims)');
+  }
 });

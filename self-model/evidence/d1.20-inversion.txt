@@ -1,0 +1,96 @@
+# D1.20 INVERSION EVIDENCE — تسع نسخ؛ المقياس: حارس D1.20 يحمرّ وحده
+المجاورون: تداخل الـ workflows (6) · تكافؤ النشر (7) · CI (6) · المرايا (6) · سجل الفجوات (5) · مرجع البيئة (6).
+قياس إضافي قبل النسخ (بروفة تنفيذ لا قراءة): جسم خطوة النشر مُستخرج من الـ YAML ومنفَّذ في نسخة طارحة —
+  (أ) private:true ⇒ rc 0 مع ::warning:: وسطر SKIP_PUBLISH في الـ summary (تخطٍّ معلن لا صمت)
+  (ب) private:false ⇒ rc 1 (registry وهمي محلي 127.0.0.1:9 حتى لا يكون هناك أي خطر نشر حقيقي) — الفشل مُبلَّغ
+ملاحظة حضّت عليها النسخة S1 ثم S8: نصّ التحذير كان يحوي «|| true» حرفيًا فأحمرّ الحارس بخطوة سليمة؛ أُزيل
+الحرفي من الرسالة وبقي في التعليق (الحارس يسقط التعليقات) — الحظر الحرفي يجب أن يعمّى الشيفرة لا الكلام عنها.
+--- INVERSION S1 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: لا ابتلاع فشل في أي خطوة — النشر
+--- INVERSION S2 ---
+   # tests 7 # pass 5 # fail 2 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: لا ابتلاع فشل في أي خطوة — النشر · لا خطوة تثبيت في الجذر، والتبرير
+--- INVERSION S3 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: جسر الأدلة الذي تستورده خطوة nod
+--- INVERSION S4 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: مسارات المنتجات متماسكة — pack و
+--- INVERSION S5 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: بوابة الإصدار وصلاحياته — مقاسات
+--- INVERSION S6 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: بوابة الإصدار وصلاحياته — مقاسات
+--- INVERSION S7 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: التناقض معلن لا مبطّن — private/
+--- INVERSION S8 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: لا ابتلاع فشل في أي خطوة — النشر
+--- INVERSION S9 ---
+   # tests 7 # pass 6 # fail 1 -> release-workflow.test.js
+   # tests 6 # pass 6 # fail 0 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> env-reference-sync.test.js
+   الأحمر: مسارات المنتجات متماسكة — pack و
+--- post-restore ---
+# tests 43 # pass 42 # fail 1
+--- post-restore مُعاد (بعد إضافة مُعيد D1.21 الذي كان غائبًا) ---
+# tests 45 # pass 45 # fail 0
+التصحيح المُسجَّل: في القياس الأول كان gaps-consistency أحمرّ في كل نسخة — لا بسبب النسخ بل لأن D1.21 سُجّلت
+بـ reproducer:"test" بلا ملف في tests/known-gaps؛ أُنشئ الملف (2 من 2 أخضر-كإثبات ويبقى ما دامت مفتوحة) ثم أُعيد
+القياس. وهذا أيضًا درس الحظر الحرفي: سطر التحذير في release.yml كان يحوي «|| true» نصًّا فأحمرّ الحارس
+خطوة سليمة؛ أُزيل الحرفي من الرسالة وبقى في التعليق لأن الحارس يُسقِط التعليقات قبل أي assert.

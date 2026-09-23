@@ -1,0 +1,16 @@
+# D1.23 — قياس تدقيق اعتماديات الداشبورد (npm audit --json في dashboard/، qِيست عند 4122600)
+الملخص: {"info": 0, "low": 0, "moderate": 1, "high": 1, "critical": 0, "total": 2}
+
+- vite (مُثبَّتة النطاق <=6.4.2) · severity=high · vite: `server.fs.deny` bypass on Windows alternate paths · المتأثر: <=6.4.2
+- esbuild (مُثبَّتة النطاق <=0.24.2) · severity=moderate · esbuild enables any website to send any requests to the development server and read the response · المتأثر: <=0.24.2
+- vite (مُثبَّتة النطاق <=6.4.2) · severity=moderate · Vite Vulnerable to Path Traversal in Optimized Deps `.map` Handling · المتأثر: <=6.4.1
+- vite (مُثبَّتة النطاق <=6.4.2) · severity=moderate · launch-editor: NTLMv2 hash disclosure via UNC path handling on Windows · المتأثر: <=6.4.2
+
+إصدارات مقفلة في dashboard/package-lock.json:
+  {"esbuild": "0.21.5", "postcss": "8.5.28", "react": "18.3.1", "tailwindcss": "3.4.19", "vite": "5.4.21"}
+
+ولا خطوة في أي workflow تشغّل npm audit على الداشبورد (قِيس بـ grep: 'npm audit' لا يظهر)،
+وفي المستودع أربعة PRs من dependabot ترقّي الكُبرى: #24 vite→8.3.0، #25 react→19.3.0،
+#26 @vitejs/plugin-react→6.1.1، #27 tailwindcss→4.3.3 — قرار الترقية/العتبة للمالك.
+ملاحظة سياق: الثغرتان الأعلى (vite server.fs.deny bypass وdev-server moderates) تمسّ خادم
+التطوير لا مخرَج vite build الساكن؛ والنشر يُبنى من القفل نفسه منذ D1.18.

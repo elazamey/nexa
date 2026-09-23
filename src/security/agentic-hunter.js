@@ -13,7 +13,8 @@ import {
   ReportWriter,
   NexaEvidenceBridge,
   HuntMemory,
-  AutopilotEngine
+  AutopilotEngine,
+  SOURCE_DETECTORS
 } from './hunter/index.js';
 
 /**
@@ -64,92 +65,125 @@ export class AgenticBugHunter {
     return results;
   }
 
-  async _inspectFile(filePath) {
+  // D1.7 (A05/A06 / DI-01، DI-15، DI-16): لا كاشف هنا — المنسِّق يقرأ الملف ويسلّمه للوحدات
+  // المسجلة، ويجمع ما تُرجعه. شرط الكشف ونطاقه ودليله كلُّها داخل الوحدة المختصة.
+  _inspectFile(filePath) {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const relativePath = path.relative(process.cwd(), filePath);
-    const lines = content.split('\n');
+    // الأصل مُعرَّف نسبةً إلى جذر الجولة المُرَخَّص — لا إلى cwd العملية: مسار يبدأ بـ ../
+    // يخرج من الجذر عند GATE_1 (D1.5) ويجعل الأصل غير قابل للإغلاق على نطاق الجولة.
+    const relativePath = path.relative(this.targetDir, filePath);
 
-    // Scan for secrets via SecretsHunter
-    const secretFindings = this.secretsHunter.scanContent(content, relativePath);
-    for (const sf of secretFindings) {
-      this.findings.push(sf);
+    for (const finding of this.secretsHunter.scanContent(content, relativePath)) {
+      this.findings.push(finding);
     }
 
-    lines.forEach((line, index) => {
-      const lineNum = index + 1;
-
-      // 1. فحص التعامل الأسيء مع الوعود (Unhandled Async/Promises)
-      if (line.includes('async ') && !content.includes('try {') && !content.includes('.catch(') && !content.includes('Promise.')) {
-        this.findings.push({
-          severity: 'MEDIUM',
-          type: 'UNHANDLED_ASYNC_ERROR',
-          file: relativePath,
-          line: lineNum,
-          description: 'دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).'
-        });
+    for (const detector of SOURCE_DETECTORS) {
+      for (const finding of detector.detect({ relativePath, content })) {
+        this.findings.push(finding);
       }
-
-      // 2. فحص استخدام التشفير الضعيف (Weak Crypto Detection)
-      if (/\b(createHash\(['"](?:md5|sha1)['"])\b/i.test(line) && !line.includes('// ignore-security')) {
-        this.findings.push({
-          severity: 'HIGH',
-          type: 'WEAK_CRYPTOGRAPHY',
-          file: relativePath,
-          line: lineNum,
-          description: 'استخدام خوارزمية تشفير ضعيفة أو غير آمنة (MD5/SHA1).'
-        });
-      }
-
-      // 3. فحص استدعاءات الذاكرة والموارد المفتوحة (Resource Leaks)
-      if (line.includes('fs.openSync') || line.includes('createReadStream')) {
-        if (!content.includes('.close') && !content.includes('.destroy')) {
-          this.findings.push({
-            severity: 'LOW',
-            type: 'POTENTIAL_RESOURCE_LEAK',
-            file: relativePath,
-            line: lineNum,
-            description: 'فتح مجرى ملفات دون إغلاقه صراحة (احتمالية تسريب موارد).'
-          });
-        }
-      }
-    });
+    }
   }
 
   _generateReport() {
-    // Validate findings with the 7-Gate Validator
-    const triage = this.validator.filterValidFindings(this.findings);
+    // D1.5 (DI-13): جولة المصدر المحلي تُرخَّص بجذرها الصريح — الأصل الذي يُطابق
+    // كل finding، فلا يستعير finding عن /etc/passwd ترشيح هذه الشجرة.
+    const gateContext = { scope: { target: this.targetDir, allow: [this.targetDir], deny: [] } };
 
-    // Cryptographically certify validated findings
-    const certifiedFindings = triage.validated.map(f => ({
+    const triage = this.validator.filterValidFindings(this.findings, gateContext);
+
+    // D1.8 (A13 / DI-17): التفصيل يُصدَر مع الإيصال لا مع التصريح. المُصرَّح به عند
+    // المُقيِّم قد لا يحصل على إيصال (قارئ الجسر مستقل)؛ فيُدرج في refused بسببه، ولا
+    // يظهر في details — وإلا كان التقرير يقول «مُصدَّق» ما لم يُصدَّق.
+    const attempted = triage.validated.map(f => ({
       ...f,
-      receipt: this.evidenceBridge.certifyFinding(f, this.targetDir)
+      receipt: this.evidenceBridge.certifyFinding(f, this.targetDir, { gateContext })
     }));
+    // الإيصال الصادر هو ما حقّقه الجسر (verified + signature)؛ الرفض يحمل certified:false
+    const isIssued = (f) => Boolean(f.receipt) && f.receipt.verified === true && typeof f.receipt.signature === 'string' && f.receipt.certified !== false;
+    const issued = attempted.filter(isIssued);
+    const refused = attempted
+      .filter(f => !isIssued(f))
+      .map(f => ({
+        title: f.title,
+        type: f.type,
+        vulnClass: f.vulnClass,
+        severity: f.severity,
+        file: f.file,
+        line: f.line,
+        code: f.receipt?.code ?? 'NEXA-E-NO-RECEIPT',
+        gateScore: f.receipt?.gateScore ?? null,
+        reasons: Array.isArray(f.receipt?.reasons) && f.receipt.reasons.length > 0
+          ? f.receipt.reasons
+          : ['the evidence bridge returned no reasons for this refusal']
+      }));
+
+    const severityOf = (list) => ({
+      critical: list.filter(f => f.severity === 'CRITICAL').length,
+      high: list.filter(f => f.severity === 'HIGH').length,
+      medium: list.filter(f => f.severity === 'MEDIUM').length,
+      low: list.filter(f => f.severity === 'LOW').length
+    });
+    const assertedSeverity = severityOf(this.findings);
+    const certifiedSeverity = severityOf(issued);
 
     const summary = {
       timestamp: new Date().toISOString(),
       targetDir: this.targetDir,
       totalFilesScanned: this._getFilesRecursive(this.targetDir).length,
+      // totalIssues يبقى بالمعنى القديم (كل ما أُبلِغ) — أساسُه مُعلَن ولا يُقرأ حكمًا
       totalIssues: this.findings.length,
-      critical: this.findings.filter(f => f.severity === 'CRITICAL').length,
-      high: this.findings.filter(f => f.severity === 'HIGH').length,
-      medium: this.findings.filter(f => f.severity === 'MEDIUM').length,
-      low: this.findings.filter(f => f.severity === 'LOW').length,
+      ...assertedSeverity,
+      severityBasis: 'asserted',
+      certifiedSeverity,
+      certifiedSeverityBasis: 'certified',
       gateValidation: triage.stats,
-      details: certifiedFindings
+      counts: {
+        asserted: this.findings.length,
+        validated: triage.stats.passed,
+        certified: issued.length,
+        refused: refused.length
+      },
+      certified: issued.length,
+      details: issued.map(f => ({
+        ...f,
+        findingId: f.receipt.findingId,
+        artifactDigest: f.receipt.artifactDigest
+      })),
+      refused
     };
 
-    // حفظ التقرير في مجلد لوحة التحكم
-    const outputDir = path.resolve('dashboard/data');
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    // D1.9: NEXA_BUG_REPORT يعزل مخرجات الاختبار؛ الافتراضي الإنتاجي unchanged.
+    const reportPath = process.env.NEXA_BUG_REPORT || path.join(path.resolve('dashboard/data'), 'bug-report.json');
+    let persistence;
+    try {
+      const outputDir = path.dirname(reportPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      const tempPath = `${reportPath}.${process.pid}.tmp`;
+      const body = `${JSON.stringify(summary, null, 2)}\n`;
+      fs.writeFileSync(tempPath, body, 'utf8');
+      fs.renameSync(tempPath, reportPath);
+      // حالة الكتابة تُضاف بعد الكتابة: لا سجل حفظ يسبق الحفظ نفسه
+      persistence = { ok: true, path: path.resolve(reportPath), bytes: Buffer.byteLength(body) };
+      summary.persistence = persistence;
+    } catch (err) {
+      persistence = {
+        ok: false,
+        code: 'NEXA-REPORT-WRITE-FAILED',
+        path: path.resolve(reportPath),
+        reason: `cannot write the report: ${err.message}`
+      };
+      summary.persistence = persistence;
     }
 
-    fs.writeFileSync(
-      path.join(outputDir, 'bug-report.json'),
-      JSON.stringify(summary, null, 2)
+    console.log(
+      `✅ [Agentic Bug Hunter] Scan complete. Asserted ${summary.counts.asserted} · validated ` +
+        `${summary.counts.validated} · certified ${summary.counts.certified} · refused ${summary.counts.refused} · ` +
+        (persistence.ok
+          ? `saved to ${persistence.path} (${persistence.bytes}B)`
+          : `NOT SAVED (${persistence.code}): ${persistence.reason}`)
     );
-
-    console.log(`✅ [Agentic Bug Hunter] Scan complete. Found ${summary.totalIssues} issue(s). Validated: ${triage.stats.passed}. Saved to dashboard/data/bug-report.json`);
     return summary;
   }
 }

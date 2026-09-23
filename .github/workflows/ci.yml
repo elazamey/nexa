@@ -39,14 +39,15 @@ jobs:
       - name: NEXA Ω adversarial suite
         run: npm run attacks
 
+      - name: Adversarial security suite
+        run: npm run audit
+
       # A dedicated Node program, not a shell one-liner: an earlier version piped
       # `npm run report:json` into a file and npm's banner made it invalid JSON, so
       # the step failed for its own reasons and hid the real signal.
       - name: Posture check (fails if a gate is not CLOSED)
         run: npm run posture
 
-      - name: Adversarial security suite
-        run: npm run audit
 
       # Runtime-enforced proof: the protocol flow completes while the runtime denies
       # filesystem writes, child processes and network access. The flag name changed
@@ -66,7 +67,55 @@ jobs:
       - name: Google identity forgeries (offline)
         run: npm run attacks:google
 
+      # The dashboard is served from copies of adapters/edge-rag/*. The mirror check belongs to
+      # this job (not the dashboard one) because it is zero-dependency: tools/sync-dashboard-assets.mjs
+      # --check never writes, so a green run here means the served bytes equal their declared source.
+      - name: Dashboard mirrors are generated from their declared source
+        run: npm run sync:assets:check
+
       - name: Spec vectors are in sync with the code
         run: |
           npm run vectors
           git diff --exit-code -- spec/vectors
+
+  dashboard:
+    # D1.16 (O08): the dashboard used to be built only by deploy-pages.yml, which runs on
+    # push:[main] — a broken Vite/React build therefore reached main before it failed a PR.
+    # ci.yml is the only workflow that sees every pull_request, so the build is asserted here.
+    # The commands below were run locally and pass (npm ci + npm run build in dashboard/:
+    # 1906 modules, dist/index.html 0.41 kB). Separate job on purpose: an independent red signal,
+    # and no dependency install in the zero-dependency kernel job above.
+    name: dashboard build (vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          # The cache key is the dashboard lockfile because that is the only install in this job. The
+          # root package has zero runtime and zero development dependencies; it does have a tracked
+          # package-lock.json, but it resolves nothing external — only the @nexa workspace links.
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install pinned dashboard dependencies
+        run: npm ci
+        working-directory: dashboard
+
+      - name: Build (vite)
+        run: npm run build
+        working-directory: dashboard
+
+      # Exit code 0 is not the contract. dist/index.html must be the built Vite entry (hashed
+      # asset reference), and the legacy static page must stay out of publicDir where it used to
+      # sit beside the entry as an unlabelled shadow (D1.15).
+      - name: Build output is the Vite entry, not a shadow copy
+        run: |
+          test -f dashboard/dist/index.html
+          grep -q 'assets/index-.*\.js' dashboard/dist/index.html
+          test ! -e dashboard/public/index.html
+
+      # A committed dist would let CI go green on checked-in output instead of on the build.
+      - name: Build output stays untracked
+        run: test -z "$(git ls-files -- dashboard/dist)"

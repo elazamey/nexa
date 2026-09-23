@@ -5,6 +5,7 @@
   "base": "b123b900e3b386a09b63b3c7e1cb608cb0c2c24c",
   "head": "56f017077dc934258484503d484e0fe0107c32fa",
   "timestamp": "2026-09-20T11:20:00Z",
+  "record_status": "HISTORICAL RECORD dated 2026-09-20T11:20:00Z — the measurements in `checks` were true when this plan was signed and are NOT a current claim; current numbers are measured by `npm test` and recorded in self-model/baseline.json (measurement) and the NEXA_METRICS block of README.md/SECURITY.md.",
   "checks": {
     "gates": "6 CLOSED",
     "tests": "314/314",

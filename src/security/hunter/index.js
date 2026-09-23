@@ -11,3 +11,4 @@ export { ReportWriter } from './report-writer.js';
 export { NexaEvidenceBridge } from './nexa-evidence-bridge.js';
 export { HuntMemory } from './hunt-memory.js';
 export { AutopilotEngine } from './autopilot.js';
+export { SOURCE_DETECTORS } from './source-detectors.js';

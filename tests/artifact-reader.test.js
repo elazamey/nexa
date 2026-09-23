@@ -4,11 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+
+
   ArtifactReader,
   SevenGateValidator,
   NexaEvidenceBridge,
   VulnEngine
 } from '../src/security/agentic-hunter.js';
+
+// D1.5 (DI-13): سياق النطاق سجلٌّ لا حكم — المُقيِّم يعيد مطابقته، ولا يُهدى الترخيص بغيابه.
+const ctx = (target = 'api.example.com') => ({ scope: { target, allow: [target], deny: [] } });
 
 /**
  * اختبار الانعكاس لتذكرة D1.2 — Artifact Reader + GATE_2 (§5.1) + certifyFinding (§6.1/§6.3)
@@ -38,7 +43,19 @@ function validFinding(overrides = {}) {
     description: 'Direct object reference permits unauthorized invoice access',
     cwe: 'CWE-639',
     endpoint: '/api/v1/billing/101',
+    // D1.4 (DI-06): مسند الأثر مستقل عن الشدة — ادعاء يسمّي متجه ضرر
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.',
+    // D1.4 (DI-06): مسند الحدود — سجلّ {{from,to,kind}} مقيَّد بصنف الثغرة
+    vulnClass: 'IDOR_BOLA',
+    boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
     artifact: validArtifact(),
+    // D1.3 (DI-07): GATE_7 محسوبة من سجل مربوط بمنتج الدليل — لا شهادة مهداة
+    safeTesting: {
+      nonDestructive: true,
+      noServiceDisruption: true,
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor'
+    },
     ...overrides
   };
 }
@@ -120,7 +137,7 @@ test('D1.2/§5.1 (A03): GATE_2 تفشل بمجرد locator نصي بلا artifac
 
 test('D1.2/§5.1: GATE_2 تمر عبر artifact صالح — والبوابات السبع محسوبة ومعلنة', () => {
   const validator = new SevenGateValidator();
-  const result = validator.evaluateFinding(validFinding(), { inScope: true });
+  const result = validator.evaluateFinding(validFinding(), ctx());
   assert.equal(result.score, '7/7');
   assert.equal(result.isValid, true);
   assert.ok(Array.isArray(result.checks) && result.checks.length === 7, 'evaluateFinding تعلن المساند السبعة المحسوبة');
@@ -143,11 +160,14 @@ test('D1.2/§6.1: رفض صريح بلا توقيع عند غياب artifact (A0
 
 test('D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7/7)', () => {
   const bridge = new NexaEvidenceBridge();
-  // artifact صالح لكن صنف never-submit يُسقط GATE_5 → 6/7
+  // artifact صالح لكن صنف never-submit يُسقط GATE_5. عدد البوابات الساقطة غير مثبَّت هنا
+  // عمدًا: منذ D1.4 يسقط مع GATE_6 أيضًا (الصنف المعلوماتي لا يعبر حدًّا)، فالتعليق على
+  // «7/7 أو لا» هو ما تختبره هذه الحالة — لا حساب السقوط الذي يخصّ تذكرة أخرى.
   const finding = validFinding({ vulnClass: 'MISSING_CSP_HEADER' });
   const outcome = bridge.certifyFinding(finding, 'api.example.com');
   assert.equal(outcome.certified, false);
-  assert.equal(outcome.gateScore, '6/7');
+  assert.notEqual(outcome.gateScore, '7/7');
+  assert.ok(outcome.reasons.some(r => /GATE_5/.test(String(r))), 'الرفض لم يسمّ GATE_5');
   assert.ok(outcome.reasons.some(r => String(r).includes('NEXA-E-GATE')));
   assert.equal(outcome.signature, undefined);
 });
@@ -155,7 +175,9 @@ test('D1.2/§10.10: لا إيصال ببوابات أقل من 7/7 (قاعدة 7
 test('D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gateCheck مزوَّر لا ينفع', () => {
   const bridge = new NexaEvidenceBridge();
   const finding = validFinding({
-    severity: 'LOW', // GATE_3/GATE_6 تسقطان فعليًا
+    // الإسقاط الحقيقي هنا بغياب الدليل (GATE_2/GATE_7) — شرط لا يتغيّر بتغيير بوابة أخرى
+    artifact: undefined,
+    boundary: undefined,
     gateCheck: { isValid: true, score: '7/7', status: 'APPROVED_FOR_REPORT', checks: [] } // تزوير مرفق
   });
   const outcome = bridge.certifyFinding(finding, 'api.example.com');
@@ -165,7 +187,7 @@ test('D1.2/§6.1 (DI-08): الجسر يعيد التقييم بنفسه — gate
 
 test('D1.2/§6.2: إيصال كامل عند استيفاء الشروط — الحقول من تحقق فعلي', () => {
   const bridge = new NexaEvidenceBridge();
-  const receipt = bridge.certifyFinding(validFinding(), 'api.example.com');
+  const receipt = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
   assert.ok(receipt.signature);
   assert.ok(receipt.findingDigest);
   assert.ok(receipt.artifactDigest, 'الإيصال مربوط بدليله (artifactDigest)');
@@ -201,8 +223,8 @@ test('D1.2/A10: signFinding يخضع لنفس الصرامة — لا ختم ب�
 
 test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest/findingId، ومفاتيح مرتبة', () => {
   const bridge = new NexaEvidenceBridge();
-  const a = bridge.certifyFinding(validFinding(), 'api.example.com');
-  const b = bridge.certifyFinding(validFinding(), 'api.example.com');
+  const a = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
+  const b = bridge.certifyFinding(validFinding(), 'api.example.com', { gateContext: ctx() });
   assert.equal(a.findingDigest, b.findingDigest);
   assert.equal(a.findingId, b.findingId);
 
@@ -218,20 +240,30 @@ test('D1.2/§6.3 (A07): الحتمية — نفس المدخلات نفس digest
     cwe: 'CWE-639',
     description: 'Direct object reference permits unauthorized invoice access',
     severity: 'HIGH',
-    title: 'IDOR in Billing API'
+    title: 'IDOR in Billing API',
+    // D1.3: السجل المطلوب — بمفاتيح مرتّبة عكس القالب، ليظل هذا الاختبار يقيس ترتيب المفاتيح
+    safeTesting: {
+      method: 'surface-model-analysis',
+      attestedBy: 'VulnEngine.detectIdor',
+      noServiceDisruption: true,
+      nonDestructive: true
+    },
+    vulnClass: 'IDOR_BOLA',
+    boundary: { kind: 'authorization', to: 'object owned by another principal', from: 'authenticated caller' },
+    impact: 'Unauthorized read and modification of other tenants’ billing records, exposing PII and invoice totals.'
   };
-  const c = bridge.certifyFinding(reordered, 'api.example.com');
+  const c = bridge.certifyFinding(reordered, 'api.example.com', { gateContext: ctx() });
   assert.equal(c.findingDigest, a.findingDigest, 'canonicalization يجب أن يمحو أثر ترتيب المفاتيح');
 
   // هدف مختلف → digest مختلف
-  const d = bridge.certifyFinding(validFinding(), 'other.example.com');
+  const d = bridge.certifyFinding(validFinding(), 'other.example.com', { gateContext: ctx('other.example.com') });
   assert.notEqual(d.findingDigest, a.findingDigest);
 });
 
 test('D1.2/§6.3 (A08): الربط — verifyReceipt يعيد حساب الحمولة ويرفض المستبدلة', () => {
   const bridge = new NexaEvidenceBridge();
   const finding = validFinding();
-  const receipt = bridge.certifyFinding(finding, 'api.example.com');
+  const receipt = bridge.certifyFinding(finding, 'api.example.com', { gateContext: ctx() });
 
   assert.equal(bridge.verifyReceipt(receipt), true, 'فحص التوقيع وحده كما كان');
   assert.equal(bridge.verifyReceipt(receipt, finding), true, 'الربط بالحمولة الأصلية ينجح');

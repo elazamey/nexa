@@ -17,6 +17,7 @@ export class VulnEngine {
     if (hasIdParam && endpoint.authRequired) {
       return {
         vulnClass: 'IDOR_BOLA',
+        boundary: { from: 'authenticated caller', to: 'object owned by another principal', kind: 'authorization' },
         severity: 'HIGH',
         cwe: 'CWE-639',
         title: `Insecure Direct Object Reference (BOLA) in ${endpoint.path}`,
@@ -36,6 +37,7 @@ export class VulnEngine {
     if (ssrfParams.includes(paramName.toLowerCase()) || sinkType === 'Open Redirect / SSRF') {
       return {
         vulnClass: 'SSRF',
+        boundary: { from: 'user-controlled parameter', to: 'server-side network location', kind: 'network' },
         severity: 'HIGH',
         cwe: 'CWE-918',
         title: `Potential Server-Side Request Forgery via parameter '${paramName}'`,
@@ -58,6 +60,7 @@ export class VulnEngine {
     if ((isReflected && allowCredentials === 'true') || isNullOrigin || isWildcardWithCreds) {
       return {
         vulnClass: 'CORS_MISCONFIGURATION',
+        boundary: { from: 'attacker-controlled origin', to: 'victim origin’s authenticated response', kind: 'origin' },
         severity: isReflected && allowCredentials === 'true' ? 'HIGH' : 'MEDIUM',
         cwe: 'CWE-942',
         title: 'Exploitable CORS Origin Reflection with Credentials',
@@ -85,11 +88,12 @@ export class VulnEngine {
       if (pattern.test(queryPattern)) {
         return {
           vulnClass: 'SQL_NOSQL_INJECTION',
+        boundary: { from: 'unvalidated input value', to: 'database query interpreter', kind: 'data' },
           severity: 'CRITICAL',
           cwe: 'CWE-89',
           title: `SQL/NoSQL Injection vulnerability on '${inputField}'`,
           description: 'User input concatenates directly into database query without parameterized binding.',
-          impact: 'Complete database compromise, data exfiltration, authentication bypass, and potential RCE.',
+          impact: 'Complete database compromise, data exfiltration, authentication bypass, and remote code execution.',
           remediation: 'Use parameterized queries, ORM prepared statements, and strict schema validation.'
         };
       }
@@ -105,6 +109,7 @@ export class VulnEngine {
     if (financialOrLimited.test(endpoint.path) && endpoint.method === 'POST') {
       return {
         vulnClass: 'RACE_CONDITION_TOCTOU',
+        boundary: { from: 'concurrent request A', to: 'shared state committed by request B', kind: 'state' },
         severity: 'HIGH',
         cwe: 'CWE-367',
         title: `Time-of-Check Time-of-Use (TOCTOU) Race Condition in ${endpoint.path}`,
@@ -141,6 +146,13 @@ export class VulnEngine {
               method: ep.method || 'ANY'
             },
             producedBy: 'VulnEngine.detectIdor'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectIdor'
           }
         });
       }
@@ -159,6 +171,13 @@ export class VulnEngine {
               method: ep.method || 'ANY'
             },
             producedBy: 'VulnEngine.detectRaceCondition'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectRaceCondition'
           }
         });
       }
@@ -179,6 +198,13 @@ export class VulnEngine {
               sink: p.sink || 'unknown'
             },
             producedBy: 'VulnEngine.detectSsrf'
+          },
+          // D1.3 (DI-07): هذا الكاشف لا يُرسل طلبًا — يقرأ نموذج السطح؛ والسجل مربوط بمنتِجه
+          safeTesting: {
+            nonDestructive: true,
+            noServiceDisruption: true,
+            method: 'surface-model-analysis',
+            attestedBy: 'VulnEngine.detectSsrf'
           }
         });
       }

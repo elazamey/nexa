@@ -12,6 +12,41 @@
 # Note: Vercel static-only hosting does NOT work for this app — the frontend
 # requires the persistent Node backend (in-memory DAG/governed-memory state +
 # long-lived SSE connections), which only a web service (Render/Koyeb/Fly) can run.
+#
+# --- D1.10 (P0-B) deploy contract -------------------------------------------------
+# This is a production runtime, so the server now refuses to boot with an open
+# perimeter: NODE_ENV=production without NEXA_API_KEY = exit 1 at startup (loud, on
+# purpose — "it served unauthenticated until someone noticed" is the failure this
+# closes). Set BOTH secrets in the Render dashboard before the next deploy:
+#
+#   NEXA_API_KEY       operator/CLI credential (>= 32 chars). The browser never
+#                      receives it: the SPA exchanges it once for an HttpOnly,
+#                      SameSite=Strict session cookie. It is sync:false below, so
+#                      no secret is ever committed to git or shipped to the SPA.
+#   NEXA_OPERATOR_SEED 32-byte hex seed that signs approvals. Left at the default
+#                      it is the published demo seed — any clone of this repo can
+#                      derive that key id, so a deploy must pin its own. The
+#                      perimeter protects the transport; this protects the
+#                      signature. (Warning at boot, not fatal.)
+#
+# healthCheckPath is /healthz, not an /api route: /healthz answers with no
+# credential, no state read and no rate-limit budget, so a platform probe can
+# never read "401" as "app down" — nor spend the operator's quota.
+#
+# --- D1.11 (P0-C) continuity contract ----------------------------------------
+# Production also refuses to boot when the memory backend is ephemeral: the server
+# asks its own vector port whether it got a real pgvector client, and a mock answer
+# (missing SUPABASE_*, a mock:// host, or a URL that is real-looking while no
+# driver is installable) is fatal at startup — because the failure being closed is
+# the *false continuity claim*, not a missing feature. Declared sync:false below so
+# the credentials stay out of git; declaring them is not what makes the deploy
+# honest, having a reachable backend is.
+#
+# A demo deploy that intentionally accepts ephemerality (facts die on restart) sets
+#   NEXA_PRODUCTION_PERSISTENCE=ack-mock-ephemeral
+# That is a label, not an escape hatch: it must be spelled exactly, it prints a
+# loud boot warning, and /api/v1/system/status keeps reporting memory as DEMO —
+# nothing is allowed to call the deployment persistent while it is not.
 
 services:
   - type: web
@@ -20,8 +55,30 @@ services:
     plan: free
     buildCommand: cd dashboard && npm install --no-audit --no-fund && npm run build
     startCommand: node tools/celia-dashboard-server.mjs
-    healthCheckPath: /api/celia/state
+    healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 22.x
+      # Production signal read by tools/celia-startup-guard.mjs (and by the
+      # Secure-cookie flag in the perimeter).
+      - key: NODE_ENV
+        value: production
+      # Secrets live in the Render dashboard only (sync: false keeps them out of
+      # the blueprint file, so a repo read is never a credential read).
+      - key: NEXA_API_KEY
+        sync: false
+      - key: NEXA_OPERATOR_SEED
+        sync: false
+      # Continuity backend (D1.11). Without a reachable pair, a production deploy
+      # exits before listening — by design.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      # Optional tuning knobs for the perimeter layers (defaults are production
+      # safe; see tools/celia-rate-limit.mjs for units and semantics).
+      - key: NEXA_RATE_LIMIT_MAX
+        value: "120"
+      - key: NEXA_TRUST_PROXY
+        value: "1"

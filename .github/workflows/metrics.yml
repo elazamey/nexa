@@ -20,25 +20,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # No cache: actions/setup-node's npm caching requires a lockfile
-          # (package-lock.json), and NEXA ships without one by design —
-          # zero runtime and zero development dependencies.
+          # No install step and no cache. Measured, not inherited: no workspace under packages/* or
+          # adapters/* declares a dependency, and the tracked root package-lock.json resolves only
+          # @nexa workspace symlinks (15 entries, 8 KB of node_modules). So the root install that
+          # used to sit here was a no-op — and its comment was wrong twice over (a lockfile does
+          # exist; the design claim is zero *dependencies*). If an external dependency ever appears,
+          # tests/workflow-overlap.test.js fails and names the file to change.
 
-      - name: Install dependencies
-        # npm install works with or without a lockfile; npm ci requires one.
-        run: npm install
-
-      - name: Run Tests & Gather TAP output
-        run: npm test
-
-      - name: Run Security Audit
-        run: npm run audit
-
-      - name: Run Security Posture & Attacks
-        run: |
-          npm run posture
-          npm run attacks
-          npm run attacks:google
-
+      # The five measurements this job used to run as separate steps (test, audit, posture, attacks,
+      # attacks:google) are exactly what tools/check-metrics.mjs runs itself via runCommand, failing
+      # the process on any of them — so listing them here doubled every pull_request for no extra
+      # signal. ci.yml remains their gate on every PR and push (that is where a suite failure goes
+      # red first); this job stays the documentation-vs-measurement gate, which is its name.
       - name: Enforce Documentation Sync
         run: npm run metrics

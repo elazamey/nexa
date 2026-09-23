@@ -14,6 +14,19 @@
       "dashboard/data/hunt-memory.json"
     ]
   },
+  "live_measurement": {
+    "date": "2026-09-24",
+    "commit": "41226003898bf896083b5ccf95283e0ac025d729",
+    "tree_state": "D1.26 closure worktree (قِيست قبل commit الإغلاق)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 732,
+    "pass": 732,
+    "fail": 0,
+    "security_tests": 16,
+    "tool": "tools/check-metrics.mjs (npm run metrics)",
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 732 = 727 (إغلاق D1.28) + 7 (tests/secret-scan-allowlist.test.js) − 2 (مُعيد D1.26 حُذف في الإغلاق)"
+  },
   "frozen_claims": {
     "tests_545": {
       "value": 545,
@@ -36,6 +49,142 @@
     {
       "date": "2026-09-22",
       "event": "إغلاق D1.2: 584/584 أخضر (545 أساس + 39 إضافات؛ صفر فشل، صفر كسر). الشواهد: self-model/evidence/d1.2-red.tap ثم d1.2-green.tap"
+    },
+    {
+      "date": "2026-09-22",
+      "event": "تسجيل الملحق O التشغيلي: D1.9–D1.16 + عائلة O01..O08 + 13 مُعيد إنتاج؛ 597/597 أخضر (584 أساس + 13 مُعيدًا؛ صفر فشل، صفر كسر)"
+    },
+    {
+      "date": "2026-09-22",
+      "event": "إغلاق D1.9 (P0-A): عزل مخرجات الاختبار عبر bootstrap إلزامي؛ 597/597 أخضر (597 تسجيل − 3 مُعيد + 3 انعكاس)؛ verify كامل PASS؛ الشجرة نظيفة بلا استعادة لأول مرة"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.10 (P0-B) بأربع طبقات منفصلة: محيط HTTP (مفتاح للمشغّل/CLI + جلسة HttpOnly + CSRF للـ SPA)، حد معدل 429 بمفتاح هوية قابل للضبط، fail-fast إنتاجي بلا مفتاح، وعقد قرار موافقة موقَّع ({} لم تعد قرارًا)؛ 622/622 أخضر (597 − 3 مُعيد + 28 اختبارًا جديدًا)؛ أحمر→أخضر في self-model/evidence/d1.10-{red,green}.tap؛ النواة لم تُمَس"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.11 (P0-C): حارس استمرارية عند الإقلاع — production + mock://memory = exit 1 قبل أي listen (النفي مُثبَت بغياب رسالة الجاهزية وباستطراق TCP لمنفذ محجوز)، والقرار من حكم البورت لا من شكل الإعداد، والمخرج إقرار صريح بحرفه يبقى موسومًا DEMO؛ حارس مستقل عن حارس المحيط؛ 629/629 أخضر (622 بعد D1.10 + 8 اختبار جديد − 1 مُعيد known-gaps حُذف)؛ verify PASS والشجرة نظيفة"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.12 (P1-A/O04): ادعاءات الأعداد صارت مقروءة من القياس لا من نص حرفي — محقق النشر يقرأ # tests/# pass/# fail من تشغيل واحد ويرفض أي فشل أو انكماش تحت الأرضية المسجلة، والخطط موسومة HISTORICAL RECORD بتاريخها، وREADME/SECURITY يحيلان إلى live_measurement هذا، وحارس المزامنة لم يعد يثبّت 545؛ 633/633 أخضر (629 − 5 known-gaps/D1.12 حُذف + 6 tests/count-claims-sync.test.js)؛ npm run metrics كان أحمر (Measured 632 ≠ Documented 545) وصار أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.3 (P0-D / A02 / DI-07): GATE_7 صارت محسوبة — سجلّ سلوك اختبار مربوط بـ artifact.producedBy في src/security/hunter/safe-testing.js، والغياب رفضٌ مُعلَّل من المُقيِّم ومن الجسر؛ لا pass حرفي في المُقيِّم (يُفحص من مصدره سطرًا سطرًا)؛ حتمية §6.3 محفوظة (لا حقل لحظي)؛ 637/637 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.4 (P0-D / A09 / DI-06): GATE_3 وGATE_6 صارا مسندين منفصلين — الأثر بمقياس مضمونه (متجه ضرر مسمّى، لا صياغة احتمال، لا شدة) وعبور الحدود بسجل {from,to,kind} مقيَّد بجدول أصناف؛ الشدة خرجت من القرارين فبطل أن تُغلَّق 7/7 برفع severity؛ 645/645 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.5 (P0-D / A12 / DI-13): GATE_1 صارت محسوبة من سجل نطاق يعيد المُقيِّم مطابقته بنفسه (مضيف + allow/deny، أو جذر مسار مع اختبار احتواء) بدل كلمة المتصل؛ الجسر لم يعوّض الغياب بترخيص، وautopilot يشتق سجله من recon؛ 651/651 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.6 (P0-D / A11 / DI-14): HuntMemory لا يبتلع — حالة قراءة وحالة كتابة بأربعة رموز (CORRUPT/MALFORMED/READ-FAILED/WRITE-FAILED) وامتناع عن الكتابة فوق مخزن غير مقروء يمنع دَهس الجلسات، واستعادة بمفتاح force صريح، وكتابة ذرّية، والمنسِّق يُبلَّغ result.memory؛ 655/655 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.7 (P0-D / A05+A06 / DI-01، DI-15، DI-16): الكواشف الثلاثة صارت وحدات نقية تُجمَّع في SOURCE_DETECTORS، والحكم في نطاق الدالة (try في دالة أخرى لا يسكت) وعلى المورد نفسه؛ كل finding بحجة يقبلها القارئ المستقل وشهادة مربوطة، وبقي الرفض عند GATE_6 سببه الصحيح بلا توسيع جدول الحدود؛ 660/660 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.8 (P0-D / A13 / DI-17): bug-report.json لا يعرض إلا ما صُدِّر له إيصال، ويعلن counts وعلاقة كل detail بإيصاله، ويطبع مساره وحالة كتابته الصادقة، وreport-writer يشتق تذييله من finding.receipt بدل «7/7 PASSED» الثابت؛ 667/667 أخضر واكتملت P0-D"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.17 (P1-A / O09): /api/celia/state تقيس أو تصمت — gates من check-posture بحرفية القياس، وtests/promotion محذوفان، والمزروعات والواجهة وسجل الإقلاع بلا أعداد مروَّاة؛ 670/670 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.13 (P1-B / O05): مرجع متغيرات البيئة صار وثيقة إلزامية بحارس مزامنة (675/675) — لا .env.example بالقرار المُجمَّد، ولا سرّ يصل إلى الحزمة الأمامية"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.14 (P1-C / O06): docs/README.md فهرس مُلزَم بالاتجاهين مع أصناف وحارس يمنع الوثيقة اليتيمة والحذف بلا أرشفة؛ 679/679 أخضر"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.15 (P1-D / O07): التكرار قرار معلَن — تسع مرايا تُولَّد من مصدرها بحارس يفحص ولا يصلح، وازدواج index.html محسوم بأرشفة موسومة؛ 684/684 أخضر"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.16 (P2 / O08): بناء الداشبورد صار مقيسًا في كل PR بوظيفة مستقلة تفحص المخرج لا رمز الخروج، ونابض المرايا من D1.15 موصول في CI؛ 689/689 أخضر، ولا فجوة مفتوحة في السجل"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.18 (P2 / O08 متابعة): النشر يثبّت ما فحصه CI — قفل الداشبورد وحده، بلا || مبتلع، وبلا خطوة تثبيت جذر no-op؛ بروفة تنفيذ تمسك غلط مسار أدخله الإصلاح؛ 696/696/0"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.19 (P3 / O08 متابعة): metrics.yml يقيس مرة واحدة بلا تثبيت زائد، والحارس يربط الأوامر بشيفرة check-metrics لا بالذاكرة؛ تصحيح ادّعاءين عن قفل الجذر وتحرير اختبارين من حالة محلية؛ 702/702/0"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.20 (P2 / O08 متابعة): مسار الإصدار لم يعد يبتلع فشله — || true و|| npm install زالا، والتخطّي عند private معلن بـ ::warning:: في الـ summary؛ D1.21 (هوية الحزمة) مسجّلة بمُعيد حيّ وتنتظر قرار المالك؛ 711/711/0"
+    },
+    {
+      "at": "2026-09-24T08:35:00Z",
+      "event": "handoff — ترقية الحارس + أربع تذاكر مفتوحة بمعيداتها",
+      "detail": "D1.18 criterion رقم 3 استُبدل: القفل يُرضي النطاق المعلن بدل أرقام حرفية (تفاديًا لكسر PRs dependabot #24–#27). وسُجّلت D1.22 (بوابة الإصدار تنقصها قياسات ci.yml) وD1.23 (لا بوابة npm audit للداشبورد؛ 4 advisory مقيسة) وD1.24 (قاعدة الأرقام محصورة في README/SECURITY) وD1.25 (دقة فهرس docs). كل واحدة لها معيد أخضر-كبُرْهان في tests/known-gaps/، فتُورَّث للتسليم كبطاقة ذاتية الفحص.",
+      "suite": {
+        "tests": 719,
+        "pass": 719,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T09:10:00Z",
+      "event": "قياس CI للـ PR #29: بوابة الأسرار حمراء على main — سُجّلت D1.26",
+      "detail": "gh pr checks 29 أظهر Verify Invariants & Restricted Code=fail في 4s؛ قِيس أنه يفشل على main كذلك (آخر تشغيلين) وأن الخطوة المعطوبة هي Scan for Exposed Secret Patterns: أربع مطابقات (ثلاثة PEM fixtures معلنة throwaway + سطر كاشف يطابق نصّه). لا تسريب؛ العطب أن البوابة لا تفرّق. وسُجّلت D1.26 بمعيد يقيسrc=1 بأمر الـ workflow نفسه.",
+      "suite": {
+        "tests": 721,
+        "pass": 721,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T09:55:00Z",
+      "event": "CodeQL على PR #29: 4 تنبيهات — صُحّبت نظافتان وسُجّلت D1.27 للمصافحة",
+      "detail": "annotations من check-run 107161367785: متغيّر حلقة غير مستعمل في tests/workflow-overlap.test.js وهروب تنصيص في مُعيد D1.26 (صُحّبا)، وتنبيهان على tools/celia-perimeter-auth.mjs:76 و:102 قِيست أنهما مطبَّلة (مقارنة مفتاح مشترك بـ sha256+timingSafeEqual، وكتابة على Object.create(null)). API التنبيهات مرفوض 403 بهذه الصلاحية فالمصدر هو annotations.",
+      "suite": {
+        "tests": 723,
+        "pass": 723,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T10:25:00Z",
+      "event": "إعادة قياس CodeQL بعد النظافة + تسجيل D1.28",
+      "detail": "أصبحت annotations خمسة: تنبيهان حدوديان مطبَّلة (D1.27) وثلاثة dead-code، أُزيل واحد منها كان في حارس هذه الجلسة (jobIndent في tests/deploy-ci-parity.test.js)، وبقي اثنان في tests/served-telemetry-honesty.test.js:34 وtools/celia-rate-limit.mjs:85. الثاني كشف فجوة أعمق من النظافة: صنبور onAudit معلن ومستقبَل وغير مستدعى، والخادم يمرّره ظنًّا أن 429 يُرى — سُجّلت D1.28 بمعيد يقيس الرفض بلا نداء.",
+      "suite": {
+        "tests": 725,
+        "pass": 725,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T11:20:00Z",
+      "event": "D1.28 مغلقة — صنبور التحقيق في محدود المعدّل يُستدعى عند الرفض",
+      "detail": "tools/celia-rate-limit.mjs: نداء onAudit في فرع الرفض بشكل سطر الـ perimeter، وبوسم الدلو القاصر لا بالخام؛ الحارس tests/rate-limit-audit-sink.test.js (4) يشمل منع الثرثرة على القبول، والمنع عند الإطفاء، وعدم تسريب مادّة المفتاح/العنوان/محتويات الدلو، وعدم الابتلاع بـ try.",
+      "suite": {
+        "tests": 727,
+        "pass": 727,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T12:25:00Z",
+      "event": "D1.26 مغلقة — بوابة مادة المفاتيح تفرّق، والحمر الدائم على main انتهى",
+      "detail": "أُضيف tools/check-secret-scan-allowlist.mjs + self-model/secret-scan-allowlist.json (مسار/سبب/مالك/تاريخ؛ الميت والمحذوف = فشل)؛ خطوة Scan for Exposed Secret Patterns صارت نداءً واحدًا بلا || true. الحارس tests/secret-scan-allowlist.test.js (7) يقيس الشجرة rc=0 والثلاث مواد المستثناة، ويسرب مادة في نسخة فينهي rc=1، ويوسّع النمط على كاشف فيحمرّ.",
+      "suite": {
+        "tests": 732,
+        "pass": 732,
+        "fail": 0
+      }
     }
   ],
   "post_d1_2": {
@@ -50,5 +199,361 @@
     "side_effects_restored": [
       "dashboard/data/hunt-memory.json"
     ]
+  },
+  "post_registration_o": {
+    "date": "2026-09-22",
+    "commit": "working tree — تغيير التسجيل (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 597,
+    "pass": 597,
+    "fail": 0,
+    "breakdown": "584 الأساس + 3 (D1.9) + 3 (D1.10) + 1 (D1.11) + 2 (D1.12) + 1 (D1.13) + 1 (D1.14) + 1 (D1.15) + 1 (D1.16)",
+    "side_effects_restored": [
+      "dashboard/data/hunt-memory.json"
+    ]
+  },
+  "d1.10_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.10 بأربع طبقات (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 622,
+    "pass": 622,
+    "fail": 0,
+    "breakdown": "597 الأساس + 9 (perimeter) + 7 (rate limit) + 6 (fail-fast) + 6 (approval contract) − 3 (مُعيد known-gaps/D1.10 حُذف في تغيير الإغلاق)",
+    "inversion_evidence": "self-model/evidence/d1.10-red.tap (5/6 fail) → self-model/evidence/d1.10-green.tap (6/6 pass)",
+    "barrier_removal_check": "إزالة الجدار 4/9 حمراء، إزالة الحد 4/7، إزالة حارس الإنتاج 2/6",
+    "side_effects_restored": []
+  },
+  "d1.11_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.11 (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 629,
+    "pass": 629,
+    "fail": 0,
+    "breakdown": "622 بعد D1.10 + 8 (tests/server-startup-guard.test.js) − 1 (مُعيد known-gaps/d1.11 حُذف في تغيير الإغلاق)؛ اختبارات D1.10 المتأثرة بالإصلاح حُدِّثت بلا تغيير في أعدادها (إقرار المؤقتية في اختبارين، وتصحيح تمهيد D1.13 إلى ملفات الحدود)",
+    "inversion_evidence": "self-model/evidence/d1.11-red.tap (7/8 fail — listened:true، والمنفذ قُبل أثناء الحياة) → d1.11-green.tap (8/8 pass)",
+    "barrier_removal_check": "تعطيل حارس الاستمرارية ⇒ 2 من 8 حمراء (اختبارا الإقلاع الفعلي)، وحارس المحيط يبقى أخضر — الفصل قائم",
+    "side_effects_restored": []
+  },
+  "d1.12_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.12 (انظر git log)",
+    "command": "npm test && npm run metrics",
+    "node": "v22.22.3",
+    "tests": 633,
+    "pass": 633,
+    "fail": 0,
+    "breakdown": "629 قبل الإغلاق − 5 (مُعيد known-gaps/d1.12 حُذف في تغيير الإغلاق) + 6 (tests/count-claims-sync.test.js؛ منها اختبار إبقاء آلية CI قائمة)",
+    "red_evidence": "self-model/evidence/d1.12-red.tap (الحارس الجديد ضد شجرة ما قبل الإصلاح: 5 من 6 حمراء، والمُعيد أخضر 5/5 = الفشل مُعاد إنتاجه قبل أي تغيير) + d1.12-metrics-red.txt (npm run metrics: Measured 632 ≠ Documented 545 في README وSECURITY، exit 1)",
+    "green_evidence": "self-model/evidence/d1.12-green.tap (6/6) + d1.12-metrics-green.txt (npm run metrics: docs match measured reality، exit 0، ثمانية أسطر مفحوصة في الوثيقتين) + d1.12-verifier-green.txt (بوابة النشر تقيس فعلًا: «633 pass / 0 fail of 633 (recorded floor 633)»)",
+    "inversion_evidence": "d1.12-gate-bypass.txt — قياس بمُخرَج مُصطنع (npm وهمي على PATH): الفحص القديم يختم «tests_green: 314/314» لمجموعة من اختبارين فقط، والجديد يرفض «below the recorded floor: 2 < 633» ويرفض «2 failing test(s) of 100»؛ وبحرف واحد في الوثائق: «501 PASS / 0 FAIL of 501» في README ⇒ اختبار الوثائق أحمر؛ Total tests في README وحده ⇒ اختبار التطابق؛ نزع record_status من خطة ⇒ اختبار الخطط؛ وفي كل حالة اختبار واحد فقط ينكسر، ثم 6/6 بالاستعادة",
+    "docs_changed": [
+      "README.md",
+      "SECURITY.md",
+      "pub-verifier.sh",
+      "publish-v0.1.plan.json",
+      "publish-v0.2.plan.json",
+      "tools/check-metrics.mjs"
+    ],
+    "residual": "حجم الخطة بالبايتات (_padding) أُزيل فحصه؛ الحشو نفسه تُرك لأنه داخل خطة موقّعة — مذكور كـ follow_up",
+    "side_effects_restored": [],
+    "tools_changed": [
+      "pub-verifier.sh: [2/5] قراءة TAP + أرضية مسجلة؛ [1/5] قرار الفاحص و عدده المقاس بدل نمط «6 gates CLOSED»؛ [4/5] record_status بدل حجم البايتات",
+      "tools/check-metrics.mjs: Ω error codes وGated namespaces وAttack categories صارت مقاسة ضد الوثائق",
+      "publish-v0.1.plan.json / publish-v0.2.plan.json: وسم HISTORICAL RECORD بتاريخ الخطة، بلا مسّ بأرقامها الموقّعة"
+    ],
+    "docs_note": "README: أُزيلت ثلاث صيغ ادعاء (سطر 2026-09-20، و«Latest verification»، و«Latest verify») وصار القياس مُحالًا إلى live_measurement. SECURITY.md: فقرة «Latest verify: 392/2 of 394» استُبدلت بما تقيسه CI، وصُحِّح ادعاء H2/H3 (كان يقول «still fail» وهو أخضر منذ 2026-09-22)"
+  },
+  "d1.3_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.3 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 637,
+    "pass": 637,
+    "fail": 0,
+    "breakdown": "633 بعد D1.12 + 6 (tests/gates-computed.test.js) − 2 (مُعيد known-gaps/d1.3 حُذف في تغيير الإغلاق)؛ قوالب D1.2 في tests/artifact-reader.test.js وtests/agentic-hunter.test.js قُوِّيت بسجلّ آمن (لا تليين لأي assert)",
+    "red_evidence": "self-model/evidence/d1.3-red.tap (5 من 6 حمراء مع المُعيد 2/2) + d1.3-red-summary.txt (اللقطة الأصلية على bd76194 قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.3-green.tap (6/6 على الكود النهائي)",
+    "inversion_evidence": "d1.3-inversion.txt — شلّ البوابة وحدها (pass: safeTesting.pass → pass: true) يُحمرّ tests/gates-computed.test.js وحده (5 من 6) ويبقي: artifact-reader 16/16، agentic-hunter 10/10، ومُعيدات D1.4/D1.5/D1.6/D1.7 خضراء — أي أن الحارس يخصّ D1.3 ولا يمسك غيرها",
+    "tools_changed": [
+      "src/security/hunter/safe-testing.js (جديد)",
+      "src/security/hunter/seven-gate-validator.js",
+      "src/security/hunter/nexa-evidence-bridge.js (تسمية البوابات الساقطة في reasons)",
+      "src/security/hunter/vuln-engine.js (سجل سلوك عند مواضع إنتاج الـ artifacts الثلاثة)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-07 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 637)",
+      "docs/repository-audit-2026-09-22.ar.md §O9"
+    ],
+    "residual": "الشهادة يصرّح بها المُنتِج؛ الرقابة الحالية هي الربط بمنتِج الدليل + البنية + النفي الصريح. سجلّ جولة مستقل (موقّع/دائم) متروك عمدًا لتذكرة قائمة بذاتها",
+    "side_effects_restored": []
+  },
+  "d1.4_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.4 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 645,
+    "pass": 645,
+    "fail": 0,
+    "breakdown": "641 بعد تسجيل D1.17 + 6 (tests/gate-boundary-vs-impact.test.js) − 2 (مُعيد known-gaps/d1.4 حُذف في تغيير الإغلاق)؛ قوالب D1.2/D1.3 قُوِّيت بأثر مسمّى وسجل حدود (لا تليين لأي assert)",
+    "red_evidence": "self-model/evidence/d1.4-red.tap (6 من 6 حمراء عند HEAD بإصلاح معكوس — src فقط والحارس موجود)",
+    "green_evidence": "self-model/evidence/d1.4-green.tap (6/6) + d1.4-suite.txt (المجموعة الكاملة 645 عند الإغلاق)",
+    "inversion_evidence": "d1.4-inversion.txt — نسختان: تعطيل مسند الأثر (GATE_3 ← severity) يُحمرّ D1.4 وحده 3 من 6؛ تعطيل مسند الحدود (GATE_6 ← severity) يُحمرّ D1.4 وحده 4 من 6؛ وفي الحالتين gates-computed 6/6 وartifact-reader 16/16 وagentic-hunter 10/10 ومُعيدات D1.5/D1.6/D1.7 خضراء — الحارس يخصّ D1.4 ولا يمسك غيرها",
+    "tools_changed": [
+      "src/security/hunter/impact-evidence.js (جديد — متجهات الضرر ومنع صياغة الاحتمال)",
+      "src/security/hunter/boundary-evidence.js (جديد — جدول BOUNDARY_KINDS_BY_CLASS وسجل {from,to,kind})",
+      "src/security/hunter/seven-gate-validator.js (GATE_3/GATE_6 محسوبتان بمسنديهما، وكل رفض مُعلَّل)",
+      "src/security/hunter/vuln-engine.js (كل كاشف يرفق boundary بصنفه، وأثر SQLi بلا صياغة احتمال)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-06 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 645)",
+      "docs/repository-audit-2026-09-22.ar.md §O11"
+    ],
+    "residual": "الأثر ما زال ادعاءً نصيًا يصرّح به المُنتِج (بلا شهادة مربوطة كما في D1.3)، وجدول الحدود يحدّ ما يُعدّ عبورًا — صنف جديد غير مُسجَّل يُرفض افتراضيًا. كلا القصرين مُوثَّق في follow_ups ولا يُغلق بتوسيع على المقاس",
+    "side_effects_restored": []
+  },
+  "d1.5_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.5 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 651,
+    "pass": 651,
+    "fail": 0,
+    "breakdown": "645 بعد D1.4 + 8 (tests/scope-independence.test.js) − 2 (مُعيد known-gaps/d1.5 حُذف)؛ قوالب D1.2/D1.3/D1.4 استُبدل فيها `{inScope:true}` بسجل نطاق صالح (تقوية، لا تليين)",
+    "red_evidence": "self-model/evidence/d1.5-red.tap (8 من 8 حمراء عند 9cda12b قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.5-green.tap (8/8) + d1.5-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.5-inversion.txt — نسختان: إعادة GATE_1 إلى الثقة boolean تُحمرّ D1.5 وحدها (0 من 8)؛ ردّ `{ inScope: true }` الافتراضي في الجسر يُحمرّ اختبار الجسر وحده (7 من 8)؛ والحراس الآخرون ومُعيدات D1.6/D1.7 خضراء",
+    "tools_changed": [
+      "src/security/hunter/scope-evidence.js (جديد — وضع المضيف ووضع المسار، جداول عيوب الأنماط، احتواء الجذر)",
+      "src/security/hunter/seven-gate-validator.js (GATE_1 من السجل المُعاد حسابه)",
+      "src/security/hunter/nexa-evidence-bridge.js (لا سجل نطاق مُهدى عند غياب السياق)",
+      "src/security/hunter/recon-agent.js (scopeRecord يُسلَّم كبيانات؛ isScopeAllowed تبقى للعدّ)",
+      "src/security/hunter/autopilot.js (سجل واحد للتصفية والإيصال) وsrc/security/agentic-hunter.js (جذر محلي صريح)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-13 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 651)",
+      "docs/repository-audit-2026-09-22.ar.md §O12"
+    ],
+    "residual": "قائمة النطاق يصرّح بها المشغِّل ولا تُثبت من مصدر خارجي موقَّع؛ وReconAgent يحتفظ بإباحة العدّ عند غياب الأنماط عمدًا — الفارق بين «يُسمح بالعدّ» و«يُصدَق عليه» صار عند البوابة لا عند الاستطلاع",
+    "side_effects_restored": []
+  },
+  "d1.6_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.6 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 655,
+    "pass": 655,
+    "fail": 0,
+    "breakdown": "651 بعد D1.5 + 6 (tests/hunt-memory-fail-closed.test.js) − 2 (مُعيد known-gaps/d1.6 حُذف)؛ لا تغيير في أي قالب لتذكرة أخرى (الحارس مستقل من أول سطر)",
+    "red_evidence": "self-model/evidence/d1.6-red.tap (6 من 6 حمراء عند 86207c3 قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.6-green.tap (6/6) + d1.6-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.6-inversion.txt — ثلاث نسخ: إلغاء الامتناع عن الدهس ⇒ 2 من 6 حمراء؛ ابتلاع _load (عودة الـ fallback الصامت) ⇒ 5 من 6؛ تزفير فشل الكتابة كنجاح ⇒ 1 من 6. في الثلاث: scope-independence 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، test-output-isolation 3/3، مُعيد D1.7 2/2",
+    "tools_changed": [
+      "src/security/hunter/hunt-memory.js (loadStatus/saveStatus، أربعة رموز، امتناع الدهس، force، كتابة ذرّية، حالات من كل نقطة كتابة)",
+      "src/security/hunter/autopilot.js (نتيجة الحفظ تُبلَّغ في result.memory + تحذير، ولا تزييف نجاح)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-14 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 655)",
+      "docs/repository-audit-2026-09-22.ar.md §O13"
+    ],
+    "residual": "معرفات الجلسات ما زالت طابعًا زمنيًا (خارج معايير التذكرة، مُسجَّلة كمتابعة)، ولا قفل بين العمليات، وforce لا يُسجَّل من فعله؛ القصور الثلاثة مذكورة في follow_ups ولا تُغلق على المقاس",
+    "side_effects_restored": []
+  },
+  "d1.7_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.7 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 660,
+    "pass": 660,
+    "fail": 0,
+    "breakdown": "655 بعد D1.6 + 7 (tests/detector-independence.test.js) − 2 (مُعيد known-gaps/d1.7 حُذف)؛ لا قالب لتذكرة أخرى تغيّر — الوحدات الجديدة لا يستهلكها سواها",
+    "red_evidence": "self-model/evidence/d1.7-red.tap (7 من 7 حمراء عند 7ad20f1، بحمول ديناميكي يفشل على الادعاء لا على الاستيراد)",
+    "green_evidence": "self-model/evidence/d1.7-green.tap (7/7) + d1.7-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.7-inversion.txt — ثلاث نسخ: عودة الشرط على الملف كله ⇒ 5 من 7 حمراء؛ حذف الشهادة من الباني المشترك ⇒ 4 من 7؛ تفريغ SOURCE_DETECTORS ⇒ 5 من 7. في الثلاث: scope-independence 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6",
+    "tools_changed": [
+      "src/security/hunter/detector-evidence.js (جديد — باني finding واحد: content-match artifact + شهادة مربوطة + نطاقات الدوال)",
+      "src/security/hunter/detector-unhandled-async.js (جديد — أول await في نطاق الدالة، جسم مُقنَّع بالداخلي)",
+      "src/security/hunter/detector-weak-crypto.js (جديد — سطر-نطاق، تعليق مُستثنى، suppression سطري)",
+      "src/security/hunter/detector-resource-leak.js (جديد — الإغلاق لنفس المتغير في نفس النطاق، موردان = حُلمان)",
+      "src/security/hunter/source-detectors.js (جديد — قائمة التجميع الوحيدة) وindex.js يُصدّرها",
+      "src/security/agentic-hunter.js (_inspectFile يركّب فقط؛ الأصل نسبةً إلى جذر الجولة)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-01 + DI-15 + DI-16 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 660)",
+      "docs/repository-audit-2026-09-22.ar.md §O14"
+    ],
+    "residual": "مطابقة الأقواس الحرفية لا AST؛ SecretsHunter بلا دليل بعد (متابعة مسجلة)؛ والأصناف الثلاثة تبقى مرفوضة عند GATE_6 عن قصد — تقارير الجودة تحتاج مسار إصدار منفصلا لا بوابة مُوسَّعة",
+    "side_effects_restored": []
+  },
+  "d1.8_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.8 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 667,
+    "pass": 667,
+    "fail": 0,
+    "breakdown": "660 بعد D1.7 + 7 (tests/bug-report-consistency.test.js)؛ مُعيد known-gaps/d1.8 كان غير متتبَّع (أُثبت في الدورة نفسها) فلم يدخل العد، وحُذف بعد التحميل",
+    "red_evidence": "self-model/evidence/d1.8-reproducer.tap (4 من 4 خضراء-كإثبات للفجوة عند f7459bd) + d1.8-guard-red.tap (6 من 6 حمراء للحارس قبل الإصلاح؛ السابع أُضيف معه)",
+    "green_evidence": "self-model/evidence/d1.8-green.tap (7 من 7) + d1.8-suite.txt (المجموعة الكاملة 667/667/0 عند الإغلاق)",
+    "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
+    "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
+  },
+  "updated_at": "2026-09-24T12:25:00Z",
+  "d1.17_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.17 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 670,
+    "pass": 670,
+    "fail": 0,
+    "breakdown": "667 بعد D1.8 + 7 (حارس القياس المخدوم) − 4 (مُعيد D1.17 المُسجَّل حُذف عند الإغلاق)؛ الأسوار (perimeter/rate-limit/failfast/startup/commit) لم يتغيّر عددها ولا نتائجها",
+    "red_evidence": "self-model/evidence/d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) + d1.17-guard-red.tap (6 من 6 حمراء قبل الإصلاح)",
+    "green_evidence": "self-model/evidence/d1.17-green.tap (7 من 7) + المجموعة الكاملة 670/670/0 عند الإغلاق",
+    "inversion_evidence": "d1.17-inversion.txt — خمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في التعريف ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ عددٌ مزروع في belief ⇒ 2 من 7؛ سجل إقلاع يروّي ⇒ 1 من 7. أسوار D1.10/D1.11 خضراء في الخمس (57 اختبارًا)، وملحق يُصحّح اسم ملف كان غائبًا في السجل",
+    "note": "شكل الإغلاق كما قرّر المالك: قياس حيّ فقط — gates من check-posture، وtests/promotion محذوفان من الحمولة (لا وسم بتاريخ، ولا baseline عبر الشبكة). وبهذا تُغلق آخر تذكرة صفر-حرج مُسجَّلة في الصنف «أعداد مُروَّاة»"
+  },
+  "d1.13_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.13 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 675,
+    "pass": 675,
+    "fail": 0,
+    "breakdown": "670 بعد D1.17 + 1 (سطر إضافي في المُعيد كُتب بعد قياس الإغلاق السابق) + 6 (حارس المرجع) − 2 (المُعيد المحذوف)",
+    "red_evidence": "self-model/evidence/d1.13-red.tap (2 من 2 خضراء-كإثبات عند 5d505b8) وd1.13-guard-red في d1.13-inversion.txt ما قبل الإصلاح",
+    "green_evidence": "self-model/evidence/d1.13-green.tap (6 من 6) + d1.13-suite.txt (675/675/0)",
+    "inversion_evidence": "d1.13-inversion.txt — ستّ نسخ (قراءة بلا صفّ، صفّ جامد، حذف صفّ، موقع process.env[key] جديد، عودة .env.example، VITE_*API_KEY في jsx) وكلّها تحمرّ الواحدَ الوحيد من الحارس دون سواه؛ post-restore 6 من 6",
+    "note": "الشكل المُغلَف: لا قالب env (قرار §3 المُجمَّد) بل docs/environment-reference.md إلزامي بحارس مزامنة. أُصلح عرضًا عدد جامد في README («113 tests») إلى إحالة الكتلة المقيسة — من فئة D1.12 لا D1.13، فسُجّل هنا لا تحت التذكرة"
+  },
+  "d1.14_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.14 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 679,
+    "pass": 679,
+    "fail": 0,
+    "breakdown": "675 بعد D1.13 + 1 (سطر معاداة إضافي) + 5 (حارس الفهرس) − 2 (مُعيد D1.14 المحذوف)",
+    "red_evidence": "self-model/evidence/d1.14-red.tap (2 من 2 خضراء-كإثبات عند 13f568d)",
+    "green_evidence": "self-model/evidence/d1.14-green.tap (5 من 5، مع الانحرافات في d1.14-inversion.txt) + d1.14-suite.txt (679/679/0)",
+    "inversion_evidence": "d1.14-inversion.txt — خمس نسخ: وثيقة بلا صفّ ⇒ 1 من 5؛ حذف بلا أرشفة ⇒ 2 من 5؛ صنف غير معلَن ⇒ 1؛ إسناد إلى حارس غير موجود ⇒ 1؛ اقتلاع «لا حذف» من المقدمة ⇒ 1. حراس docs/gaps/evidence-frozen/count-claims خضراء في الخمس (19 اختبارًا). الأخطاء الأمانة في السجل: git rm فشل أولًا لأن المُعيد كان معدَّلًا محليًا (استُعمل -f)، والحارس رُوجع مرّتين ليطبّع أسماء المجلدات ويحلّ المسارات النسبية إلى docs/ بدل مطالبة الفهرس بمسارات جذرية زائفة",
+    "note": "لا انحراف في عدد موثَّق: الفهرس يُحيل الأرقام إلى live_measurement/npm run metrics ولا ينسخ رقمًا، ويصنّف السجلّات (331/331، 415، 428، 100%) تاريخيةً لا حالة. صُحِّح عرضيًا قالب commit في CONTRIBUTING («113 pass») إلى إحالة عدد الجولة، وأُضيفت قاعدة مساهمة رقم 10"
+  },
+  "d1.15_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.15 (انظر git log)",
+    "command": "npm test && npm run sync:assets:check && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 684,
+    "pass": 684,
+    "fail": 0,
+    "breakdown": "679 بعد D1.14 + 1 (سطر معاداة إضافي في المُعيد كُتب بعد ذلك القياس) + 6 (حارس المرايا) − 2 (مُعيد D1.15 المحذوف)",
+    "red_evidence": "self-model/evidence/d1.15-red.tap (2 من 2 خضراء-كإثبات عند 794c40f)",
+    "green_evidence": "self-model/evidence/d1.15-green.tap (6 من 6) + d1.15-suite.txt (684/684/0)",
+    "inversion_evidence": "d1.15-inversion.txt — سبع نسخ: تحرير المرآة يدويًا ⇒ 2 من 6؛ نسخة ظلّ غير معلنة ⇒ 1؛ عودة index.html إلى publicDir ⇒ 2؛ فحص بلا exit 1 ⇒ 1؛ الفاحص يتجاهل الجذر الممرر ⇒ 1؛ --check يصلح القرص ⇒ 1؛ H7 عرضيًا: إزالة صف NEXA_SYNC_ROOT تُحمرّ حارس D1.13 (5 من 6) وتُخضرّ بإعادته. الأسوار خضراء في الكل (edge-rag 4 و6، detector-independence 7/7، docs-consistency 6/6، server-perimeter 9/9). الملحق يوثّق أن H5/H6 أُعيدت صياغتهما بعد نسخة غير صالحة/خالية الأثر",
+    "note": "الفحص جافّ والكتابة idempotent وذرّية (tmp+rename)؛ 9 مرايا معلنة بـ (source→dest) وسبب؛ لا حذف: ساكنة public/index.html أُرشفت إلى dashboard/legacy/ وتُخدَم عند /dashboard-static.html موسومة non-production. وأول قياس حيّ لحارس D1.13 على قراءة السكربت الجديدة (H7)"
+  },
+  "d1.16_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.16 (انظر git log)",
+    "command": "npm test && npm run sync:assets:check && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 689,
+    "pass": 689,
+    "fail": 0,
+    "breakdown": "684 بعد D1.15 + 6 (حارس CI) − 1 (مُعيد D1.16 المحذوف)",
+    "red_evidence": "self-model/evidence/d1.16-red.tap (المُعيد 1 من 1 أخضر-كإثبات + قياس أين كان البناء يحدث فعلًا)",
+    "green_evidence": "self-model/evidence/d1.16-green.tap (الحارس 6 من 6 + بروفة محليّة لأوامر الوظيفة: npm ci 131 حزمة، vite build 2.80s، فحوص المخرج، git ls-files فارغ، sync:assets:check) + d1.16-suite.txt (689/689/0)",
+    "inversion_evidence": "d1.16-inversion.txt — ثماني نسخ: حذف وظيفة dashboard ⇒ 3 من 6؛ continue-on-error ⇒ 1؛ cache-dependency-path إلى قفل غير موجود ⇒ 1؛ npm install في وظيفة kernel ⇒ 1؛ نزع خطوة sync:assets:check ⇒ 1؛ تغيير اسم سكربت build ⇒ 1؛ إلغاء استثناء dashboard/dist ⇒ 1؛ R1 تعليق ينتحل خطوات ⇒ 2. المجاورون خضر في الثمانية (duplicate-sync 6، edge-rag 4، docs-consistency 6، gaps-consistency 5) والاستعادة 27 من 27",
+    "note": "سجل الفجوات صار كاملًا: لا مفتوحة. deploy-pages.yml لم يُمَس (مسار النشر)، وما لم يُفعل عمدًا مسجَّل follow_ups أربعًا (تثبيت النشر بلا قفل، تكرار npm test في metrics.yml، لا actionlint، توليد بيانات Hunter لا يُختبر في PRs)"
+  },
+  "d1.18_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.18 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 696,
+    "pass": 696,
+    "fail": 0,
+    "breakdown": "689 بعد D1.16 + 7 (حارس تكافؤ النشر)",
+    "red_evidence": "self-model/evidence/d1.18-red.tap (المُعيد 2 من 2 أخضر-كإثبات — بعد أن أعيدت صياغته بالقياس: npm ci في الجذر ينجح لا يفشل)",
+    "green_evidence": "self-model/evidence/d1.18-green.tap (الحارس 7 من 7 + بروفة تنفّذ نص الخطوات من الـ YAML على نسخة طارحة: hunter exit 0، npm ci 131 حزمة، vite build 3.05s، dist/data = bug-report.json + hunt-memory.json، 14 ملفًا/556K) + d1.18-suite.txt (696/696/0)",
+    "inversion_evidence": "d1.18-inversion.txt — اثنتا عشرة نسخة: install عائم مع || ⇒ 2 من 7؛ || على خطوة القفل ⇒ 2 (و7)؛ node 18.x ⇒ 1؛ قلب hunter/البناء ⇒ 1؛ pull_request في النشر ⇒ 1؛ contents: write ⇒ 1؛ إعادة خطوة تثبيت الجذر ⇒ 2 (و3)؛ مسار hunter وهمي ⇒ 1؛ حذف mkdir dist/data ⇒ 1؛ تعليق ينتحل خطوة ⇒ 2 (و7)؛ اعتمادية معلنة في workspace ⇒ 1؛ قفل خاطئ في cache-dependency-path ⇒ 1. المجاورون خضر في الكل (CI 6، المرايا 6، edge-rag 4، السجل 5، الوثائق 6) والاستعادة 34 من 34",
+    "note": "البروفة كشفت غلطًا أدخلته بنفسي: cp -r ../data/* من داخل dashboard/ (= جذر المستودع) ⇒ dist/data فارغة مع exit 1. صُحّح المسار إلى data/*، وأُلغي || true الذي كان يجعل النشر بلا بيانات أخضر، وصار الحارس يحلّ المسارات على القرص. لا فحص نصّي للـ YAML كان يمسك هذا — وهو سبب كتابة بروفة تنفيذ لا قراءة سطور"
+  },
+  "d1.19_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.19 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 702,
+    "pass": 702,
+    "fail": 0,
+    "breakdown": "696 بعد D1.18 + 6 (حارس تداخل الـ workflows)",
+    "red_evidence": "self-model/evidence/d1.19-red.tap (2 من 2 أخضر-كإثبات؛ أوائلًا صِيغ باطّل — qِيس أن npm ci في الجذر ينجح)",
+    "green_evidence": "self-model/evidence/d1.19-green.tap (6 من 6 + حارسا D1.18/D1.16 بعد التصحيح العَرَضي + بوابة metrics في نسخة طارحة بلا تثبيت) + d1.19-suite.txt (702/702/0)",
+    "inversion_evidence": "d1.19-inversion.txt — تسع نسخ: خطوة npm test زائدة ⇒ 2 من 6؛ تثبيت جذر ⇒ 2؛ عبارة بلا lockfile ⇒ 1؛ continue-on-error ⇒ 1؛ حذف pull_request من on: ⇒ 1؛ node 19 خارج المصفوفة ⇒ 1؛ إزالة runCommand audit من الأداة ⇒ 2؛ إزالة npm run audit من ci.yml ⇒ 1؛ cache: npm بلا مسار قفل ⇒ 1. المجاورون خضر (المرايا 6، تكافؤ النشر 7، CI 6، الوثائق 6). وفيه موثّق أن Q3/Q9 أُعيدتا بعد أن كانت نسخة الانحراف تُنادى بثلاث وسائط لـ rw() فلم تُطبَّق (0 أحمر = قياس أعمى)، وأن فحوص cache كانت تتخطّى metrics.yml",
+    "note": "حذف 5 خطوات مكرّرة من metrics.yml (كلها تُنفَّذ داخل tools/check-metrics.mjs أصلًا) وتثبيتِ جذر no-op؛ تصحيح تعليقين خاطئين (metrics.yml القديم، وci.yml من D1.16) كانا ينفيان وجود قفل الجذر وهو متتبَّع؛ وتحرير اختبارين من الاعتماد على حالة محلية (dashboard/dist، و.git) بعد قياس نسخة طارحة — 704 اختبارًا هناك بفشلين هما المُعيد وحده و2 skip معلنة"
+  },
+  "d1.20_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.20 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 711,
+    "pass": 711,
+    "fail": 0,
+    "breakdown": "702 بعد D1.19 + 7 (حارس مسار الإصدار) + 2 (مُعيد D1.21 المعلّقة)",
+    "red_evidence": "self-model/evidence/d1.20-red.tap (2 من 2 أخضر-كإثبات؛ صياغتي الأولى للادّعاء الثاني كانت باطلة وقِست: env-reference-sync يذكر release.yml في PIPELINE_FILES لفحص البيئة فقط)",
+    "green_evidence": "self-model/evidence/d1.20-green.tap (7 من 7 + بروفة تنفيذ جسم خطوة Publish: (أ) private:true ⇒ rc 0 مع ::warning:: وSKIP_PUBLISH في الـ summary، (ب) private:false ⇒ rc 1 على registry وهمي محلي) + d1.20-suite.txt (711/711/0)",
+    "inversion_evidence": "d1.20-inversion.txt — تسع نسخ + ملحق: || true على النشر ⇒ 1؛ إعادة خطوة التثبيت الجذري ⇒ 2؛ كسر مسار الجسر ⇒ 1؛ تغيير --pack-destination وحده ⇒ 1؛ actions: write ⇒ 1؛ node 21 خارج المصفوفة ⇒ 1؛ private:false بلا حسم ⇒ 1؛ إسكات الـ warning ⇒ 1؛ حذف الإيصال من files: ⇒ 1. المجاورون خضر (تداخل workflows 6، تكافؤ النشر 7، CI 6، المرايا 6، مرجع البيئة 6). والملحق يروي خطأين في قياس لا في الشجرة: gaps-consistency كان أحمرّ في كل نسخة لأن D1.21 سُجّلت بمُعيد غير موجود، والحظر الحرفي كان يقرأ «|| true» داخل نص التحذير نفسه",
+    "note": "لا قرار في هوية الحزمة: private:true واسم غير موسّع وscope @elazamey = إعداد لا يمكن أن ينجح معه النشر (مقيس)؛ صار التخطّي معلنًا بدل الابتلاع، وحُسمت D1.21 للمالك. الحارس يبني على الـ YAML نفسه (المسارات، الدوال المستعمَلة، المجلدات، الصلاحيات) فأي انزياح في release.yml يُرى لا يُفترَض"
+  },
+  "d1.28_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.28 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 727,
+    "pass": 727,
+    "fail": 0,
+    "breakdown": "725 + 4 (حارس صنبور التحقيق) − 2 (مُعيد فجوة معلّقة حُذف في نفس commit)",
+    "red_evidence": "self-model/evidence/d1.28-red.tap (3 من 4 حمراء قبل الإصلاح؛ الرابعة «القبول لا يثرثر» وظيفتها منع الانزلاق فتبقى خضراء طرفي التغيير)",
+    "green_evidence": "self-model/evidence/d1.28-green.tap (4/4 بعد النداء في فرع الرفض)",
+    "inversions": "self-model/evidence/d1.28-inversion.txt (I1 حذف النداء يُحمِرّ الحارس وحده 3؛ I3 خام، I4 ابتلاع، I5 محتويات دلو، I6 تصريح كاذب، I7 فصل الوصلة — كل واحدة يمسكها الحارس؛ I2 إفراط عمدي يمسك الحارس أوله ثم تتبعه جيرانه لأن الوصلة حقيقية حتى الشاشة)",
+    "method": "مرسى الطفرة يجب أن يكون فريدًا: أول محاولة لـ I3 استبدلت bucket: id في مسار القبول لا في سطر التحقيق فخرج قياس أخضر كاذبًا؛ أعيد بالكتلة كاملة بعد تثبيت count==1",
+    "untouched": "packages/ وspec/ وvectors؛ لا قائمة أنواع DAG في docs/ فكان الدخول الجديد بلا انجراف توثيق"
+  },
+  "d1.26_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.26 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 732,
+    "pass": 732,
+    "fail": 0,
+    "breakdown": "727 + 7 (حارس البوابة والفاحص) − 2 (مُعيد فجوة معلّقة حُذف في نفس commit)",
+    "red_evidence": "self-model/evidence/d1.26-red.tap (6 من 7 قبل الوصل؛ الأحمر هو سطر الربط وحده — الفاحص كان جاهزًا)",
+    "green_evidence": "self-model/evidence/d1.26-green.tap (7/7 بعد وصل security-scan.yml بالفاحص)",
+    "inversions": "self-model/evidence/d1.26-inversion.txt (J1..J7؛ الجيران deploy-ci-parity 7، workflow-consumer-truth، workflow-overlap 6، gaps-consistency لم يمسّهم شيء في أي طفرة)",
+    "method": "القرار في سكربت واحد يناديه الـ workflow نداءً واحدًا بلا && ولا ||: القياس المحلي هو قياس CI. المادة تُحتسب بـ ≥200 حرف base64 بعد علامة PEM، وبـ ≥64 بعد nexa:key:priv: — فالتوثيق وسطر الكاشف لا يُحتسبان",
+    "untouched": "tools/google-fixtures.mjs لم يُنقل ولم يُحرَّر؛ packages/ وspec/ وvectors سليمة؛ لا حذف فحص"
   }
 }

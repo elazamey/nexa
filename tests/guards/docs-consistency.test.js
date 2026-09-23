@@ -72,8 +72,19 @@ test('Guard D1.1/docs: مصادر الفشل A01..A13 كلها معرفة في �
     const code = `A${String(i).padStart(2, '0')}`;
     assert.ok(audit.includes(`**${code}**`), `التقرير لا يعرف ${code}`);
   }
+  // ملحق O (gaps.json v2.1.0-ops): العائلة التشغيلية O01..O08 معرفة في التقرير أيضًا.
+  for (let i = 1; i <= 8; i++) {
+    const code = `O${String(i).padStart(2, '0')}`;
+    assert.ok(audit.includes(`**${code}**`), `التقرير لا يعرف ${code}`);
+  }
   const usedSources = new Set(gaps.gaps.flatMap(g => g.sources));
-  assert.equal(usedSources.size, 13, 'كل مصادر الفشل A01..A13 يجب أن تُستخدم في الفهرس');
+  for (let i = 1; i <= 13; i++) {
+    assert.ok(usedSources.has(`A${String(i).padStart(2, '0')}`), 'كل مصادر A01..A13 يجب أن تبقى مستخدمة في الفهرس');
+  }
+  // تعميم محافظ: أي مصدر مستخدم (A أو O) يجب أن يكون معرّفًا في التقرير — لا إسناد وهمي.
+  for (const code of usedSources) {
+    assert.ok(audit.includes(`**${code}**`), `مصدر مستخدم بلا تعريف في التقرير: ${code}`);
+  }
 });
 
 test('Guard D1.1/docs: العقد v0.3 يحمل البنود المرجعية للتذاكر والتعديلات الختامية', () => {
@@ -83,10 +94,16 @@ test('Guard D1.1/docs: العقد v0.3 يحمل البنود المرجعية ل
 });
 
 test('Guard D1.1/docs: خط الأساس المقاس يطابق ما يدّعيه التقرير', () => {
-  assert.equal(baseline.measured.tests, 545);
-  assert.equal(baseline.measured.pass, 545);
-  assert.equal(baseline.measured.fail, 0);
-  assert.ok(audit.includes('545 / 545'), 'التقرير لا يذكر 545/545');
+  // D1.12: لا أرقام حرفية هنا — الحارس يقرأ رقم التقرير نفسه ويقارنه بالسجل.
+  // التثبيت الحرفي (545) كان يجعل كل إعادة قياس انكسارًا للحارس بدل تصحيح للوثيقة.
+  const m = audit.match(/اختبارات المجموعة الكاملة \| \*\*(\d+) \/ (\d+) نجاح \/ (\d+) فشل/);
+  assert.ok(m, 'التقرير لم يعد يحمل صف «اختبارات المجموعة الكاملة» — حدّث الحارس عمدًا أو أعِد الرقم');
+  assert.equal(baseline.measured.tests, Number(m[1]), 'baseline.measured.tests لا يطابق رقم التقرير');
+  assert.equal(baseline.measured.pass, Number(m[2]), 'baseline.measured.pass لا يطابق رقم التقرير');
+  assert.equal(baseline.measured.fail, Number(m[3]), 'baseline.measured.fail لا يطابق رقم التقرير');
+  // القياس الحيّ سجل منفصل موسوم بتاريخه ولحظته — لا يُخلط بالقياس المجمّد للتقرير.
+  assert.ok(baseline.live_measurement, 'baseline.live_measurement مفقود: الوثائق بلا سجل تُحال إليه');
+  assert.match(baseline.live_measurement.date, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(audit.includes('13'), 'التقرير يجب أن ينقل ادعاء الـ 13 probes كما هو');
   // الادعاء غير القابل للتحقق يجب أن يبقى موسومًا كذلك — لا تحويله إلى "متحقق"
   assert.ok(baseline.frozen_claims.probes_13.status.startsWith('unverifiable'));

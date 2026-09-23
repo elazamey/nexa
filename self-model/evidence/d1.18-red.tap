@@ -1,0 +1,16 @@
+# D1.18 red-as-proof — أخضر 2 من 2 = الفجوة قائمة (قياس عند 9823f18)
+## المُعيد
+not ok 1 - known-gap D1.18: تثبيت الداشبورد في النشر عائم لا على القفل
+not ok 2 - known-gap D1.18: «npm ci || npm install» في الجذر — فشل حتمي مبتلع
+# tests 2
+# pass 0
+# fail 2
+## مقيس في نسخة طارحة (/tmp/deployroot من git archive HEAD)
+npm install في الجذر => added 15 packages، node_modules فيه سطر واحد: @nexa -> ../../packages/* (روابط workspaces)، du = 8.0K
+وبإزالة node_modules وpackage-lock.json:
+  node src/security/agentic-hunter.js packages => exit 0 (Asserted 22 · تقرير 612B)
+  npm --prefix dashboard ci && npm --prefix dashboard run build => exit 0 (✓ built in 2.98s)
+=> تثبيت الجذر في النشر no-op مكلف؛ والضرر المقيس: install عائم للداشبورد + || يبتلع الفشل + قفل يُكتب في الجذر لا يريده المشروع
+## npm audit للداشبورد (مقيس، يذهب إلى D1.19): echo   moderate: esbuild (dev-server requests) · vite optimized-deps .map path traversal · vite launch-editor NTLMv2 (Windows)
+  high: vite server.fs.deny bypass on Windows alternate paths (<=6.4.2؛ المحلول 5.4.21)
+  ولا workflow واحد يشغّل npm audit على الداشبورد (قِيس بـ grep -l 'npm audit' .github/workflows)

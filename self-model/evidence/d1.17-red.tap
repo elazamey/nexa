@@ -1,0 +1,36 @@
+# D1.17 تسجيل — مُعيد known-gaps على الشجرة غير المُصلحة: 4/4 خضراء = الفشل مُعاد إنتاجه (لا إصلاح بعد)
+# الاختبار الأول سلوكي فوق HTTP معزول: الخادم يُعيد فعلًا status.tests === '314/314' وstatus.promotion === '5/5 READY'
+TAP version 13
+# Subtest: known-gap D1.17 (O09): /api/celia/state يخدم عدد اختبارات وحكم ترقية مروَّيين بالنص
+ok 1 - known-gap D1.17 (O09): /api/celia/state يخدم عدد اختبارات وحكم ترقية مروَّيين بالنص
+  ---
+  duration_ms: 287.152353
+  type: 'test'
+  ...
+# Subtest: known-gap D1.17 (O09): سجل الإقلاع يطبع عددًا مختلفًا عمّا يخدمه، ولا يقيس شيئًا
+ok 2 - known-gap D1.17 (O09): سجل الإقلاع يطبع عددًا مختلفًا عمّا يخدمه، ولا يقيس شيئًا
+  ---
+  duration_ms: 3.774473
+  type: 'test'
+  ...
+# Subtest: known-gap D1.17 (O09): الأرقام تُزرَع في beliefs وذكريات المحرك فتصير معرفة
+ok 3 - known-gap D1.17 (O09): الأرقام تُزرَع في beliefs وذكريات المحرك فتصير معرفة
+  ---
+  duration_ms: 1.167788
+  type: 'test'
+  ...
+# Subtest: known-gap D1.17 (O09): الواجهة تُروّي العدد نفسه بياناتٍ أولية
+ok 4 - known-gap D1.17 (O09): الواجهة تُروّي العدد نفسه بياناتٍ أولية
+  ---
+  duration_ms: 0.54616
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 379.672734

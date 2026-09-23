@@ -32,20 +32,37 @@ jobs:
           cache: 'npm'
           cache-dependency-path: dashboard/package-lock.json
 
-      - name: Install Root & Dashboard Dependencies
-        run: |
-          npm ci || npm install
-          npm --prefix dashboard install
+      # D1.18 (deploy must install what CI verified): the dashboard is installed from its lockfile,
+      # exactly like the `dashboard` job in ci.yml. `npm --prefix dashboard install` resolved floating
+      # ranges (react ^18.2.0, vite ^5.0.0), so the deployed bundle could be built from versions the
+      # tests never saw. No `|| npm install` fallback either: it turned a real failure (a lockfile out
+      # of sync with package.json) into a green step.
+      #
+      # There is no root install step. Measured on a clean `git archive` checkout: the root has 15
+      # workspaces and zero declared dependencies, its lockfile contains zero external packages, and
+      # `npm ci` there only materialises the @nexa symlink farm (15 entries, 8 KB). Nothing in this
+      # workflow consumes it — `node src/security/agentic-hunter.js packages` and the Vite build both
+      # run with no root node_modules — and tests/deploy-ci-parity.test.js fails if a workspace ever
+      # gains an external dependency without an install step being declared here.
+      - name: Install pinned dashboard dependencies
+        run: npm ci
+        working-directory: dashboard
 
       - name: Run Agentic Bug Hunter & Pre-Generate Data
         run: |
           node src/security/agentic-hunter.js packages
 
+      # Paths are dashboard-relative because the step runs inside dashboard/ (one
+      # working-directory for the whole step, so `dist/` means the same thing in all three lines).
+      # The data copy has no `|| true` anymore: silently shipping dist without dashboard/data was the
+      # original bug's quieter cousin. tests/deploy-ci-parity.test.js resolves these paths on disk, so
+      # a repo-root-style `../data` (which does not exist from inside dashboard/) cannot come back.
       - name: Build Dashboard
         run: |
-          npm --prefix dashboard run build
-          mkdir -p dashboard/dist/data
-          cp -r dashboard/data/* dashboard/dist/data/ || true
+          npm run build
+          mkdir -p dist/data
+          cp -r data/* dist/data/
+        working-directory: dashboard
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5

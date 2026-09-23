@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-rebuild",
+  "version": "2.1.0-ops",
   "provenance": {
     "note": "إعادة بناء لفهرس الفجوات المفقود من جلسة arena/01a0cabd-nexa (كان untracked وفُقد). الاشتقاق من الكود في 085a9c7 وفق docs/repository-audit-2026-09-22.ar.md §4-§5.",
     "rebuilt_at": "2026-09-22T22:15:00Z",
@@ -8,13 +8,16 @@
       "docs/repository-audit-2026-09-22.ar.md",
       "docs/Detector_Independence_Assertions.md",
       "docs/Artifact_Reader_Contract.md"
-    ]
+    ],
+    "ops_addendum": "ملحق O التشغيلي 2026-09-22 (فرع arena/01a0cb5b): عائلة مصادر O01..O08 وتذاكر D1.9–D1.16 — اشتقاق من الكود (§O4 في التقرير)، لا من الجلسة المفقودة"
   },
   "rules": {
     "enforced_requires_verification": "enforced:true بلا verification في tests/ خارج known-gaps = مرفوض (يُختبر في tests/guards/gaps-consistency.test.js)",
     "known_gaps_semantics": "نجاح اختبار في tests/known-gaps/ = إعادة إنتاج الفشل، لا دليل سلامة؛ يُزال ملف الفجوة في نفس تغيير إغلاقها",
     "closure_change": "الإغلاق = اختبار انعكاس في tests/ (ليس known-gaps) + enforced:true + verification + closed_at في التغيير نفسه، بعد إثبات الفشل قبل الإصلاح",
-    "full_run_hygiene": "التشغيل الكامل عند الحاجة فقط؛ بعده تُستعاد dashboard/data/hunt-memory.json من HEAD ويُسجل الرقم في self-model/baseline.json"
+    "full_run_hygiene": "منذ إغلاق D1.9: المجموعة (npm test) تعزل مخرجاتها في tmp لكل عملية (tests/bootstrap.mjs) وتترك الشجرة نظيفة بلا استعادة؛ خطوة الاستعادة اليدوية متقاعدة. التشغيل الكامل عند الحاجة فقط ويُسجل الرقم في self-model/baseline.json",
+    "operational_family": "عائلة O01..O08 مصادر تشغيلية (خادم/اختبارات/توثيق/CI) معرّفة في ملحق O بالتقرير؛ تخضع لنفس قواعد الإغلاق D1.x",
+    "gap_reference_matching": "مطابقة مراجع الفجوات boundary-aware (D1.10 لا يطابق D1.1) — إصلاح علة كامنة في الحارس كانت ستمنع أي D1.1x"
   },
   "gaps": [
     {
@@ -60,7 +63,7 @@
           "يرفض artifact بحكم ذاتي (AR-E06) وبنية ناقصة (AR-E01..E05) والاستثناءات (AR-E00) — لا يرمي ولا يمرر عند الشك (DI-04، DI-12، §10.9)",
           "GATE_2 يفشل بدون artifact صالح ولا يمر بمجرد locator نصي (DI-05، §5.1، A03)",
           "certifyFinding يرفض بلا توقيع: finding بلا artifact، أو لم يجتز 7/7، أو أي استثناء — رفض معلَّل NEXA-E-REJECTED (DI-08، DI-12، §6.1/§10.9)",
-          "الجسر يعيد التقييم بنفسه ولا يثق بgateCheck مرفق (DI-08، §6.1)",
+          "الجسر يعيد التقييم بنفسه ولا يثق بـ gateCheck مرفقًا (DI-08، §6.1)",
           "الإيصال حتمي: نفس (finding,target) → نفس findingId وdigest؛ canonicalJSON بمفاتيح مرتبة بلا حقول لحظية محقونة (DI-10، §6.3، A07)",
           "verifyReceipt(receipt, finding) يعيد حساب digest ويرفض الحمولة المستبدلة (DI-11، §6.3، A08)",
           "gateScore/verified في الإيصال من التحقق الفعلي فقط + artifactDigest يربط الإيصال بدليله (DI-09، §6.2)",
@@ -82,22 +85,32 @@
       "sources": [
         "A02"
       ],
-      "current": "البوابة السابعة تكتب pass:true حرفيًا لكل finding (seven-gate-validator.js:56)",
+      "current": "البوابة السابعة تكتب `pass: true` حرفيًا لكل finding (seven-gate-validator.js:64 في الشجرة الحالية)؛ الجسر يعيد التقييم بنفسه فيُصدِر 7/7 على بوابة لم يُجب عنها أحد",
       "required": "البوابة تُحسب من دليل اختبار آمن فعلي (مثل safeTesting مستنبط من artifact/سياق)، لا قرار ثابت (DI-07)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/gates-computed.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.3-red.tap (الحارس 5 من 6 حمراء والمُعيد 2/2 قبل الإصلاح) → d1.3-green.tap (6/6)؛ d1.3-inversion.txt: شلّ البوابة وحدها يُحمرّ tests/gates-computed.test.js وحده ويبقي D1.2 (16) والصيد (10) ومُعيدات D1.4–D1.7 خضراء",
         "criteria": [
-          "GATE_7 تفشل لـ finding بلا دليل اختبار آمن وتمر لدليل صالح",
-          "لا بوابة في evaluateFinding بقيمة pass حرفية",
-          "قاعدة 7/7 تبقى محفوظة"
+          "GATE_7 تفشل لكل finding بلا سجل اختبار آمن — والسبب معلن في failedGates.reason — وتمرّ لسجل صالح مربوط",
+          "لا بوابة في evaluateFinding بقيمة pass حرفية: يُقرأ مصدر المُقيِّم سطرًا سطرًا ويُرفض أي `pass: true|false`",
+          "الشهادة العامة لا تكفي: attestedBy يجب أن يساوي artifact.producedBy المنقّح بالقارئ المستقل",
+          "الإقرار بالضرر (serviceDisrupted / destructiveAction / causedOutage) يُلغي السجل ولو مع true مجاور",
+          "لا حقل لحظي في السجل — الحمولة تبقى حتمية (§6.3): certifyFinding مرتين على نفس المدخلات يعطي نفس findingDigest",
+          "قاعدة 7/7 محفوظة من طرفين: المُقيِّم يرفض، والجسر يعيد الحساب ويسمّي البوابات الساقطة في reasons",
+          "المُنتِج الحقيقي يوقّع شهادته: VulnEngine يرفق السجل عند مواضع إنتاج الـ artifacts الثلاثة؛ ومن لا يملك سجلًا يُرفض (لا شهادة مُهداة)",
+          "لا توسيع: لا تغيير في packages/ ولا spec/، ولا إعادة تصميم لسلسلة البوابات — البوابة صارت محسوبة فقط"
         ]
       },
-      "verification": null,
+      "verification": "tests/gates-computed.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T01:15:00Z",
+      "ticket_status": "closed 2026-09-23 — GATE_7 محسوبة من سجلّ سلوك مربوط بمنتِج الدليل؛ لا بوابة بقيمة pass حرفية في المُقيِّم؛ فشل مُعلَّل من الطرفين (المُقيِّم والجسر)",
+      "follow_ups": [
+        "الكواشف inline في agentic-hunter لا تحمل artifacts ولا سجلات: مرفوضة اليوم عند GATE_2/GATE_7؛ تُزوَّد بدليلها وشهادتها في D1.7",
+        "tools/bughunter.mjs validate يبقى مثالًا مرفوعًا عمداً (fixture بلا artifact ولا سجل) — مخرجاته تقول REJECTED_AT_GATE وتسمّي الآن السبب",
+        "السجل يصرّح به المُنتِج: ربطه بمنتِج الدليل يمنع إعادة الاستخدام، لكنه يبقى شهادة لا سجلًا مُستقلًا — تشديد أدلّى (سجل جولة موقّع أو دائم) يُترك لتذكرة قائمة بذاتها إن طُلب"
+      ]
     },
     {
       "id": "D1.4",
@@ -106,22 +119,32 @@
       "sources": [
         "A09"
       ],
-      "current": "GATE_3 (سطر 36) وGATE_6 (سطر 55-57) يحملان نفس الشرط الدلالي severity ∈ {CRITICAL,HIGH,MEDIUM}",
+      "current": "GATE_3 وGATE_6 كانا يقرآن نفس الشرط (severity ∈ {CRITICAL,HIGH,MEDIUM}) — «الأسئلة السبعة» خمسة فعليًا، وقاعدة 7/7 تُغلَّق بمسند واحد مُعاد استخدامه مرتين (seven-gate-validator.js:44,59 في شجرة التسجيل)",
       "required": "مسندان متمايزان: الأثر الملموس (impact من الدليل) وعبور حدود فعلي (boundary bypass) — كلٌّ بمصدر مستقل (DI-06)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/gates-computed.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.4-red.tap (6 من 6 حمراء عند HEAD 6699586 بإصلاح معكوس) → d1.4-green.tap (6/6 على الكود النهائي)؛ d1.4-inversion.txt: شلّ مسند الأثر وحده يُحمرّ D1.4 فقط (3 من 6)، وشلّ مسند الحدود وحده يُحمرّ D1.4 فقط (4 من 6) — وartifact-reader/gates-computed/agentic-hunter ومُعيدات D1.5–D1.7 خضراء في الحالتين",
         "criteria": [
-          "يوجد severity تجتاز GATE_3 وتفشل GATE_6 والعكس (تمايز فعلي)",
-          "كلتا البوابتين مسندتان إلى حقول مختلفة في الـ finding/artifact",
-          "قاعدة 7/7 محفوظة"
+          "تمايز فعلي مُقاس: HIGH بأثر ملموس بلا سجل حدود ⇒ GATE_3 تنجح وGATE_6 تفشل (6/7)؛ وسجل حدود صالح بأثر ملموس عند INFO ⇒ GATE_6 تنجح دون أي هدية شدة",
+          "مسندان مختلفان حرفيًا: GATE_3 من مضمون finding.impact (متجه ضرر مسمّى، طول كافٍ، لا صياغة احتمال) وGATE_6 من finding.boundary {from,to,kind} — ويُسبر مصدر المُقيِّم للتأكد أن سطري pass مختلفان ولا تذكر أيٌّ منهما severity|CRITICAL|HIGH|MEDIUM",
+          "جدول BOUNDARY_KINDS_BY_CLASS يغلق الاحتيال: صنف غير مُسجَّل مرفوع ولو سجلّه متماسك، kind غير مصرّح به للصنف مرفوض، من===إلى مرفوض، والسجل النصي (جملة) مرفوض",
+          "الأثر لا يُشترى بالطول: عبارات المتردد (may/might/could/potentially/theoretically) والادعاء بلا متجه ضرر مرفوضتان، ونجاحُ الأثر لا يشترط شدة تقريرية",
+          "المُنتِجون يصرّحون بحدودهم: كل كاشف في VulnEngine يرفق boundary بصنفه المصرّح به، وscanSurface يمرّ بوابتَي 3/6 بأثره الخاص لا بشدته — أي أن التبويب الحقيقي ما زال ممكنًا",
+          "قاعدة 7/7 محفوظة من الطرفين: المُقيِّم يرفض مُعلِّلًا، والجسر يعيد الحساب ويسمّي GATE_6 في reasons، والإيصال بلا signature؛ وحتمية §6.3 (findingDigest) لم تتأثر بالحقلين الجديدين",
+          "لا تليين للفجوات المغلقة: قوالب D1.2/D1.3 قُوِّيت بأثر مسمّى وسجل حدود؛ وحالة D1.2 التي كانت تعدّ الساقطات صُححت لتسقط بسبب لا يتوقف على بوابة تذكرة أخرى (artifact: undefined) بدل تغيير الرقم المتوقع",
+          "لا توسيع: لا مساس بـ packages/ ولا spec/، ولم تُزد بوابة ثامنة — البوابتان بقيتا بسؤالين، صار لكلٍّ منهما مسند"
         ]
       },
-      "verification": null,
+      "verification": "tests/gate-boundary-vs-impact.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T08:20:00Z",
+      "ticket_status": "closed 2026-09-23 — مسندان منفصلان: أثر بمقياس مضمونه (impact-evidence.js) وحدود بسجل مقيَّد بالصنف (boundary-evidence.js)؛ الشدة خرجت من قرار البوابتين؛ حارس دائم + جدول أصناف مُغلق + المُنتِجون يصرّحون",
+      "follow_ups": [
+        "جدول الأصناف يحدّ ما يعبر حدًّا: صنف جديد في كاشف جديد يجب أن يُسجَّل فيه صراحةً، وإلا تُرفض GATE_6 — الرفض الافتراضي مقصود ولا يُزال بتوسيع الجدول على المقاس",
+        "أثر SQLi كان يخلط «potential RCE»؛ حُذف القيد المتردد من عبارة الكاشف بدل تليين مُقيِّم الأثر — أي إعادة صياغة لاحقًا تُراجع بمقياس THEORETICAL_PHRASING",
+        "impact يبقى نصًا يصرّح به المُنتِج (وليس سجلًا موقّعًا كـ safeTesting في D1.3): ربط الأثر بالدليل نفسه مُرحَّل لتذكرة مستقلة إن طُلب تشديده"
+      ]
     },
     {
       "id": "D1.5",
@@ -130,21 +153,33 @@
       "sources": [
         "A12"
       ],
-      "current": "autopilot يمرر {inScope:true} حرفيًا (autopilot.js:55)؛ GATE_1 يثق بالسياق لا بمصدر مستقل (seven-gate-validator.js:26)",
+      "current": "كانت GATE_1 تكتب `pass: context.inScope !== false && !finding.outOfScope`: غياب السياق يُقرأ ترخيصًا، والجسر يعوّض الغياب بـ `{ inScope: true }` (nexa-evidence-bridge.js:100)، وautopilot يروي `{ inScope: true }` حرفيًا (autopilot.js:55) بعد فحص نطاق حقيقي عند :39",
       "required": "قرار النطاق يُشتق من بيانات recon/نطاق موثقة تُمرر للـ validator كبيانات لا كحكم مسبق (DI-13)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/scope-independence.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.5-red.tap (8 من 8 حمراء عند 9cda12b قبل الإصلاح) → d1.5-green.tap (8/8)؛ d1.5-inversion.txt: شلّ GATE_1 إلى الثقة boolean يُحمرّ حارس D1.5 وحده (0 من 8)، ورَدُّ الافتراض المُهدى في الجسر يُحمرّ اختبار الجسر وحده (7 من 8) — وgates-computed/gate-boundary/artifact-reader/agentic-hunter ومُعيدات D1.6/D1.7 خضراء في الحالتين",
         "criteria": [
-          "GATE_1 يفشل لـ target خارج أنماط النطاق مهما مرر المتصل",
-          "الـ validator يستقبل بيانات النطاق (أنماط/نتيجة recon) لا boolean جاهزًا"
+          "GATE_1 تفشل لكل target خارج الأنماط مهما مرّر المتصل: `{inScope:true}` أو `'yes'` أو ملاحظة نصية لا تُجيب البوابة، وغياب السياق نفسه رفضٌ مُعلَّل",
+          "المُقيِّم يستقبل بيانات لا حكمًا: سجل `{target, allow[], deny[]}` يُعاد حسابه داخليًا (مطابقة allow ثم استبعاد deny ثم مطابقة أصل الـ finding)، و`sco­pe.allow` مفردًا (نص لا مصفوفة) مرفوض",
+          "أصل الـ finding لا يستعير ترشيح غيره: مضيف في `endpoint|url|host|asset` يختلف عن الهدف ⇒ رفض يسمّي المضيفين؛ والمسار النسبي يبقى مربوطًا بهدف الجولة",
+          "لا نمط يبتلع العالم: `*` و`.*` و`**` و`.com` و`com` والبادئة `*.` الفارغة كلها عيوب في السجل تُرفض صراحةً، لا تُغفَل",
+          "المستدعي يضيّق ولا يوسّع: `inScope:false` و`finding.outOfScope` قاطعان حتى مع سجل مطابق، و`scope.authorized:false` يُلغي الترخيص",
+          "الجسر يرفض افتراضيًا: certifyFinding بلا gateContext ⇒ NEXA-E-REJECTED يسمّي GATE_1، وبلا signature؛ والحظر مُثبَّت بمسح مصدر الجسر (على الأسطر التنفيذية) فلا يعود الافتراض المُرخِّص",
+          "وضع المسار لجرولات المصدر المحلي: الجذر المُصرَّح به يحدّ، و`/` مرفوض كنطاق، و`../` لا يعبر الخروج، والمسار النسبي يُفهم نسبةً للهدف",
+          "autopilot يشتق السجل من إعداد recon نفسه في الموضعين (التصفية والإيصال) — لا `{ inScope: true }` مكتوبة؛ وبلا أنماط مُعرَّفة لا تُصدَر أي إيصال مع بقاء العدّ مفتوحًا كما هو (لا توسيع على ReconAgent)",
+          "قاعدة 7/7 وحتمية §6.3 محفوظتان: السجل لا يُدخل لحظة، ونفس المدخلات يعطي نفس findingDigest؛ وقوالب D1.2/D1.3/D1.4 قُوِّيت بسجل نطاق بدل الادعاء (لا assert خُفِّف)"
         ]
       },
-      "verification": null,
+      "verification": "tests/scope-independence.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T09:05:00Z",
+      "ticket_status": "closed 2026-09-23 — GATE_1 محسوبة من سجل نطاق (scope-evidence.js) بمضيف أو بجذر مسار، وتُطابق من جديد في المُقيِّم؛ الجسر بلا افتراض مُرخِّص؛ autopilot يشتق من recon؛ إباحة العدّ في ReconAgent باقية لكنها لم تعد تشتري إيصالات",
+      "follow_ups": [
+        "ReconAgent.isScopeAllowed تبقى مريحة عند غياب الأنماط (عدّ مفتوح) — قرار مقصود: الترخيص يُحجب عند البوابة لا عند الاستطلاع؛ من يريد منع الجولة كلها يضبط inScopePatterns",
+        "سجل النطاق يصرّح به المشغِّل (allow/deny/target)؛ مصدر خارجي مُوقَّع لقائمة النطاق (scope file مُصدَّق) خارج نطاق التذكرة ولا يُضاف على المقاس",
+        "الأثر ما زال ادعاءً نصيًا (قصور D1.4 المسجَّل) — ربط الأثر بالدليل والسجل معًا مرهون بتذكرة مستقلة"
+      ]
     },
     {
       "id": "D1.6",
@@ -153,21 +188,34 @@
       "sources": [
         "A11"
       ],
-      "current": "_load يبتلع JSON فاسد بصمت ويرجع ذاكرة فارغة (hunt-memory.js:20-23)؛ save يبتلع أخطاء الكتابة بمجرد console.error (37-40)",
+      "current": "_load كان يبتلع أي استثناء (`catch { // Fallback }`) ويرجع ذاكرة فارغة، وsave يبتلع فشل الكتابة بسطر console.error — فالأثر ليس نسيانًا بل دهسًا: ذاكرة فارغة تُكتب فوق ملف فاسد وتمحو الجلسات السابقة",
       "required": "فشل القراءة/الكتابة يظهر صراحة: خطأ مفهوم أو إشارة حالة تتحققها الاختبارات (DI-14)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/hunt-memory-fail-closed.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.6-red.tap (6 من 6 حمراء عند 86207c3 قبل الإصلاح) → d1.6-green.tap (6/6)؛ d1.6-inversion.txt بثلاث نسخ: إلغاء امتناع الدهس (2/6 حمراء)، وابتلاع _load للفساد (1/6)، وتزفير فشل الكتابة كنجاح (5/6) — وفي الثلاث بقيت حراس D1.2–D1.5 وعزل D1.9 ومُعيد D1.7 خضراء",
         "criteria": [
-          "JSON فاسد → إشارة فشل صريحة قابلة للاختبار لا ذاكرة فارغة صامتة",
-          "فشل الحفظ → إشارة صريحة يستطيع المنسق التصرف بناءً عليها"
+          "مخزن فاسد ⇒ `loadStatus = {ok:false, code:'NEXA-HM-CORRUPT', phase:'load', path, reason}` — لا استثناء في الباني (الجولة تستمر)، ولا ذاكرة صامتة",
+          "الكتابة فوق مخزن غير مقروء ممتنعة: `save()` ⇒ `{ok:false, code:'NEXA-HM-REFUSED-OVERWRITE'}` وBytes الأصل على القرص لا تتغيّر؛ الاستعادة بمفتاح صريح `save({force:true})` وحده",
+          "JSON صحيح الصرف لكنه ليس بنية ذاكرة (مصفوفة، `{}`، sessions ليست مصفوفة، null، رقم) ⇒ `NEXA-HM-MALFORMED` — لا «فارغ» مُعاد تفسيره",
+          "فشل نظام الكتابة ⇒ `NEXA-HM-WRITE-FAILED` مع errno/syscall، كتابة ذرّية (tmp + rename)، ولا ملف مؤقت متروك؛ `console.error` لم يبقَ قناةَ حالة",
+          "القراءة من مسار هو دليل ⇒ `NEXA-HM-READ-FAILED` ثم امتناع حفظ — لا دَهس دليل بمسار غلط",
+          "أول تشغيل (ملف غير موجود) ليس فشلًا: `loadStatus.fresh === true`، ودورة save→reopen تُرجع الجلسات؛ والفساد لا يُوسم `fresh` أبدًا",
+          "كل نقطة كتابة تُرجع حالة: `recordSession`/`rememberTarget` ⇒ `{persisted, status}`، و`garbageCollect` ⇒ حالة أو `null` صريح (لا undefined غامض)",
+          "المنسِّق يتصرّف: autopilot يخزّن النتيجة في `result.memory = {persisted, code, path}` ويحذّر عند الفشل، ولا يزيّف نجاحًا؛ وذاكرته ليست بوابة — الإيصالات لا تُمنح ولا تُسحب بسببها",
+          "عقد مسمَّر من المصدر: لا catch فارغ، لا console.error، والرموز الأربعة موجودة، ومصنع `_blankMemory` واحد للذاكرة الفارغة",
+          "لا توسيع: packages/ وspec/ سليمة، ولا تغيير لسلوك الحجب في البوابات، ولا انتقال لأي حالة من مرفوضة إلى مقبولة"
         ]
       },
-      "verification": null,
+      "verification": "tests/hunt-memory-fail-closed.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T09:40:00Z",
+      "ticket_status": "closed 2026-09-23 — حالة قراءة وحالة كتابة صريحتان بأربعة رموز، وامتناع عن الكتابة فوق مخزن غير مقروء (لا دَهس للجلسات)، واستعادة بمفتاح force، وكتابة ذرّية، والمنسِّق يُبلَّغ result.memory",
+      "follow_ups": [
+        "معرفات الجلسات ما زالت `session_${Date.now()}` (تصادمية وغير مشتقة من المحتوى) — كانت مذكورة في مُعيد التذكرة ولا في معاييريها المسجلة؛ تُغلق في تذكرة هوية/حتمية مستقلة مع §6.3، لا تُضمَّن هنا توسيعًا",
+        "الحالة لا تُشفَّر: `loadStatus.recovered` علامة على أن الملف كُتب بعد force؛ سجلّ استعادة مُوقَّع (من فعلها ومتى) خارج النطاق المسجَّل",
+        "لا قفل تعدد العمليات (multiple processes writing the same store): الكتابة صارت ذرّية لكن آخر rename يفوز — إن صار التخزين متعدد الكُتّاب يُفتح كطلب مستقل"
+      ]
     },
     {
       "id": "D1.7",
@@ -177,22 +225,33 @@
         "A05",
         "A06"
       ],
-      "current": "ثلاثة كواشف داخل _inspectFile تدفع إلى this.findings (agentic-hunter.js:81-116)؛ شرط UNHANDLED_ASYNC_ERROR على محتوى الملف كاملًا فيفقد كشفًا حقيقيًا بسبب try في دالة أخرى",
+      "current": "ثلاثة كواشف في جسم المنسِّق (agentic-hunter.js:81-116) تدفع في this.findings، وشرطا UNHANDLED_ASYNC_ERROR وPOTENTIAL_RESOURCE_LEAK يُقيَّمان على محتوى الملف كاملًا (!content.includes('try {') و!content.includes('.close')) — فالـ try في دالة أخرى يسكت كشفًا حقيقيًا، وكل سطر async يعيد نفس الحكم، ولا artifact ولا شهادة عند أي منها",
       "required": "كل كاشف وحدة مستقلة (ملف خاص) تُختبر منفردة؛ الشروط تُقيَّم في نطاق الهدف (DI-01، DI-15، DI-16)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/detector-independence.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.7-red.tap (7 من 7 حمراء عند 7ad20f1 — كل اختبار يفشل على ادّعائه لا على خطأ استيراد) → d1.7-green.tap (7/7)؛ d1.7-inversion.txt بثلاث نسخ: عودة الشرط على الملف كله (5 من 7 حمراء)، وحذف الشهادة من الباني المشترك (4 من 7)، وتفريغ قائمة التجميع (5 من 7) — وفي الثلاث بقيت حراس D1.2–D1.6 وD1.9 خضراء (scope 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6)",
         "criteria": [
-          "لا كواشف في جسم AgenticBugHunter — استيراد وحدات فقط",
-          "كشف async غير المعالج ينجح بوجود try في دالة أخرى (نطاق الدالة)",
-          "الكواشف الجديدة مغطاة باختبارات منفردة"
+          "لا كاشف في جسم AgenticBugHunter: مصدر المنسِّق خالٍ من الأصناف الثلاثة ومن createHash/fs.openSync/createReadStream، ولا `this.findings.push({` (بناء يدوي) — التجميع عبر SOURCE_DETECTORS فقط",
+          "كل كاشف وحدة مستقلة (detector-unhandled-async / -weak-crypto / -resource-leak) تُصدِّر دالة تُدعى بمدخلات معلنة {relativePath, content}، بلا fs.* calls ولا process.cwd/env ولا حقل لحظي — فتُختبر منفردة وتُستدعى مررتين بنفس الناتج",
+          "DI-16: async غير معالَج يُكتشف رغم try في دالة أخرى، وبحكم واحد لكل دالة على أول await خاص بها، وجسم النطاق مُقنَّع بنطاقاتها الداخلية (الدالة الداخلية مسؤولة عن أخطائها، والخارجية لا تُرحَم بها) — ثلاث دوال = ثلاثة أحكام لا تكرار لكل سطر",
+          "الإغلاق يُحسب على المورد نفسه في نطاقه: closeSync(fd)/fd.close() لنفس المتغير؛ موردان في سطر واحد = حُلمان؛ ولا يُرحَم بإغلاق جارٍ لموارد غيره",
+          "التشفير الضعيف سطر-نطاق: التعليق لا يُحتسب، و// ignore-security محترم على سطر هو لا على مستوى الملف — لم تُزوَّد الأنماط (لا توسيع كشف ضمن هذه التذكرة)",
+          "كل finding يحمل artifact (content-match، locator=file:<rel>#L<n>) يقبله ArtifactReader بلا رفض، وsafeTesting مربوطًا بنفس المنتج (عقد D1.3) — فتُستوفى GATE_2/GATE_7/GATE_1 فعلا، وisValid تبقى false لأن GATE_6 ترفض صنفا ليس عابرا لحد",
+          "الصدق مُثبَّت: الكاشف لا يبتكر finding.boundary، وحارس D1.4 يتحقق بنيويًا أن جدول BOUNDARY_KINDS_BY_CLASS لم يُوَسَّع على مقاس الأصناف الثلاثة — لا 7/7 مُهداة مقابل فصل الوحدات",
+          "الأصل نسبةً إلى جذر الجولة (path.relative(this.targetDir, …)) لا إلى cwd العملية — وإلا صار كل مسار يبدأ بـ../ خارج الجذر عند GATE_1",
+          "جولة كاملة حتمية على شجرة مؤقتة: findings من الوحدات فقط، والدالة المعالَجة لا تُبلَّغ، وnpm run metrics/verify أخضر"
         ]
       },
-      "verification": null,
+      "verification": "tests/detector-independence.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T10:25:00Z",
+      "ticket_status": "closed 2026-09-23 — الكواشف وحدات نقية تُجمَّع في SOURCE_DETECTORS، والحكم في نطاق الدالة وعلى المورد نفسه؛ كل finding بدليل يقبله القارئ المستقل وشهادة مربوطة؛ الرفض المتبقي (GATE_6) لسبب صحيح لا لعيب في الدليل",
+      "follow_ups": [
+        "SecretsHunter يُصدِّر findings بلا artifact ولا شهادة (نفس داء A05 في وحدة جيدة البنية) — يُغطى في تذكرة دليل-للكاشف المستقلة، ولا يُضمَّن هنا توسيعًا",
+        "مطابقة الأقواس الحرفية تفوقها AST حقيقي: سلاسل نصية داخل أقواس غير متوازنة أو تعليق متعدد الأسطر قد يزيح النطاق؛ تُترك لتذكرة parser إن طُلبت الدقة اللغوية",
+        "الأصناف الثلاثة تبقى مرفوضة عند GATE_6 عمدا (جودة كود لا تعبر حدًا)؛ إن أراد المشغِّل تقارير جودة فلا تُشترى بـ7/7 بل بمسار إصدار منفصل"
+      ]
     },
     {
       "id": "D1.8",
@@ -201,25 +260,715 @@
       "sources": [
         "A13"
       ],
-      "current": "التقرير يكتب gateValidation من triage وdetails من certified فقط؛ الجوهر الإيصالي (ختم 7/7 الدائم) يعالج في D1.2",
+      "current": "details تُصفّى إلى الإيصالات الصادرة (verified + signature)، والمرفوض في refused برمزعه وأسبابه؛ counts={asserted,validated,certified,refused} وcertified===details.length؛ كل detail مربوط بـ findingId/artifactDigest الخاصين بإيصاله",
       "required": "أرقام التقرير (totalIssues/validated/certified) تطابق الإيصالات الصادرة فعلًا وتُوثق علاقتها (DI-17)",
-      "enforced": false,
-      "reproducer": "none",
-      "blocked_by": [
-        "D1.2"
-      ],
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "blocked_by": [],
       "acceptance": {
-        "inversion_test": "tests/bug-report-consistency.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.8-reproducer.tap (4 من 4 خضراء-كإثبات عند f7459bd، تُثبت الفجوة لا خطأ الاختبار) → d1.8-green.tap (7 من 7)؛ d1.8-inversion.txt بأربع نسخ: عودة details بلا فلتر ⇒ 2 من 7 حمراء؛ ادّعاء حفظ رغم فشل الكتابة ⇒ 1 من 7؛ استعادة تذييل «7/7 PASSED» الثابت ⇒ 2 من 7؛ تقارير autopilot لكل مُصرَّح به ⇒ 1 من 7. وفي الأربع بقيت حراس D1.2–D1.7 خضراء (detector-independence 7/7، scope 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6، test-output-isolation 3/3)",
         "criteria": [
-          "كل detail يحمل إيصالًا صادرًا فعلًا (certified:true) أو لا يظهر",
-          "عدد certified في التقرير = عدد الإيصالات في details"
+          "لا detail بلا إيصال صادر: detail لكل finding تحقق فيه receipt.verified===true && typeof signature==='string' && certified!==false؛ المرفوض لا يظهر في details إطلاقًا بل في refused مع code وreasons غير فارغين",
+          "العدّادات معلنة العلاقة: counts={asserted,validated,certified,refused} وcertified===details.length مثبَّت آليًا، وrefused===counts.validated-counts.certified",
+          "العلاقة مُوثَّقة بالمعرّف لا بالاسم: كل detail يحمل findingId مطابقًا /^NEXA-EVID-[0-9a-f]{16}$/ وartifactDigest مساويًا لقيمة الإيصال — فالتقرير قابل للتحقق ضد الإيصالات التي يُضمِّنها",
+          "أساس الأرقام معلن: totalIssues يبقى بمعنى المُبلَّغ (توافق) مع severityBasis:'asserted'، وcritical/high/medium/low على المُبلَّغ، وcertifiedSeverity على المُصدَّق وحده مع certifiedSeverityBasis:'certified' — فلا تُقرأ أرقام قديمة أحكامًا",
+          "لا ادعاء حفظ: السطر المطبوع يذكر path الحقيقي (reportPath أو المسار الافتراضي) وحالة الكتابة؛ الفشل يُرجع persistence={ok:false,code:'NEXA-REPORT-WRITE-FAILED',reason} والكتابة ذرّية (tmp+rename) مع ok:true وbytes — لا «Saved to dashboard/data/bug-report.json» حرفيًا",
+          "تذييل report-writer مشتق من finding.receipt: معرّف الإيصال وgateScore وبصمة التوقيع عند الإصدار، وNOT CERTIFIED مع الرمز والأسباب خلاف ذلك — حُذف حرفيّا «(7-Question Gate: 7/7 PASSED)» و«cryptographically pre-validated»",
+          "جولة autopilot تخضع لنفس العقد: reports وvalidatedFindings للإيصالات الصادرة فقط، وcounts={discovered,validated,certified,refused,reports} وrefusedFindings مرئية في النتيجة"
         ]
       },
-      "verification": null,
+      "verification": "tests/bug-report-consistency.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open — محجوبة بـ D1.2"
+      "closed_at": "2026-09-23T21:40:00Z",
+      "ticket_status": "enforced — أرقام التقرير مقيَّدة بالإيصالات الصادرة، والحفظ والتذييل صادقان (667/667، اكتملت مجموعة P0-D: D1.3–D1.8)",
+      "follow_ups": [
+        "الإيصال الصادر لا يحمل certified===true بل verified===true؛ العقد مُثبَّت على ذلك في الحارس، وتوحيد الاسم (certified/verified) قرار كسر توافق يُترك لتذكرة عقد",
+        "certifyFinding يولّد زوج مفاتيح عابرًا عند غياب مفتاح — فكل مُصرَّح به يُصدَّق عمليًا، والرفض لا يُبلَّغ عبر مفتاح مفقود. الحارس يستعمل حقن جسر مرفوض ليُثبت المسار؛ الربط الحقيقي بسياسة التوقيع خارج النطاق",
+        "SecretsHunter يُصدِّر findings بلا artifact فتُرفض عند GATE_2 — مرئي في counts.asserted > counts.validated ولا يُصلح هنا (تذكرة كاشف-الدليل المستقلة)",
+        "لا مخطط JSON لـ bug-report.json: لا شيء يفحص الملف المكتوب ضد الحقول الجديدة وقت الإنتاج؛ يُقترح مخطط عند حاجة حقيقية"
+      ]
+    },
+    {
+      "id": "D1.9",
+      "track": "P0-A",
+      "severity": "high",
+      "area": "tests",
+      "title": "عزل مخرجات الاختبار عن الملفات المُتتبَّعة (test bootstrap إلزامي)",
+      "sources": [
+        "O01"
+      ],
+      "current": "npm test يعدّل dashboard/data/hunt-memory.json (مُتتبَّع) كل تشغيل؛ HuntMemory الافتراضي يحل إلى ملف داخل الشجرة (hunt-memory.js:9) وbug-report.json متصلب (agentic-hunter.js:143-149) وسكربت الاختبار بلا عزل — يلزم استعادة يدوية من HEAD بعد كل تشغيل كامل",
+      "required": "bootstrap إلزامي للمجموعة: NEXA_HUNT_MEMORY وNEXA_BUG_REPORT إلى مسارات مؤقتة فريدة لكل عملية قبل أي اختبار؛ الافتراضات الإنتاجية (dashboard/data) تبقى كما هي خارج المجموعة؛ التشغيل الكامل يترك الشجرة نظيفة بلا استعادة يدوية",
+      "enforced": true,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/test-output-isolation.test.js",
+        "criteria": [
+          "تحت npm test: مسارا HuntMemory والـ hunter يحلان داخل tmp حصرًا",
+          "خارج المجموعة (env غائب): الافتراض dashboard/data كما هو (سلوك النشر/الإنتاج unchanged)",
+          "التشغيل الكامل ينتهي بـ git status نظيف لملفات dashboard/data بلا تدخل",
+          "لا كتابة متزامنة متضاربة بين ملفات الاختبار المتوازية (مسار فريد لكل عملية)"
+        ]
+      },
+      "verification": "tests/test-output-isolation.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-22T23:40:00Z",
+      "ticket_status": "closed 2026-09-22 — bootstrap إلزامي + env overrides + انعكاس حي"
+    },
+    {
+      "id": "D1.10",
+      "track": "P0-B",
+      "severity": "critical",
+      "area": "server",
+      "title": "مصادقة محيط للخادم HTTP (جلسة SPA + مفتاح مشغّل) + حد معدل + fail-fast إنتاجي + عقد قرار الموافقة",
+      "sources": [
+        "O02"
+      ],
+      "current": "سلسلة request→approve→terminal/execute مفتوحة بلا أي سر (approve تقبل approverKid الافتراضي بفحص سلسلة بلا توقيع)؛ rollback/create/missions بلا مصرّح؛ لا API key ولا rate limit على أي من ~110 مسارات",
+      "required": "أربع طبقات منفصلة قابلة للعكس على حدود الخادم فقط: (1)tools/celia-perimeter-auth.mjs — مفتاح NEXA_API_KEY عبر Authorization/X-Nexa-Api-Key لعملاء الخادم فقط (بلا query string، مقارنة sha256+timingSafeEqual)، و SPA عبر جلسة/كوكي HttpOnly SameSite=Strict Path=/ (+Secure في الإنتاج) مع CSRF double-submit على كل حالة مُغيِّرة؛ (2)tools/celia-rate-limit.mjs — نافذة ثابتة بلا اعتماديات، مفتاحها الهوية (قابل للضبط: identity|ip|forwarded) و429+Retry-After بعد المصادقة وقبل التنفيذ؛ (3)tools/celia-startup-guard.mjs — production بلا مفتاح (أو فارغ) = exit 1 قبل listen؛ (4)tools/celia-approval-http.mjs — approve/deny يستلزمان approverKid مصرّحًا وscope مصرّحًا وتوقيعًا على nexa:approval-decision:v1+canonicalBytes، وconsume يفك الترميز فقط، و/sign يوقّع ولا يمنح. المحيط ≠ تفويض: لا تغيير في kernel (protocol/capability/policy/crypto/evidence/vectors) ولا في حارس D1.11 (mock://memory)",
+      "enforced": true,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/server-approval-contract.test.js — أحمر قبل الإصلاح ثم أخضر (self-model/evidence/d1.10-red.tap: 5/6 fail، d1.10-green.tap: 6/6 pass). نجاح المجموعة وحده لا يُغلق السلسلة؛ الدليل هو انعكاس request → approve {} → terminal/execute إلى قرار DENY",
+        "criteria": [
+          "مع NEXA_API_KEY: request→approve{} بلا مفتاح = 401 (لا تنفيذ)؛ بالمفتاح الصحيح = نفس السلوك الوظيفي السابق",
+          "مفتاح المشغّل لا يظهر في أي حزمة/إعداد أمامي/استجابة، ولا يُقبل في query string؛ SPA لا يحمل سرًا: جلسة/كوكي HttpOnly فقط",
+          "الجلسة: HttpOnly + SameSite=Strict + Path=/ + Secure في الإنتاج/خلف https؛ الدخول مرة واحدة عبر POST /api/v1/session؛ لا HTML يُركَّب ولا polling/SSE قبل اكتمال الجلسة",
+          "كل POST/PUT/PATCH/DELETE بجلسة بلا x-nexa-csrf = مرفوض (HttpOnly ليس دفاع CSRF)؛ عميل الترويسة معفى من فحص CSRF لا من الجدار",
+          "الترتيب تعاقدي: Authentication → Rate Limit → Authorization → Policy → Executor؛ 429+Retry-After مع مفتاح دلو قابل للضبط، و/healthz والمسارات الساكنة خارج الحد",
+          "production بلا NEXA_API_KEY (فارغ/مسافات = مفقود) = exit 1 قبل listen؛ محلي/dev/test بلا تغيير — اختبارات HTTP الحالية خضراء بلا تعديل",
+          "approve {}: approverKid وscope وتوقيع مصرّحة — غياب القرار لا يُقرأ قرارًا؛ unsigned/wrong approver/scope-widening = DENY (400 من العقد/الدفتر لا من الجدار)",
+          "encoded approve ID صالح = PASS (فك ترميز، والخام والرمَّز يحلان إلى نفس المعرّف)؛ ترميز مشوّه = DENY",
+          "موافقة موقَّعة صالحة = مسار التنفيذ القائم يعمل كما هو (approve → consume/execute → حالة الآلة تحفظ single-use)",
+          "الموافقة الموقَّعة لا تعني هوية، والهوية لا تعني تفويضًا: signed + بلا مصرّح = 401، {} + بمصرّح = 400 DENY — الطبقتان مستقلتان ومثبتتان معًا",
+          "لا تغيير في kernel: protocol/capability/policy/crypto/evidence/vectors خارج النطاق؛ عقد الموافقة أُصلح في السيرفر لا في packages/policy",
+          "D1.11 تبقى مفتوحة عمدًا: الحارس لا يقرأ SUPABASE_*، ومُعيد D1.11 يُحدَّث (مفتاح تجريبي) ليظل إثبات «إنتاج+mock يقلع» قائمًا"
+        ],
+        "pre_condition": "يجب أن يفشل اختبار الانعكاس قبل الإصلاح (احمرار مُثبَّت في self-model/evidence/d1.10-red.tap)، لا أن يُكتب بعد الحل",
+        "closure": "إغلاق D1.10 في نفس التغيير الذي يحذف tests/known-gaps/d1.10-perimeter-open.test.js ويضع verification حيًا خارج known-gaps"
+      },
+      "verification": "tests/server-perimeter.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-23T00:55:00Z",
+      "ticket_status": "closed 2026-09-23 — أربع طبقات (perimeter/session/CSRF، rate limit، fail-fast، عقد الموافقة) بأربعة commits؛ انظر ملحق O في التقرير",
+      "layers": [
+        {
+          "layer": "1 perimeter+session+CSRF",
+          "impl": "tools/celia-perimeter-auth.mjs + hook في tools/celia-dashboard-server.mjs",
+          "test": "tests/server-perimeter.test.js"
+        },
+        {
+          "layer": "2 rate limit",
+          "impl": "tools/celia-rate-limit.mjs",
+          "test": "tests/server-rate-limit.test.js"
+        },
+        {
+          "layer": "3 production fail-fast",
+          "impl": "tools/celia-startup-guard.mjs (+ render.yaml)",
+          "test": "tests/server-production-failfast.test.js"
+        },
+        {
+          "layer": "4 approval decision contract",
+          "impl": "tools/celia-approval-http.mjs + tools/celia-operator.mjs",
+          "test": "tests/server-approval-contract.test.js"
+        }
+      ],
+      "follow_ups": [
+        "حد حجم جسم لطلبات POST في المسارات القديمة (نفس نمط req.on('data') بلا سقف) — خارج D1.10",
+        "دوران NEXA_OPERATOR_SEED: تحذير عند الإقلاع فقط الآن؛ الفصل الكامل لبصمة المشغّل عن /api/v1/authorizations/stats مؤجل"
+      ],
+      "closure_note": "المعيار 12 («D1.11 تبقى مفتوحة عمدًا») وصف لحظة إغلاق D1.10؛ أُغلقت D1.11 لاحقًا بنفس المسار (فصل الحارسين بقي كما صُمم: حارس الاستمرارية لا يمس المحيط ولا العكس)"
+    },
+    {
+      "id": "D1.11",
+      "track": "P0-C",
+      "severity": "high",
+      "area": "server",
+      "title": "حارس بدء التشغيل: الإنتاج يرفض ادّعاء استمرارية غير متحققة (mock://memory)",
+      "sources": [
+        "O03"
+      ],
+      "current": "الخادم يسقط إلى mock://memory عند غياب SUPABASE_* حتى مع NODE_ENV=production، ويقلع ويخدم بنجاح — 'يعمل محليًا ويفشل إنتاجيًا' بصمت",
+      "required": "fail-fast عند الإقلاع — لا: القرار من حكم البورت نفسه لا من شكل الإعداد. NODE_ENV/NEXA_ENV=production + ذاكرة استمرارية mock (إعداد غائب، مضيف mock://، أو URL يبدو حقيقيًا مع سائق غير مثبَّت) = خروج برمز 1 قبل أي listen مع NEXA_E_PERSISTENCE_MOCK ورسالة تحوي السبب والعلاجين؛ المخرج الوحيد إقرار صريح بالحرف NEXA_PRODUCTION_PERSISTENCE=ack-mock-ephemeral يبقى موسومًا DEMO في /api/v1/system/status؛ development/test بلا تغيير؛ خلفية حقيقية فعلًا (_isMock===false) تقلع بلا أي إقرار",
+      "enforced": true,
+      "reproducer": "test",
+      "acceptance": {
+        "inversion_test": "tests/server-startup-guard.test.js — أحمر قبل الإصلاح ثم أخضر بعده (self-model/evidence/d1.11-red.tap: 7 فشل/1 نجاح، d1.11-green.tap: 8/8). الدليل الحاسم ليس «exit != 0» بل «فشل الإقلاع ∧ لا منفذ TCP مقبول أثناء الحياة ∧ المنفذ قابل للربط بعد الخروج»",
+        "criteria": [
+          "production + mock://memory: الكود 1، ولا نداء listen() قط (غياب رسالة الجاهزية من ناقل الإقلاع)، والرمز NEXA_E_PERSISTENCE_MOCK في أول سطر",
+          "المنفذ المحجوز مسبقًا لا يقبل أي اتصال أثناء عمر العملية، ويبقى قابلًا للربط بعد خروجها — لا «خدم ثم مات»",
+          "رسالة حتمية ومحددة: سبب مميز (unconfigured | mock-url | no-driver) وعلاجان، بلا مفتاح ولا مضيف مشروع في النص",
+          "URL يبدو حقيقيًا مع سائق غائب = مرفوض أيضًا؛ هذا بالضبط الادعاء الكاذب الذي لا يمسكه أي فحص إعداد",
+          "development/test/CI مع mock: إقلاع وخدمة كما كان حرفيًا (url/key محفوظان بسلوكهما السابق، بلا انحراف بين الحارس والبورت)",
+          "production + خلفية استمرارية حقيقية (_isMock === false): العقد محفوظ — يقلع بلا أي علامة أو إقرار",
+          "الإقرار الصريح بحرفه الوحيد المسموح يُبقي النشر التجريبي قابلًا للإقلاع، ويطبع تحذيرًا، ويُسجَّل memory: DEMO في /api/v1/system/status؛ أي قيمة أخرى (1/yes/فارغ/حرف كبير/مسافة ذيل) ليست إقرارًا",
+          "الحارس مستقل عن حارس المحيط: كل منهما يرفض بموضوعه وحده، ولا تظهر الرسالتان في إقلاع واحد",
+          "لا توسيع: لا Supabase refactor، لا تنفيذ تخزين دائم، لا Render migration (عقد render.yaml موثق فقط)، لا تفكيك للسيرفر",
+          "نطاق القرار محصور بذاكرة الاستمرارية المعلنة؛ الحالة المؤقتة الأخرى (governed engine، missions، commit state dir) موثقة كمتابعة لا كمغلقة بالخطأ"
+        ],
+        "pre_condition": "يجب أن يُثبت المُعيد قبل الإصلاح أن الخادم يسمع فعلًا (منفذ مفتوح + 200)، لا مجرد أن العملية لم ترفض",
+        "closure": "إغلاق في نفس التغيير الذي يحذف tests/known-gaps/d1.11-mock-in-production.test.js ويضع verification حيًا خارج known-gaps"
+      },
+      "verification": "tests/server-startup-guard.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-23T01:40:00Z",
+      "ticket_status": "closed 2026-09-23 — حارس استمرارية في tools/celia-startup-guard.mjs، مستقل عن حارس المحيط؛ لا Supabase refactor ولا تنفيذ تخزين دائم (خارج النطاق عمدًا)",
+      "follow_ups": [
+        "CELIA_COMMIT_STATE_DIR في الإنتاج قد يشير إلى مسار مؤقت: نفس فئة الادعاء، خارج D1.11 (لا يُقاس بحكم البورت)",
+        "NexaGovernedMemoryEngine والمهمات/الأحداث في الذاكرة فقط: إما خلفية دائمة أو لافتة DEMO مطردة في system/status"
+      ]
+    },
+    {
+      "id": "D1.12",
+      "track": "P1-A",
+      "severity": "medium",
+      "area": "docs",
+      "title": "مزامنة ادعاءات أعداد الاختبارات (README/الخطط/المحقق)",
+      "sources": [
+        "O04"
+      ],
+      "current": "ثلاثة أرقام متضاربة بلا رابط فحص: README يقول 501/501 (سطران) و545 (كتلة NEXA_METRICS)، والخطة تقول 314/314، والفعلي 629 يوم القراءة. والأخطر أن pub-verifier.sh كان يهنّئ المجموعة بنصّه الثابت «tests_green: 314/314» بعد بحث عن \"314\" في آخر 30 سطرًا: مقيس مُختلَق لا قراءة — مجموعة من اختبارين فقط تنال الختم (مُثبَت بالقياس)، ولا تُقرأ # fail ولا أرضية، فمجموعة منكمشة تُزَكّى. وحارس المزامنة نفسه كان يثبّت 545 حرفيًا، فتُكسر كل إعادة قياس بدل أن تُصحَّح الوثيقة",
+      "required": "لا ادعاء عدد بلا قياس: المحقق يقرأ # tests/# pass/# fail من تشغيل واحد ويرفض أي فشل أو انكماش تحت الأرضية المسجلة، والوثائق تُحيل إلى سجل قياس واحد (self-model/baseline.json → live_measurement) بدل أرقام حرفية، وكل خطة نشر موسومة HISTORICAL RECORD بتاريخها؛ وnpm run metrics يبقى السنَد الذي يربط السجل بالواقع",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.12-red.tap (الحارس الجديد tests/count-claims-sync.test.js ضد شجرة ما قبل الإصلاح: 5 من 6 حمراء؛ ومُعيد known-gaps أخضر 5/5 = الفشل مُعاد إنتاجه) + self-model/evidence/d1.12-metrics-red.txt (npm run metrics: Measured 632 ≠ Documented 545، exit 1) → d1.12-green.tap (6/6) + d1.12-metrics-green.txt (docs match measured reality، exit 0) + d1.12-gate-bypass.txt (قياس البوابة نفسها بمُخرَج مُصطنع: القديم يختم «314/314» لمجموعة من اختبارين، والجديد يرفض الانكماش تحت 633 ويرفض # fail≠0)",
+        "criteria": [
+          "لا صيغة «N PASS / M FAIL of K» ولا وسم «Latest verification» بعدد في README.md ولا SECURITY.md — القياس الوحيد المسموح هو كتلة NEXA_METRICS",
+          "كتلتا README/SECURITY متطابقتان وتساويان baseline.live_measurement (tests وsecurity_tests)، ولا رقم حر في النثر",
+          "pub-verifier.sh [2/5]: تشغيل واحد للمجموعة، قراءة # tests/# pass/# fail، رفض عند fail>0 أو pass≠tests أو نزول العدد تحت أرضية السجل؛ لا grep -q \"pass\" ولا حرفيات عدد",
+          "pub-verifier.sh [4/5]: لا فحص حجم بالبايتات (كان يُرضى بحشو _padding)؛ المطلوب أن تحمل الخطة record_status يذكر تاريخها",
+          "كل publish-v0.*.plan.json فيها checks.tests تحمل وسم HISTORICAL RECORD صريحًا ينفي الراهنية ويحوّل إلى مصدر القياس الحي",
+          "حارس المزامنة لم يعد يثبّت 545: يقرأ رقم التقرير المجمّد من التقرير نفسه ويقارن بالسجل، ويفصل live_measurement عن measured",
+          "توسعة النطاق المعلن: check-metrics يقيس الآن Ω error codes وGated namespaces وAttack categories أيضًا، فلا يبقى عدد في الوثائق بلا سنَد (72 كان حرفيًا لا يفحصه شيء مقابل 86 مقاسًا)",
+          "إلغاء الحارس ممكن: أي رقم حرفي يُعاد إلى الوثائق، أو أي grep -q \"pass\" يعود إلى المحقق، أو تُزال إحالة baseline → اختبار واحد على الأقل يكسر",
+          "لا مس للجوهر: packages/ وspec/ لم تُمَس؛ الوثائق والأدوات فقط",
+          "بوابة gates_closed لا تُحكم بنمط نص فيه عدد حرفي («6 gates CLOSED»): رمز خروج tools/check-posture.mjs هو الحكم، وعدد البوابات يُقرأ من NEXA_METRIC closed_gates الذي يطبعه الفاحص نفسه"
+        ],
+        "closure": "إغلاق في نفس التغيير الذي حذف tests/known-gaps/d1.12-stale-counts.test.js ووضع الاختبار الحي tests/count-claims-sync.test.js"
+      },
+      "verification": "tests/count-claims-sync.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-23T02:40:00Z",
+      "ticket_status": "closed 2026-09-23 — الأعداد تُقراء من القياس لا من نص حرفي؛ لا تغيير في المجموعة سوى حذف المُعيد وإضافة الحارس (629 → 633)",
+      "follow_ups": [
+        "_padding (3281 و3724 حرف X) ما زال داخل الخطتين الموقّعتين: لم يعد فحص الحجم يطلبه، وتنظيفه يغيّر بايتات خطة موقّعة فَيُترك لقرار صريح",
+        "مقارنة الوثائق بالقياس تُنفَّذ في CI (.github/workflows/metrics.yml) لا داخل npm run verify؛ نقلها إلى verify يعني تشغيل المجموعة ثلاث مرات لكل بوابة — متروك عمدًا",
+        "أرقام مؤرخة داخل نثر تاريخي (مثل «207 tests at that release») مسموح بها صراحةً لأنها موسومة بتاريخها؛ التوسيع القادم إن أُريد هو وسم آلي لهذا النمط"
+      ]
+    },
+    {
+      "id": "D1.13",
+      "track": "P1-B",
+      "severity": "low",
+      "area": "docs",
+      "title": "مرجع متغيرات البيئة (.env.example)",
+      "sources": [
+        "O05"
+      ],
+      "current": "docs/environment-reference.md يسمّي كل قراءة process.env في tools/src/packages/adapters/examples وخطوط CI، بصفّ من خمسة أعمدة (المتغير|القارئ|الافتراضي|الأثر|الصنف)، مع قسم للقراءات غير المباشرة وقسم لما ليس متغيّر بيئة؛ والحارس يزامن المرجع مع الكود",
+      "required": "مرجع يسرد كل متغير يقرأه الخادم/الأدوات مع القيمة الافتراضية والأثر؛ أي متغير جديد يُضاف إليه في نفس التغيير. **الشكل: وثيقة لا قالب** — `.env.example` يبقى مرفوضًا بالقرار المُجمَّد (§3 من سجل الحدود)، فلا تُودَع قيم أسرار إطلاقًا",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.13-red.tap (2 من 2 خضراء-كإثبات: لا مرجع ولا رقيب، مع استنفاد 18+ قراءة) → d1.13-green.tap (6 من 6)؛ d1.13-inversion.txt بستّ نسخ: قراءة جديدة بلا صف ⇒ 1 من 6؛ حذف صفّ مع بقاء القراءة ⇒ 1 من 6؛ صفّ جامد لا يقرأه أحد ⇒ 1 من 6؛ موقع process.env[key] جديد بلا إعلان ⇒ 1 من 6؛ عودة .env.example ⇒ 1 من 6؛ تسرّب VITE_*API_KEY إلى jsx ⇒ 1 من 6 — وحارس D1.17 وخضراء، وحارس CI للمحيط خضراء في الستّ",
+        "criteria": [
+          "كل قراءة ثابتة لمتغير بيئة في tools/ وsrc/ وpackages/ وadapters/ وexamples/ وworkflow/render لها صفّ في المرجع — قراءة جديدة بلا توثيق تكسر الاختبار",
+          "لا صفّ جامد: ما لا يقابل قراءة ثابتة يجب أن يُعلَن داخل قسم «قراءات غير مباشرة» نفسه (ذكرٌ عابر في الوثيقة لا يُبرّئ)",
+          "كل ملف فيه process.env[key] (قراءة غير مباشرة) مُدرَج بالمسار في القسم — موقع صمت جديد يكسر",
+          "لا .env.example في المستودع، والمرجع يشرح سبب الرفض ولا يعطي قيمة سرّ حقيقية (خانة الافتراضي للصفوف المصنّفة سرًّا: — أو قيمة mock منشورة)",
+          "لا سرّ يصل إلى الحزمة الأمامية: لا process.env في dashboard/**، ولا import.meta.env.VITE_*(KEY|TOKEN|SECRET|SEED|PASSWORD) — والفحص يشمل jsx/html لا js وحده",
+          "بنية المرجع مفروضة: خمسة أعمدة لكل صفّ، قارئ مُسمًّى بملف، أثر لا يقلّ عن جملة، وخانة افتراضي مُصرَّح بها (— عند عدمه)"
+        ]
+      },
+      "verification": "tests/env-reference-sync.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-23T23:40:00Z",
+      "ticket_status": "enforced — مرجع موثَّق لا قالب مُودَع، والحارس يمنع أن تنمو القراءات صامتة",
+      "decision_log": "تعارض محلول: نص التذكرة كان يطلب `.env.example`، وسجل الحدود المُجمَّد (§3) ينفي وجوده لأن القالب المودَع يدعو إلى إيداع سرّ فيه. غُيِّر الشكل إلى docs/environment-reference.md + حارس مزامنة، وهو ما يحقق جوهر المطلوب (مرجع مركزي إلزامي) دون نقض القرار الأمني. عولج كما عولجت D1.12 من قبل: إلزامٌ آلي على الوثيقة، لا قالب.",
+      "follow_ups": [
+        "القراءات غير المباشرة (حافظة demos/grok-port/rag-demo) لا تُستنفد آليًا — تُراجَع يدويًا عند تغييرها؛ الحارس يضمن فقط ألّا يتكاثر الصمت",
+        "أسماء تُمرَّر إلى أدوات خارجية (Docker/Render envVars في render.yaml) ليست قراءات process.env فلا صفوف لها؛ لو صار render.yaml يقرأ env لزم التسجيل",
+        "README/SECURITY يشيران إلى المرجع؛ يُستحسن إضافة «متغيرات البيئة» إلى فهرس CONTRIBUTING عند D1.14 (فهرس الوثائق) بدل تكرار الجدول"
+      ]
+    },
+    {
+      "id": "D1.14",
+      "track": "P1-C",
+      "severity": "low",
+      "area": "docs",
+      "title": "فهرس التوثيق (docs/README.md)",
+      "sources": [
+        "O06"
+      ],
+      "current": "docs/README.md فهرس بأربعة أعمدة (الوثيقة|الغرض|الصنف|المرجع) يغطي كل مدخل في docs/ عدا نفسه، بصنف من مغلق {سارية، سجلّ، تخطيط، تصميم، مؤرشفة}، مع قاعدة لا-حذف وأرشيف تحت docs/archive/؛ والحارس يفحص التزامن في الاتجاهين",
+      "required": "فهرس يسرد كل وثيقة مع الغرض والحالة (سارية/مؤرشفة)؛ لا حذف توثيق — أرشفة موسومة فقط",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.14-red.tap (2 من 2 خضراء-كإثبات عند 13f568d: لا فهرس، ولا حارس فهرس، والسجلّ لا يصرّح بصنفه) → d1.14-green.tap (5 من 5)؛ d1.14-inversion.txt بخمس نسخ: وثيقة جديدة غير مفهرسة ⇒ 1 من 5؛ حذف وثيقة بلا أرشفة ⇒ 2 من 5؛ صنف غير معلَن ⇒ 1؛ مرجع إلى حارس غير موجود ⇒ 1؛ اقتلاع عبارة «لا حذف» من preamble ⇒ 1. وفي الخمس بقيت حراس الوثائق والسجلّ والأدلة المجمّدة وعدّاد التزامن خضراء (19 اختبارًا)",
+        "criteria": [
+          "كل ملف أو مجلد أعلى في docs/ (عدا README.md) له صفّ واحد بالضبط — لا تكرار ولا صفّ يتيم",
+          "لا صفّ جامد: اسم الوثيقة في الصفّ يجب أن يوجد في docs/، أو يكون الصنف «مؤرشفة» والمسار تحت docs/archive/ — أي حذف بلا أرشفة يكسر",
+          "الصنف من المغلق {سارية، سجلّ، تخطيط، تصميم، مؤرشفة}؛ والأربعة غير الجارية تحمل تاريخًا 20\\d\\d، فلا يُخلط سجلّ لحظة بوثيقة جارية",
+          "الغرض ≥12 حرفًا والمرجع ≥8 ولا يُقبل إحالة غائمة ('كسابقها') — الفهرس وُضع ليزيل الغموض لا لينقله",
+          "كل مسار يُسند إليه صفّ (حارس أو دليل) موجود فعلًا، على الجذر أو نسبةً إلى docs/ — لا حارس محذوف ولا دليل لم يُولَّد",
+          "الفهرس يعلن قاعدته: لا حذف، مسار الأرشيف، append-only للسجلّات، وإحالة الحالة إلى self-model/gaps.json والعدد المقيس إلى live_measurement/npm run metrics — لا ينسخ رقمًا",
+          "الاكتشاف مضمون: docs/README.md مذكور في CONTRIBUTING.md أو README.md، وقاعدته مكتوبة هناك كقاعدة مساهمة (رقم 10)",
+          "الفهرس لا يُلصق حالة بالكود: لا يُحدَّث عدّاد الاختبارات منه، وREADME/SECURITY/baseline تبقى مصادر الأرقام الوحيدة (لا انحراف عن حارس D1.12)"
+        ]
+      },
+      "verification": "tests/docs-index-sync.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-24T00:35:00Z",
+      "ticket_status": "enforced — الفهرس مُلزَم بالاتجاهين ولا حذف؛ الأرشفة موسومة",
+      "follow_ups": [
+        "لا يوجد docs/archive/ بعد: المسار مُعرَّف في القاعدة والحارس يقبله عند أول أرشفة؛ أول نقل وثيقة يجب أن يُحدِّث صفّها في نفس التغيير",
+        "docs/evidence/ مفهرس كمجلد واحد لا كملفاته (45 ملفًا يتغيّر مع كل تذكرة) — لو صار للأدلة حالةٌ تُقاس، تُفهرَس بدقة في تذكرة مستقلة",
+        "أرقام داخل سجلّات (331/331، 415، 428، 52/52، «100% PASS») صحيحة لوقتها ولا تُقرأ حالة؛ توسيع قاعدة D1.12 إلى docs/ كلها (لا عدد في وثيقة سارية بلا قياس) يبقى تذكرة مستقلة — الحارس الحالي يفحص README/SECURITY فقط"
+      ]
+    },
+    {
+      "id": "D1.15",
+      "track": "P1-D",
+      "severity": "medium",
+      "area": "repo",
+      "title": "حارس الملفات المكررة (edge-rag ×7 + workspace.html + تباين index.html)",
+      "sources": [
+        "O07"
+      ],
+      "current": "تسع مرايا معلنة في tools/sync-dashboard-assets.mjs (7 وحدات edge-rag + index.html→edge-rag.html + workspace.html) تُولَّد من مصدرها كتابةً ذرّية؛ وdashboard/public/index.html نُقلت إلى dashboard/legacy/static-dashboard.html وتُخدَم عند /dashboard-static.html موسومة غير إنتاجية؛ وscan شامل يمنع أي نسخة ظلّ غير معلنة",
+      "required": "مصدر حقيقة واحد: سكربت مزامنة وقت البناء + حارس CI يفشل عند الاختلاف؛ حسم ازدواج index.html (إنتاجية مقابل legacy موثق)",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.15-red.tap (2 من 2 خضراء-كإثبات عند 794c40f) → d1.15-green.tap (6 من 6)؛ d1.15-inversion.txt بستّ نسخ + ملحق: تحرير يدوي في المرآة ⇒ 2 من 6؛ نسخة ظلّ جديدة غير معلنة ⇒ 1؛ عودة index.html إلى publicDir ⇒ 2؛ الفحص بلا نابض (لا exit 1) ⇒ 1؛ الفاحص يتجاهل الجذر الممرر ⇒ 1؛ --check يصلح القرص بدل أن يفحص ⇒ 1. وفي الستّ بقيت edge-rag (4 و6) وdetector-independence وdocs-consistency وserver-perimeter خضراء. الملحق يوثّق أن H5/H6 أُعيدت صياغتهما بعد أن كانتا غير صالحتين",
+        "criteria": [
+          "كل مرآة معلنة في ASSET_MIRRORS مطابقة لمصدرها بالبايت، ولا مرآة/مصدر مفقود — والانحراف يكسر CI عبر npm run sync:assets:check (exit 1) لا بالتحذير",
+          "الاتجاه مُعلَّن من جهة الاختبار: المصدر هو ما تستورده tests/edge-rag.test.js (adapters/) والمرآة في سطح الخدمة (dashboard/public/)، ولكل زوج سبب مكتوب — لا مرآة ذاتية ولا مرآة داخل adapters/",
+          "لا نسخة ظلّ غير معلنة: مسح adapters/ وdashboard/ وsrc/ وtools/ وpackages/ وspec/ وdocs/ بحدّ 32 بايتًا لا يترك أي زوج متطابق خارج ASSET_MIRRORS",
+          "ازدواج index.html محسوم بحكم مقيس: لا dashboard/public/index.html (والسبب المصحَّح: نسخة ميتة بلا قارئ — لا تصادم بناء)، وdashboard/index.html يبقى مدخل Vite (يشير إلى /src/main.jsx)، والساكنة مؤرشفة في dashboard/legacy/ مع README يسمّي المسار الجديد والحارس",
+          "الأرشيف يُخدَم ويُوسَم: مسار /dashboard-static.html (+ /static) يقرأ من dashboard/legacy/ بترويسة X-Nexa-Page: legacy-static (not the production build)، وي replies 410 إن فُقد الملف بدل الصمت؛ ولا مرجع في شيفرة السيرفر إلى dashboard/public/index.html (التعليقات لا تُحسب)",
+          "الفحص لا يكتب والكتابة idempotent: syncMirrors({write:false}).written فارغ، و--check لا يرحم الانحراف ولا يصلحه، و--write مرتان لا تكتبان شيئًا second-pass، والكتابة ذرّية (tmp+rename)",
+          "الفاحص مستقل عن حالة الشجرة: على جذر وهمي بمنرايا منحرفة يلتقط drift عدده ويسمّي الملف ويخرج 1 — فلا يُقرأ خُضْرةُ CI ثقتَين بالصدفة",
+          "الحارس السابق يردّ: أي قراءة بيئة يضيفها السكربت تحتاج صفًّا في docs/environment-reference.md، وقِيس ذلك (H7) لا استُنتج"
+        ]
+      },
+      "verification": "tests/duplicate-sync.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-24T01:50:00Z",
+      "ticket_status": "enforced — التكرار قرار معلَن: مرآة مولَّدة أو كسر في CI؛ وأول قياس حيّ أن حارس D1.13 لم يمرّر قراءة السكربت الجديدة بلا صفّ",
+      "follow_ups": [
+        "المرآة تُنسخ لا تُرمَّز لأن dashboard/public/ يُخدَم كما هو؛ لو صار بناء الداشبورد يجمعها (D1.16 فوق CI) فالأفضل إسقاط public/ من git وتوليده في البناء — تغيير بنية لا تذكرة مزامنة",
+        "dashboard/data/bug-report.json وhunt-memory.json متتبَّعان في git (مخرجات تشغيل) — class آخر (تلوّث الشجرة لا تكرار) يستحق تذكرة مستقلة",
+        "النسخة الساكنة legacy لا تُختبَر ولا تُزامَن؛ تُؤرشف تمامًا إن تقرّر أن لا قارئ لها"
+      ],
+      "correction": {
+        "date": "2026-09-24",
+        "what": "سبب النقل كان مكتوبًا «تتصادم مع مدخل Vite في dist» وهو غير صحيح؛ قِيس العكس. الحكم (لا نسخة في publicDir) لم يتغير، والسبب صار المقيس في self-model/evidence/d1.15-correction.txt"
+      }
+    },
+    {
+      "id": "D1.16",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci",
+      "title": "بناء الداشبورد في CI لكل PR",
+      "sources": [
+        "O08"
+      ],
+      "current": "ci.yml (الوحيد الذي يرى كل pull_request) فيه وظيفة dashboard مستقلة: npm ci بقفل الداشبورد ثم vite build ثم فحص مخرج (dist/index.html يشير إلى أصل باسمه بصمة المحتوى، ولا ظلّ في publicDir، ولا مخرج متتبَّع)، ونابض D1.15 sync:assets:check موصول في وظيفة kernel بلا تثبيت",
+      "required": "job منفصل في ci.yml يبني الداشبورد لكل PR؛ job الباكند (zero-dep) يبقى بلا install كما هو",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.16-red.tap (المُعيد أخضر 1 من 1 = الفجوة قائمة؛ مقيس أين كان البناء يحدث) → d1.16-green.tap (الحارس 6 من 6 + بروفة محليّة لأوامر الوظيفة نفسها كلها exit 0: npm ci بـ 131 حزمة، vite build في 2.80s، فحوص المخرج، git ls-files فارغ، sync:assets:check)؛ d1.16-inversion.txt بثماني نسخ: حذف وظيفة dashboard ⇒ 3 من 6؛ continue-on-error على البناء ⇒ 1؛ cache-dependency-path إلى قفل لا وجود له ⇒ 1؛ npm install داخل وظيفة kernel ⇒ 1؛ نزع خطوة sync:assets:check ⇒ 1؛ تغيير اسم سكربت build في dashboard/package.json ⇒ 1؛ إلغاء استثناء dashboard/dist من .gitignore ⇒ 1؛ R1 (تعليق ينتحل خطوات npm ci/build) ⇒ 2 — يثبت أن الحارس يقرأ الشيفرة لا التعليقات. في الثمانية بقيت حارس المرايا (6) وedge-rag (4) وdocs-consistency (6) وgaps-consistency (6) خضراء؛ الاستعادة 27 من 27",
+        "criteria": [
+          "ci.yml فيه وظيفة dashboard مستقلة عن verify، تعمل على كل pull_request (بدون فلترة فروع على job ولا شرط refs/heads/main)",
+          "التثبيت npm ci من قفل الداشبورد، وcache-dependency-path يشير إلى ملف موجود فعلًا ويساوي dashboard/package-lock.json",
+          "البناء npm run build ثم فحص مخرج لا رمز خروج فقط: dist/index.html موجود، يشير إلى أصل باسمه بصمة المحتوى، ولا dashboard/public/index.html",
+          "لا continue-on-error في وظيفة الداشبورد — الكسر أحمر لا أصفر",
+          "وظيفة verify تبقى بلا أي npm install/npm ci (invariant صفر-الاعتمادية)، وnpm test يبقى أول خطوة فيها",
+          "نابض D1.15: npm run sync:assets:check خطوة في CI (في وظيفة kernel حيث لا تثبيت) وبلا continue-on-error، والسكربت الذي تناده package.json موجود",
+          "كل npm run <script> تناديه وظيفة الداشبورد موجود في dashboard/package.json — لا اسم مكسور في YAML",
+          "dashboard/dist مستثنى في .gitignore وغير متتبَّع في git (مقاس من الفهرس بـ git ls-files، لا من التخمين)",
+          "قارئ الحارس المستهدف نفسه مُختبَر: لا Tabs، ولا وظيفة تبتلعها مسافة بادئة خاطئة، وسطر تعليق لا يرضي أي assert"
+        ]
+      },
+      "verification": "tests/dashboard-ci.test.js",
+      "opened_at": "2026-09-22T23:15:00Z",
+      "closed_at": "2026-09-24T02:55:00Z",
+      "ticket_status": "enforced — البناء يُرى في PR لا على main؛ deploy-pages يبقى مسار النشر ولا يُلمَس",
+      "follow_ups": [
+        "deploy-pages.yml يثبّت بـ npm --prefix dashboard install (بلا قفل) وبعد `npm ci || npm install` في الجذر — مسار النشر لا يثبّت بما يثبّته CI؛ توحيدهما (ci لهما) تذكرة نشر مستقلة",
+        "metrics.yml يعيد npm test على PRs إلى main بعد أن غطّاه ci.yml — إلغاء التكرار أو حصره في metrics فقط، تذكرة مستقلة",
+        "لا actionlint ولا مخطط YAML في CI؛ الحارس يقرأ البنية بقارئ مستهدف مُختبَر. إضافة actionlint خطوة بناء مستقلة",
+        "توليد بيانات النشر في deploy-pages (node src/security/agentic-hunter.js packages) لا يُجرى في PRs؛ كسره يكسر النشر لا الدمج",
+        "الحارس يقرأ ci.yml بقارئ مستهدف (لا pyyaml ولا actionlint في نطاق صفر-اعتمادية): لو تطلّب الأمر شروطاً مركّبة (matrix include, uses@major aliases) فالحارس يحتاج مخططًا حقيقيًا لا توسيع regex"
+      ]
+    },
+    {
+      "id": "D1.17",
+      "track": "P1-A",
+      "severity": "medium",
+      "area": "server",
+      "title": "أعداد مُروَّاة على الحدود المخدمة: /api/celia/state والذاكرة المزروعة وسجل الإقلاع",
+      "sources": [
+        "O09"
+      ],
+      "current": "الحالة المخدومة تُبنى من القياس: servedStatus() تقرأ أسطر NEXA_METRIC من check-posture (عيّنة بـ TTL ثانيتين)، وعند تعذّر القياس تُخدَم الكتلة بلا عدد مع measurement_error؛ لا tests ولا promotion في الحمولة أصلًا؛ النثر مُعلَّق في claims.kind='claim'؛ سجل الإقلاع يطبع القياس نفسه أو يصمت؛ والمزروعات والواجهة بلا أعداد",
+      "required": "لا عدد على سطح مخدوم إلا وهو قراءة: تُسند gates وllm_vectors إلى getPosture()/قياس فعلي مثلهما في /api/v1/system/status، وحقلا tests وpromotion يُحذفان من /api/celia/state لأن هذا السيرفر لا يقيسهما (حذف الادعاء أولى من وسمه حين لا مصدر له)؛ ولا رقم أداء غير مقاس (48.5%، 100%) يدخل beliefs أو ذاكرة أو بيانات الواجهة الأولية؛ وسجل الإقلاع يطبع ما يخدمه أو يصمت عن العدد",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "inversion_test": "self-model/evidence/d1.17-guard-red.tap (6 من 6 حمراء عند 5d54d46 قبل الإصلاح؛ الاختبار السابع أُضيف معه) + d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) → d1.17-green.tap (7 من 7)؛ d1.17-inversion.txt بخمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في تعريف الحالة ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ العدد معرفةً مزروعة في belief ⇒ 2 من 7؛ سجل يروّي 501/501 ⇒ 1 من 7. وفي الخمس بقيت أسوار D1.10/D1.11 والالتزام خضراء (perimeter 9/9، rate-limit 7/7، failfast 6/6، startup-guard 8/8، commit-http 3/3، commit-auth 19/19، hardening 3/3، workspace-http 1/1، write-auth 16/16، output-isolation 3/3) — ملحق الإثبات يُصحّح سطرًا كان يحمل اسم ملف غير موجود",
+        "criteria": [
+          "GET /api/celia/state لا يعيد tests ولا promotion كحقل خام، ولا نسبة «ن/م» ولا 314 ولا 501 ولا 48.5% ولا 100% في كتلة الحالة",
+          "gates وسائر الأعداد تُقرأ من القياس: في جذر فيه spec/ تساوي الحمولة مخرج check-posture حرفًا بحرف (parity test)، وفي بيئة لا تقيس (لا spec/) تُخدَم الكتلة بلا عدد مع NEXA-POSTURE-UNAVAILABLE/UNMEASURABLE — لا جواب محفوظ",
+          "لا حرف '6 CLOSED' ولا tests:'ن/م' ولا promotion:'ن/م READY' ولا Tests: ن/م في tools/celia-dashboard-server.mjs خارج التعليقات — تُفحص الشيفرة بعد تجبيب التعليقات",
+          "المزروعات: condition الاعتقاد لا يحمل أعدادًا بل يُحيل إلى القياس؛ لا «314 tests» ولا «gates 6 CLOSED» ولا 48.5% في الحقائق الدلالية؛ pasteSaving رواية موسومة لا نسبة مُروَّاة (السيرفر والأداة التجريبية معًا)",
+          "الواجهة: المبدئيات placeholder صريح ('not measured'/صفر) لا أعداد تُعرض كقراءة؛ سطر «6 gates CLOSED … Z3 100% proof» صار claim موسومًا؛ كل ذكر لـ 48.5% أو 100% في المكوّنين يحمل وسم رواية",
+          "التوافق: status باقٍ كحقل (بمحتوى مقيس) وclaims إضافة؛ لا مسّ بسلوك الجدار (D1.10) ولا بحارس الإقلاع (D1.11) ولا تفكيك للسيرفر؛ /api/posture و/api/v1/system/status كما هما"
+        ]
+      },
+      "verification": "tests/served-telemetry-honesty.test.js",
+      "opened_at": "2026-09-23T01:35:00Z",
+      "closed_at": "2026-09-23T22:55:00Z",
+      "ticket_status": "enforced — السطح المخدوم يقيس أو يصمت؛ العدد المحذوف أصدق من الوسم (670/670)",
+      "follow_ups": [
+        "عند الإغلاق: `/api/celia/evidence` و`/api/celia/memory` يخدمان مزروعات مزروعة الأرقام — نفس المعيار يسري عليهما (لا «314 tests» ولا «48.5%»)",
+        "النثر في landing page (سطر 3037) و`version:'v0.8-ultimate'` و«56 Engines» ادعاءات قدرة لا أرقام: تُوسم أو تُحذف في التذكرة نفسها إن رُئي ذلك",
+        "`llm_vectors:'2/2 BLOCKED'` له قياس فعل (npm run audit/vectors) — يمكن تحويله إلى قراءة بدل حرف"
+      ],
+      "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
+    },
+    {
+      "id": "D1.18",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "النشر يُبنى من اعتماديات مختلفة عمّا فحصه CI: ‏deploy-pages يثبّت الداشبورد بلا قفل، و«npm ci || npm install» في الجذر يبتلع فشله ويكتب قفلًا لا يريده المشروع",
+      "current": "deploy-pages.yml يثبّت الداشبورد بـ npm ci داخل dashboard/ على نفس قفل CI بلا أي || وبدون خطوة تثبيت جذر؛ والبناء يعمل داخل dashboard/ بمسارات نسبية بعد hunter مباشرة؛ والحارس يربط التكافؤ (قفل واحد، نفس node major، الترتيب، البيانات، الصلاحيات، الأدوار)",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "acceptance": {
+        "criteria": [
+          "وظيفة النشر تثبّت الداشبورد من القفل: خطوة واحدة `npm ci` مع `working-directory: dashboard` (أو `npm --prefix dashboard ci`)، ولا `install` عائم ولا `|| npm install` في أي خطوة",
+          "لا خطوة تثبيت في الجذر: قِيس على نسخة `git archive` نظيفة أن hunter والبناء يعملان بلا root/node_modules، وأن node_modules الجذر مزرعة روابط @nexa فقط (15 سطرًا، 8KB) وقفل الجذر بلا أي حزمة خارجية",
+          "تكافؤ معلن ومقيس: `cache-dependency-path` في deploy-pages وci.yml يشير إلى dashboard/package-lock.json نفسه، والملف موجود، والقفل يثبّت react 18 وvite 5 فعلًا، وmajor لـ node واحد في المسارين (22)",
+          "الترتيب والبيانات: خطوة hunter قبل البناء، والبناء يُنشئ dist/data وينسخ ../data/* إليه، والرفع من dashboard/dist — الموقع المنشور يحمل بيانات لا هيكلًا فارغًا",
+          "الأدوار بلا انزلاق: النشر على push(main)+workflow_dispatch وبلا pull_request (PRs ملك ci.yml منذ D1.16)، permissions مطابقة لـ {contents:read, pages:write, id-token:write} حرفيًا، وconcurrency محفوظ",
+          "كل أمر يناديه النشر يؤول إلى موجود: npm run <script> في package.json المناسب، وnode <file> موجود على القرص — لا اسم مكسور في YAML يعمل على main فقط",
+          "الحارس يقرأ الشيفرة لا التعليقات (سطر # لا يبني خطوة) وقاؤه المستهدف مُختبَر على الملفين: لا Tabs، خطوات مقروءة بأسمائها وكتلها، وworking-directory مقروء"
+        ],
+        "inversion_test": "self-model/evidence/d1.18-red.tap (المُعيد 2 من 2 أخضر-كإثبات بعد أن صِيغ بالقياس لا بالتذكرة) → d1.18-green.tap (الحارس 7 من 7)؛ d1.18-inversion.txt باثنتي عشرة نسخة: استرجاع install العائم مع || ⇒ 2 من 7؛ || على خطوة القفل وحدها ⇒ 2 (و7)؛ node-version 18.x في النشر ⇒ 1 (تكافؤ)؛ قلب ترتيب hunter/البناء ⇒ 1 (الترتيب)؛ pull_request في on النشر ⇒ 1 (الأدوار)؛ contents: write ⇒ 1 (الصلاحيات)؛ إعادة خطوة تثبيت جذر ⇒ 2 (و3)؛ مسار hunter وهمي ⇒ 1 (الأوامر تؤول)؛ حذف mkdir dist/data ⇒ 1 (البيانات)؛ تعليق ينتحل خطوة التثبيت ⇒ 2 (و7)؛ اعتمادية معلنة في workspace ⇒ 1 (التبرير)؛ cache-dependency-path إلى قفل الجذر ⇒ 1 (التكافؤ). المجاورون خضر في الاثنتي عشرة: CI (6)، المرايا (6)، edge-rag (4)، السجل (5)، الوثائق (6)؛ والاستعادة كاملة. ملحق أمانة: أول محاولة لمسار hunter استبدلت داخل تعليق فلم تُحمرّ شيئًا — إعادة الصياغة بمرساة سطر الخطوة هي التي قاست"
+      },
+      "verification": "tests/deploy-ci-parity.test.js",
+      "opened_at": "2026-09-24T03:40:00Z",
+      "required": "أن يُنشر ما فُحص حرفيًا: تثبيت الداشبورد من dashboard/package-lock.json في CI وفي النشر معًا، وبلا || يبتلع فشل القفل، وبلا خطوة تثبيت جذر لا يستهلكها أحد. لا يمسّ النشر الفعلي ولا GitHub Pages نفسه، ولا يقرّر ترقية vite (ذلك D1.19).",
+      "closed_at": "2026-09-24T04:25:00Z",
+      "ticket_status": "enforced — ما يُنشر هو ما فُحص: قفل واحد للداشبورد في CI والنشر، ولا fallback يبتلع الفشل",
+      "follow_ups": [
+        "metrics.yml يشغّل npm test على PRs بعد أن غطّاه ci.yml، ويعمل npm install في الجذر وهو no-op مقيس — إلغاء التكرار وتفعيل cache (القفل موجود) تذكرة مستقلة",
+        "تعليق metrics.yml:34-36 يقول إن setup-node يحتاج قفلًا و«NEXA ships without one by design» — قِيس أن package-lock.json متتبَّع في الجذر (3467B، 31 عقدة، صفر حزمة خارجية): العبارة خاطئة، وتصحيحها وثائقي بحت لا يغيّر سلوكًا",
+        "npm audit لمسار الداشبورد غير مفحوص في أي workflow؛ قِيست 4 advisory (vite fs.deny bypass high ≤6.4.2، esbuild/vite dev-server moderate ×3) على vite 5.4.21 — الإغلاق يحتاج قرار ترقية vite كبرى أو عتبة + استثناء معلن، وهي D1.19 المقترحة",
+        "deploy-pages لا يعمل sync:assets:check؛ غير كافٍ اليوم لأن ci.yml يعمل على push لكل فرع بما فيه main، لكنه يصير لازمًا لو فُرع النشر أو أُضيفت يدوية workflow_dispatch على شجرة غير مفحوصة"
+      ],
+      "correction": {
+        "date": "2026-09-24",
+        "what": "كان criterion رقم 3 يُلزم القفل بـ react 18 وvite 5 حرفيًا؛ قِيس أن في المستودع PRs مفتوحة من dependabot (#24 vite→8، #25 react→19، #26 plugin-react→6، #27 tailwind→4) كانت ستُحمرّ الحارس بلا سبب أمني. استُبدل الإلزام بحلّي: القفل يجب أن يُرضي النطاق المعلن في dashboard/package.json (^major و~major.minor)، فيبقى النابض صادقًا قبل وبعد أي قرار ترقية."
+      }
+    },
+    {
+      "id": "D1.19",
+      "track": "P3",
+      "severity": "low",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "metrics.yml يعيد تشغيل ما يشغّله npm run metrics داخله — كل PR إلى main يقيس مرتين، ومعها تثبيت جذر no-op وتعليق ينكر قفلًا متتبَّعًا",
+      "current": "metrics.yml = checkout + setup-node (بلا تثبيت وبلا cache) + npm run metrics؛ الأوامر الخمسة التي كانت خطواتٍ منفصلة ينفّذها tools/check-metrics.mjs داخله بالفعل، وci.yml يبقى بوابتها على كل PR/push؛ وصُحّح تعليق ci.yml الذي كرّر نفس الادّعاء الخاطئ عن غياب قفل الجذر",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/workflow-overlap.test.js",
+      "opened_at": "2026-09-24T05:20:00Z",
+      "required": "ألا يقيس CI الشيء نفسه مرتين في نفس الـ workflow دون سبب، ولا يوثّق ادّعاءً عن الشجرة يكسره git ls-files. لا يغيّر ما تقيسه البوابة ولا عتباتها؛ يغيّر كم مرة يُقاس ومن يثبّت بلا حاجة.",
+      "notes": "من follow_ups في D1.16/D1.18. لا يمسّ ci.yml ولا عتبات metrics نفسها. release.yml فيه npm ci || npm install قبل النشر — فئة D1.18 لا هذه التذكرة، وسُجّلت D1.20.",
+      "acceptance": {
+        "criteria": [
+          "لا خطوة في metrics.yml تعيد أمرًا تنفّذه الأداة داخلها — والقائمة تُقرأ من runCommand في tools/check-metrics.mjs لا من نص محفوظ (لو تغيّرت الأداة تغيّر الحارس بعلم)",
+          "التغطية محفوظة: كل أمر من القائمة الداخلية موجود أيضًا في ci.yml، فحذف الخطوات لم يُسقِط بوابة PR عن أي قياس",
+          "لا تثبيت جذر في metrics.yml/ci.yml/deploy-pages.yml، والتبرير مقيس داخل الحارس: لا workspace (packages/* أو adapters/*) يعلن اعتمادية، وقفل الجذر بلا أي عقدة خارجية",
+          "البوابة باقية: npm run metrics آخر خطوة، على pull_request إلى main وpush إلى main، permissions = contents: read وحدها، وبلا continue-on-error ولا || true ولا if: always()",
+          "لا ادّعاء في تعليقات الملفات الثلاثة يناقض الشجرة: من يقول بلا lockfile والجذر فيه package-lock.json متتبَّع يُكسَر؛ وأي cache: npm لازم أن يشير إلى قفل متتبَّع فعلًا (في الملفات الثلاثة كلها، لا في اثنين)",
+          "إصدار node في metrics.yml داخل مصفوفة ci.yml (20 ∈ [20,22]) — لا بوابة تُقاس على تشغيل لا يغطيه الاختبار",
+          "قارئ الحارس يثبت شكل metrics.yml (3 خطوات، checkout/setup-node/metrics) ويجمع كتل | من الملف الآخر، فأي خطوة زائدة تُرى فورًا بدل أن تُمرَّر؛ وفحوص git تُختصر بـ skip صريح حيث لا .git بدل أن تنفجر على نسخة أرشيف"
+        ],
+        "inversion_test": "self-model/evidence/d1.19-red.tap (المُعيد 2 من 2 أخضر-كإثبات عند 13c91e2) → d1.19-green.tap (الحارس 6 من 6 + بوابة metrics تعمل في نسخة طارحة بلا أي تثبيت)؛ d1.19-inversion.txt بتسع نسخ: إعادة خطوة npm test ⇒ 2 من 6 (القارئ + لا إعادة قياس)؛ إعادة npm install الجذري ⇒ 2 (القارئ + لا تثبيت جذر)؛ استرجاع عبارة «ships without one by design» ⇒ 1 (التعليق يناقض الشجرة)؛ continue-on-error على الخطوة ⇒ 1 (البوابة)؛ حذف pull_request من on: ⇒ 1؛ node-version 19 خارج مصفوفة ci.yml ⇒ 1؛ إزالة runCommand audit من الأداة ⇒ 2 (لا إعادة قياس + التغطية محفوظة)؛ إزالة npm run audit من ci.yml ⇒ 1 (التغطية)؛ تفعيل cache: npm في metrics.yml بلا cache-dependency-path ⇒ 1. المجاورون خضر في التسع: المرايا 6، تكافؤ النشر 7، CI 6، الوثائق 6؛ والسجل كان أحمرّ عمدًا قبل قلب السجل ثم اخضرّ بعده"
+      },
+      "closed_at": "2026-09-24T06:15:00Z",
+      "ticket_status": "enforced — القياس مرة واحدة في المكان الصحيح؛ لا تكرار بلا إشارة، ولا تعليق يناقض git ls-files",
+      "follow_ups": [
+        "release.yml يعمل npm ci || npm install قبل npm test وmesh:verify ثم النشر — نفس فئة D1.18 (ابتلاع الفشل + no-op)، مسجَّل D1.20",
+        "لو صار check-metrics.mjs يقيس بلا أن يُشغّل الاختبارات (قراءة baseline بدل تشغيلها)، فحارس D1.19 يفرض إضافة الخطوات إلى workflow عند سقوط أي أمر من قائمة runCommand — وهذا مقصود: التغطية لا الذاكرة",
+        "security-scan.yml وagentic-bug-hunter.yml يعملان على PRs إلى main وpush main/arena/**؛ لم تُقس درجة تداخلهما مع ci.yml (تذكرة مستقلة لو تبيّن تكرار)"
+      ]
+    },
+    {
+      "id": "D1.20",
+      "track": "P2",
+      "severity": "high",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "مسار الإصدار يبتلع فشله: نشر الحزمة بـ || true وتثبيت بلا أثر مع || يبتلع فشل القفل — أخضر لا يعني نُشر",
+      "current": "release.yml بلا خطوة تثبيت جذر (no-op مقيس) وبلا أي || في خطواته؛ خطوة Publish تقرأ private من package.json: تُعلن ::warning:: + سطر في الـ summary عند التخطّي، وتُشغّل npm publish حرفيًا بلا ابتلاع عند التفعيل؛ وحارس tests/release-workflow.test.js يربط الجسر والمسارات والصلاحيات والبوابة بنص الـ workflow نفسه",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/release-workflow.test.js",
+      "opened_at": "2026-09-24T06:50:00Z",
+      "required": "ألّا يخضر workflow يقول «Publish» ثم يبتلع فشل النشر بـ || true، ولا خطوة تثبيت لا يستهلكها أحد مع || يُسكِت فشل القفل؛ أن تُفحص مسارات الأدلة والمنتجات التي يوقّعها الإصدار من نصّه لا من الذاكرة.",
+      "notes": "لا يقرّر هوية الحزمة (انظر D1.21) ولا يغيّر ما يُنشر؛ يغيّر فقط ما يُبلَّع أخضر وما لا يُفحص.",
+      "acceptance": {
+        "criteria": [
+          "لا || true ولا || npm install ولا continue-on-error ولا if: always() في أي خطوة من release.yml (بعد إسقاط التعليقات، فالرسائل ليست شيفرة)",
+          "خطوة Publish تنادي npm publish --access public فعلًا، وتقرأ حالة private من package.json، وتُعلن ::warning:: + سطر SKIP_PUBLISH في GITHUB_STEP_SUMMARY حين تتخطّى — لا صمت ولا ابتلاع",
+          "لا خطوة تثبيت جذر في release.yml، والتبرير مقيس داخل الحارس: لا workspace يعلن اعتمادية، وقفل الجذر بلا عقدة خارجية",
+          "جسر الأدلة مُتحقَّق منه من نص الـ workflow: المسار النسبي (من dist/packages حيث تعمل الخطوة) موجود، والصنف مُصدَّر، وكل bridge.<fn>(...) مستعمَلة معرفة في الجسر، والإيصال يُكتب هناك",
+          "تماسك المنتجات: --pack-destination = مجلد cd في خطوة البصمات = مجلد files: في action الإصدار، وSHA256SUMS على * والإيصال RELEASE_RECEIPT.json مكتوب فيه",
+          "بوابة الإصدار تعمل على وسوم v*.*.* وحدها (لا pull_request)، وتشغّل npm test + npm run mesh:verify، وnode major داخل مصفوفة ci.yml، وfetch-depth: 0، وpermissions مطابقة لـ [contents: write, packages: write, id-token: write] بالضبط",
+          "لا تناقض مبطّن: ما دامت private:true فلازم تذكرة مفتوحة في gaps.json تسمّي النشر/الـ scope ومعها مُعيد؛ ولو صارت غير private فلازم الاسم موسّع بـ scope معلن وتُقفل D1.21 في نفس التغيير"
+        ],
+        "inversion_test": "self-model/evidence/d1.20-red.tap (المُعيد 2 من 2 أخضر-كإثبات؛ صِيغ بالقياس بعد أن كانت صياغتي الأولى «لا اختبار يمس release.yml» باطّلة — env-reference-sync يذكره في PIPELINE_FILES:18) → d1.20-green.tap (الحارس 7 من 7) → d1.20-suite.txt؛ وبروفة تنفيذ جسم الخطوة المستخرج من الـ YAML: (أ) private:true ⇒ rc 0 + ::warning:: + SKIP_PUBLISH في الـ summary، (ب) private:false ⇒ rc 1 بفشل npm publish على registry وهمي 127.0.0.1:9 (بلا أي خطر نشر حقيقي) — الفشل مُبلَّغ."
+      },
+      "closed_at": "2026-09-24T07:30:00Z",
+      "ticket_status": "enforced — لا أخضر كاذب في مسار الإصدار؛ أما هوية الحزمة فقرار معلّق ومسجَّل D1.21 (بمُعيد حيّ في tests/known-gaps)",
+      "follow_ups": [
+        "D1.21 مفتوحة: private:true + اسم غير موسّع + scope @elazamey ⇒ لا إعداد ينجح معه npm publish؛ القرار للمالك (إعادة تسمية/نطاق أو حذف خطوة النشر أو حزمة فرعية موسّعة) مع files صريحة في package.json",
+        "بوابة الإصدار لا تشغّل posture/attacks/audit التي يراها كل PR، ولا تعمل على الوسوم في ci.yml — توسيع بوابة النشر تذكرة مستقلة (قرار توقيت/تكلفة)",
+        "التوقيع يعتمد على NexaEvidenceBridge بمفتاح محلي؛ أين تُحفظ المفاتيح العمومية للإيصالات ومن يتحقق منها خارج المستودع — خارج هذه التذكرة"
+      ]
+    },
+    {
+      "id": "D1.21",
+      "track": "P1",
+      "severity": "medium",
+      "area": "package-published",
+      "sources": [
+        "O08"
+      ],
+      "title": "إعدادات النشر متناقضة: الحزمة private:true واسمها غير موسّع (nexa) بينما setup-node يعلن scope ‏@elazamey على GHPR — النشر لا يمكن أن ينجح",
+      "current": "مفتوحة — تنتظر قرار المالك",
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T06:50:00Z",
+      "required": "قرار المالك قبل أي كود: إمّا @elazamey/nexa + private:false (ووقتها يُنشر 698 ملفًا/6.4MB بحزم workspaces داخلها!)، أو حذف خطوة npm publish والإبقاء على GitHub Release بالأصول الموقّعة فقط، أو نشر sub-package موسّع مستقل.",
+      "notes": "مقيس: package.json name=nexa، private=true، publishConfig {@elazamey:registry → GHPR} (يوجّه الحزم الموسّعة فقط)، npm pack --dry-run => nexa-0.1.0.tgz (698 ملفًا، 6.4MB). وnpm publish على حزمة private يفشل دائمًا — وهو ما كان || true يُخفيه (D1.20). لا يقرّر الوكيل هذا: قرار هوية/نطاق النشر للعميل.",
+      "acceptance": {
+        "criteria": [
+          "قرار مسجّل في self-model/decision-log.json: ما الذي يُنشر وأين وبأي اسم — أو أن النشر محذوف صراحةً من workflow",
+          "بعد القرار: package.json وrelease.yml متسقان (name/registry/scope/private) ويقيس ذلك حارس في tests/ — لا تعليق يشرح بل assert",
+          "الحجم تحت السيطرة: إن قُرّر النشر فـ files في package.json يحدّد ما يدخل Tarball صراحةً (لا 698 ملفًا افتراضية)"
+        ]
+      }
+    },
+    {
+      "id": "D1.22",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "بوابة الإصدار أضعف من بوابة الـ PR: الوسم لا يشغّل posture/attacks/audit ولا فحص المرايا ولا تزامن الـ vectors — والـ tarball يُبنى من شجرة أقل فحصًا",
+      "current": "مفتوحة",
+      "notes": "مقيس: بوابة الإصدار (on: tags v*.*.*) تشغّل npm test وnpm run mesh:verify فقط، بينما ci.yml — الذي لا يعمل على الوسوم — يشغّل npm run audit وnpm run posture وnpm run attacks وnpm run attacks:google وnpm run sync:assets:check وnpm run vectors. وci.yml يعمل على push لكل الفروع بما فيها main، فالفجوة الفعلية هي وسوم على commit غير main أو وسوم قديمة مُعاد دفعها.",
+      "required": "ألّا يُبنَى منتج منشور من شجرة لم تجتز القياسات التي يراها كل PR؛ القرار المطلوب: تشغيلها كلها في وظيفته قبل pack، أو اشتراط أن يكون الوسم على رأس main (تحقّق) — والاثنان قابلان للقياس.",
+      "acceptance": {
+        "criteria": [
+          "release.yml يشغّل كل أمر يقيس سلامة النواة في ci.yml (audit, posture, attacks, attacks:google) قبل خطوة npm pack — أو يرفض الوسم غير الواقع على رأس main صراحةً",
+          "خطوة sync:assets:check وخطوة تزامن spec/vectors موجودتان قبل التوقيع على المنتج، أو مُستثنَتان بتعليق يقوله",
+          "بوابة الإصدار تفشل (rc≠0) لو فشل أي من هذه، بلا || وبلا continue-on-error (ورث D1.20)",
+          "حارس يربط مجموعة الأوامر في الملفين بقائمة واحدة معلنة، فلا يضاف قياس إلى ci.yml ويُنسَى في الإصدار"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.23",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "لا بوابة تدقيق اعتماديات للداشبورد: أربع advisory مقيسة على vite 5.4.21 (أعلاها high) ولا ‏npm audit في أي workflow يمس dashboard/",
+      "current": "مفتوحة — تحتاج قرار عتبة أو قرار ترقية",
+      "notes": "القياس في self-model/evidence/d1.23-advisories.txt (npm audit --json داخل dashboard/). الثغرات تمس خادم التطوير لا مخرج vite build الساكن؛ وفي المستودع أربعة PRs من dependabot (#24–#27) ترقّي الكُبرى. الحارس الجديد في D1.18 صار يفحص إرضاء النطاق لا الأرقام الحرفية، فقرار الدمج لا يكسر شيئًا.",
+      "required": "قرار المالك: عتبة الفشل (high+/critical+/moderate+allowlist) أو دمج ترقيات dependabot أو قبول موثّق منتهٍ الصلاحية؛ لا يقرّره الوكيل لأنه يغيّر اعتماديات الواجهة المنشورة.",
+      "acceptance": {
+        "criteria": [
+          "خطوة CI تشغّل npm audit على dashboard/ بعتبة معلنة (‏--audit-level=…) وتفشل فوقها، أو تعليق في الـ workflow يسجّل القبول وسببه وتاريخه",
+          "لو قُرّر الاستثناء فملف استثناء معلن في المستودع (لا في head commit للـ workflow) مع سبب ورقم advisory",
+          "حارس يربط القائمة: إن لم توجد بوابة audit للداشبورد فلازم تذكرة مفتوحة تسمّيها — لا صمت مريح",
+          "بعد الدمج: تحديث ‏dashboard/package-lock.json متزامن مع النطاقات المعلنَة (الحارس في D1.18 يفحص الإرضاء لا الأرقام)"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.24",
+      "track": "P2",
+      "severity": "low",
+      "area": "documentation",
+      "sources": [
+        "O06"
+      ],
+      "title": "قاعدة «لا رقم في وثيقة سارية بلا قياس» محصورة في README/SECURITY — ‏docs/ فيها أرقام مُعلَّقة تُقرأ حالةً وهي قياس لحظة",
+      "current": "مفتوحة",
+      "notes": "مقيس: tests/count-claims-sync.test.js يفحص ملفين فقط (README.md وSECURITY.md)؛ وسجل D1.14 يوثّق أن توسيع القاعدة إلى docs/ تُرك عمدًا كتذكرة مستقلة. الخطر الملموس: ‏docs/repository-audit-*.ar.md وdocs/*.md تحمل صيغ N/M و«100% PASS» صحيحة لتاريخها فقط.",
+      "required": "أن تُقرأ كل رقم في وثيقة سارية من قياس، أو تُوسم صراحةً بلحظتها — بنفس الآلية المستعملة في README/SECURITY لا باختراع ثانٍ. لا يحذف ولا يعيد كتابة أي سجل قائم.",
+      "acceptance": {
+        "criteria": [
+          "نطاق الفحص معلن في الحارس ويُقاس من قائمة ملفات، لا من تكرار نصّي محفور؛ وdocs/archive/ (إن وُجد) مُستثنًى بتعريف",
+          "كل وثيقة في docs/ إما بلا رقم حالة، أو رقمها منسوب إلى ‏self-model/baseline.json/npm run metrics، أو موسومة «قياس لحظة» بصيغة يفهمها الحارس",
+          "الفئات المُسجَّلة سلفًا في السجل (سجلّ/تاريخي) لا تُعاد صياغتها؛ الحارس يضيف الوسم عند الحاجة لا يحرّر الماضي",
+          "الحارس لا يكسر السجل: مواد docs/repository-audit-*.ar.md المرفوعة سابقًا تُقرأ سجلًّا (append-only) فلا تُحمرّ بأرقامها"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.25",
+      "track": "P3",
+      "severity": "low",
+      "area": "documentation",
+      "sources": [
+        "O06"
+      ],
+      "title": "فهرس التوثيق: ‏docs/archive/ معرّف في القاعدة لكنه غير موجود، وdocs/evidence/ مفهرس كمجلد واحد بدل ملفاته",
+      "current": "مفتوحة",
+      "notes": "مقيس عند التحضير: لا docs/archive/ في الشجرة (القاعدة في docs/README.md تعرف المسار والحارس يقبله عند أول أرشفة)؛ وdocs/evidence/ فيه عشرات الملفات ومفهرس في docs/README.md بصفّ مجلد واحد — فحارس D1.14 لا يرى ملفاته واحدًا واحدًا ولا يطلب له حالة.",
+      "required": "حسم دقة الفهرسة دون تضخيم الصيانة: إما صف لكل ملف دليل مع حالته، أو قاعدة «مجلد مُفهرَس = كل ملفاته مفهرسة تلقائيًا» مع سطر يقيس العدد. والأرشفة الفعلية تُفعَّل عند أول نقل وثيقة، بلا نقل استباقي.",
+      "acceptance": {
+        "criteria": [
+          "docs/README.md يعرّف بدقة هل الأدلة مفهرسة ملفًا بملف أم كمجلد، والاختبار يطابق النص مع الشجرة (عدّاد ملفات فعلي، لا رقم مكتوب)",
+          "لو بقي المجلد مُفهرَسًا كوحدة، فالحارس يفحص أن كل ملف جديد في docs/evidence/ مطابق لنمط مسموح (d1.x-*.tap/.txt) فلا يفلت أي ملف من الفهرسة",
+          "docs/archive/ يُنشأ عند أول أرشفة فعلية مع صفّ «مؤرشفة» لا قبلها؛ لا نقل استباقي لشيء",
+          "لا تضخيم: لا يُلزم كل ملف دليل بصفّ يدوي إن كان النمط يغطيه؛ القرار مسجّل في self-model/decision-log.json"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.26",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "بوابة «Scan for Exposed Secret Patterns» في security-scan.yml حمراء دائمًا: ثلاثة مفاتيح fixture ومطابقة الكاشف لنفسه تُفشل كل push وPR على main",
+      "current": "مغلقة — البوابة تفرّق: مادة مفتاح تُحتسب، وسطر كاشف أو توثيق لا يُحتسبان، والاستثناء ملف في المستودع",
+      "notes": "مقيس بـ gh (الوظيفة fail على main في آخر تشغيلين: 35794166206 و35710930174) ثم محليًا بأمر الـ workflow نفسه: أربع مطابقات — tools/google-fixtures.mjs:29-31 (ثلاثة PEM كاملة) وpackages/cells/celia/synthesis/src/anthropic-constitutional.js:136 (الكاشف يطابق نصّه 'nexa:key:priv:'). رأس الملف يقول إنها throwaway test keys with a known private half، أي ليست أسرارًا حقيقية؛ والكيانات DER صالحة (PKCS#8 RSA، 1217 بايت). المستودع عام (gh: isPrivate=false) فمنشورًا معروف أصلًا. العطب في البوابة لا في الـ fixture:exit 1 بلا تمييز بين تسريب حقيقي وضجيج دائم.",
+      "required": "أن تُفرّق البوابة بين تسريب و fixture، معلَنًا في المستودع لا في نصّ الـ workflow وحده؛ وألّا يُثبَّت نجاحها بحذف الفحص. القرار المطلوب: قائمة استثناء بمسار + سبب + رقم advisory/PR، أو نقل الـ fixtures إلى مسار خارج نطاق الفحص، وتضييق نمط الكاشف فلا يبتلع نصّه الذاتي.",
+      "acceptance": {
+        "criteria": [
+          "البوابة تُنهي بـ rc=0 على الشجرة الحالية مع بقاء الـ fixtures حيث هي، أو نقلها إلى مسار مُستثنًى بنصّ في المستودع لا في الـ workflow فقط",
+          "نمط الفحص لا يطابق أسطر الكاشف الذاتية (قِيَاس: anthropic-constitutional.js لم تعد في النتيجة)، ويُثبت ذلك بحالة اختبار تبني سطر كاشف مشابه",
+          "لو أُدرجت قائمة استثناء فكل مدخل فيها له سبب ومالك؛ ويضاف حارس يفشل لو ذُكر ملف في القائمة وهو محذوف من المستودع (لا استثناءات ميتة)",
+          "لو وُجد تسريب حقيقي جديد (PEM في ملف غير مُستثنًى) فالوظيفة لا تزال تُنهي rc≠0 — يُقاس بحقن مؤقت في نسخة لا في المستودع",
+          "الملف المُعاد في tests/known-gaps/d1.26-… يُحذف في نفس commit الإغلاق، ونسخة gh تُظهر الوظيفة خضراء على main"
+        ]
+      },
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/secret-scan-allowlist.test.js",
+      "opened_at": "2026-09-24T09:10:00Z",
+      "closed_at": "2026-09-24T12:25:00Z",
+      "ticket_status": "enforced — بوابة الأسرار صارت قرارًا يفرّق؛ لا حمر دائم على main ولا إسكات: tools/check-secret-scan-allowlist.mjs + self-model/secret-scan-allowlist.json",
+      "follow_ups": [
+        "الخطوة S9 في security-scan.yml ما زالت capture-then-decide بنمط $(grep … || true)؛ ليس ابتلاعَ قرار (يُتبع بـ exit 1) لكنها تُرحّب بالنمط نفسه — تُحوَّل إلى الفاحص نفسه إن وسِّعت تغطيته",
+        "node --test في هذه الوظيفة يعمل بلا --import ./tests/bootstrap.mjs (يبني بيئة أقل من npm test)؛ يظل أخضر لأن security.test.js لا يحتاج المتغيرات، لكنه انزلاق محتمل لتغيير لاحق",
+        "لا قائمة أنواع DAG في docs/؛ لو وُثّقت فRATE_LIMIT_REJECTED (من D1.28) لازم لها"
+      ]
+    },
+    {
+      "id": "D1.27",
+      "track": "P3",
+      "severity": "low",
+      "area": "static-analysis-triage",
+      "sources": [
+        "O08"
+      ],
+      "title": "تنبيهات الفحص الساكن بلا مصافحة معلنة: فرعان من أربعة على نمط مُراجَع في tools/celia-perimeter-auth.mjs يُبقيان كل PR أحمر",
+      "current": "مفتوحة",
+      "notes": "مقيس من PR #29: gh api check-runs/107161367785/annotations أعطى أربعة failure — اثنان نظافة في حراس هذه الجلسة (صُحّبا في نفس الجولة: متغيّر حلقة غير مستعمل، وهروب تنصيص بـ replace)، واثنان على tools/celia-perimeter-auth.mjs:76 (»Password … hashed insecurely« على timingSafeEqual(sha256(presented), sha256(expected))) و:102 («property name to write to depends on a user-provided value» على كتابة الكوكيز). الاثنان الأخيران مطبَّلة بالقياس: المفتاح المشترك ليس كلمة مرور مخزّنة فتقوية KDF بلا معنى مع مقارنة متساوية الوقت، والكتابة على Object.create(null) مع حجب __proto__/constructor لا تصل نموذجًا. API القائمة الكاملة مرفوض (403 لصلاحية الـ token) فالقياس من annotations فقط. — ملاحظة بنية للمُعيد: بنده (ب) كان يقرأ ملف مُعيد تذكرة أخرى فانهزم عند إغلاق تلك؛ الحراس لا يقرؤون بعضهم",
+      "required": "مصافحة قابلة للمراجعة لا إسكاتًا أعمى: سجلّ في المستودع يسمّي الـ query ids والملف والسبب والمالك، أو تعطيل محلي للـ query بنمط يفهمه الأداة؛ ويُبقى على فشل البوابة أمام أي تنبيه جديد غير مُصافَح.",
+      "acceptance": {
+        "criteria": [
+          "ملف مصافحة في المستودع (أحد المسارات الثلاثة التي يسمّيها المُعيد) يذكر الـ query ids والملف وسبب كل تصنيف وتاريخه",
+          "لا يُسقَط الفحص كاملًا ولا يُفعَّل continue-on-error على وظيفة التحليل (ورث D1.19/D1.20: لا ابتلاع فشل)",
+          "تنبيه جديد غير مُصافَح يُبقي الـ PR أحمر — يُقاس بحقن تنبيه تجريبي في نسخة لا في المستودع، أو بتعليق على PR حقيقي",
+          "المُعيد الحالي يظل يفشل لو تغيّر نمط perimeter (المقارنة أو Object.create(null)) فالحارس مربوط بالشيفر لا بالتصريح",
+          "تُذفَع المصافحة إلى self-model/decision-log.json بتذكرة قرار، لأن تعطيل query قرار حوكمة لا تفصيل تقني"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T09:55:00Z"
+    },
+    {
+      "id": "D1.28",
+      "track": "P2",
+      "severity": "medium",
+      "area": "telemetry-honesty",
+      "sources": [
+        "O08"
+      ],
+      "title": "createRateLimiter يوثّق options.onAudit ويستقبله ولا يستدعيه أبدًا: رفض 429 لا يصل DAG الداشبورد من أي طريق",
+      "current": "مغلقة — الصنبور يُستدعى من فرع الرفض نفسه، وبلا خام",
+      "notes": "مقيس: tools/celia-rate-limit.mjs يعرّف onAudit في JSDoc (:72) ويربطه (:85) ولا يوجد له استدعاء في الملف (grep: onAudit( = 0)؛ مقابل ذلك tools/celia-perimeter-auth.mjs يستدعيه فعلًا (:400 و:407). والمستدعي tools/celia-dashboard-server.mjs:118-120 يمرّر (entry) => emitDagEvent(entry.type, entry) فيظن أن رفض الحدّ يُرى. ولا حدث DAG آخر باسم RATELRimit يغطّيه (قِيس بنفس الملف).",
+      "required": "إمّا استدعاء الصنبور عند الرفض بنفس شكل سطر الـ perimeter (type/at/ip أو bucketId،بلا محتويات دلو ولا بيانات غيرة) وحراسته، أو إلغاء الخيار من الواجهة ومن المستدعي — لا تعليق صامت يترك التصريح كاذبًا. الإصلاح عند الحدود: لا مسّ لـ packages/.",
+      "acceptance": {
+        "criteria": [
+          "الصنبور يُستدعى مرة واحدة على الأقل لكل رفض (اختبار يبني limiter بـ max:1 ويعدّ النداءات) — أو يُحذف الخيار من JSDoc والتوقيع ومن caller في نفس التغيير",
+          "السطر المنشور لا يحمل محتويات الدلو ولا معرّفات callers أخرى؛ لا مفتاح ولا تجزئته (ورث سياسة: لا سرّ في السجل)",
+          "إبطال مُثبَت: تعطيل الاستدعاء (أو إبقاؤه محذوفًا مع التصريح) يُحمِرّ هذا الحارس وحده — يُقاس بـ mutation ثم استعادته",
+          "لو اختير مسار الإلغاء فـ emitDagEvent لا يستقبل نوعًا مجهولًا، ويُحدَّث ملحق O في الوثيقة بلا إعادة كتابة ما سبق"
+        ]
+      },
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/rate-limit-audit-sink.test.js",
+      "opened_at": "2026-09-24T10:25:00Z",
+      "closed_at": "2026-09-24T11:20:00Z",
+      "ticket_status": "enforced — نداء onAudit صار يتمّ مرة لكل رفض بشكل سطر الـ perimeter (type/at/bucket/limit/retryAfterSec)؛ الوسم هو hash الدلو الذي يعيده الحكم فلا خام في السطر؛ والنداء غير مبتلَع عمدًا",
+      "follow_ups": [
+        "تنبيه CodeQL الباقي tests/served-telemetry-honesty.test.js:34 (دالة measuredPosture غير مستعملة) تُرك لصاحبه: إما حذف في PR منفصل أو مصافحة تحت D1.27",
+        "لا قائمة أنواع DAG موثقة في docs/ (قيس: لا PERIMETER_* ولا TERMINAL_* مذكورة)، فRATE_LIMIT_REJECTED لا يخلق انجراف توثيق؛ لو وُثّقت الأنواع يومًا فالدخول الجديد لازم لها",
+        "تغطية حدود الحدّ نفسها (نوافذ/إطفاء/أوضاع المفاتيح) تبقى عند tests/server-rate-limit.test.js عبر الخادم؛ حارس D1.28 يفحص سطر التحقيق فقط ولا يدّعي تغطية الخوارزمية"
+      ]
     }
   ],
-  "updated_at": "2026-09-22T22:45:00Z"
+  "updated_at": "2026-09-24T12:25:00Z"
 }

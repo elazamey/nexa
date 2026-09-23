@@ -2,6 +2,28 @@
  * ReportWriter - Multi-Platform Bug Bounty & Cryptographic Report Generator
  * Builds high-impact, submission-ready reports for HackerOne, Bugcrowd, Intigriti, and Immunefi.
  */
+/**
+ * D1.8 (A13 / DI-17): تذييل مشتق من إيصال finding نفسه — لا نص ثابت.
+ * «7/7 PASSED» و«cryptographically pre-validated» كانا يُروَّيان لأي finding، بما فيه
+ * من لا إيصال له أصلًا؛ الآن: إيصال صادر ⇒ معرّفه ودرجته وبصمة توقيعه، وغير ذلك ⇒ NOT
+ * CERTIFIED مع الرمز والأسباب، ولا ادعاء تشفيري.
+ */
+function certificationFooter(finding) {
+  const receipt = finding?.receipt;
+  const issued = Boolean(receipt) && receipt.verified === true && typeof receipt.signature === 'string' && receipt.certified !== false;
+  if (issued) {
+    return (
+      `*Gate validation: ${receipt.gateScore ?? 'issued'} · receipt ${receipt.findingId ?? '(unidentified)'} · ` +
+      `signature ${String(receipt.signature).slice(0, 16)}… · NEXA Evidence Bridge (cryptographically signed).*`
+    );
+  }
+  if (!receipt) {
+    return '*NOT CERTIFIED — no NEXA receipt was issued for this finding; nothing in this report is cryptographically validated.*';
+  }
+  const reasons = Array.isArray(receipt.reasons) && receipt.reasons.length > 0 ? `\n*Refusal reasons: ${receipt.reasons.join(' | ')}*` : '';
+  return `*NOT CERTIFIED (${receipt.code ?? 'NEXA-E-NO-RECEIPT'}) — the evidence bridge refused this finding; submit nothing on it.*${reasons}`;
+}
+
 export class ReportWriter {
   /**
    * Generates a HackerOne submission markdown report
@@ -39,7 +61,7 @@ ${finding.impact || 'Direct violation of authorization boundaries and sensitive 
 ${finding.remediation || 'Apply input sanitization and strict capability-based authorization checks.'}
 
 ---
-*Report automatically generated and cryptographically pre-validated by NEXA Agentic Bug Hunter (7-Question Gate: 7/7 PASSED).*
+${certificationFooter(finding)}
 `;
   }
 

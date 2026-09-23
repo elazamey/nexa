@@ -38,7 +38,50 @@ export function snapshot(root, prefix = '', result = new Map()) {
   return result;
 }
 
-export async function startIsolatedServer(t, config, commitConfig) {
+export function copySources(root) {
+  for (const area of ['packages', 'adapters', 'tools']) {
+    cpSync(join(repository, area), join(root, area), {
+      recursive: true,
+      filter(path) {
+        const stat = lstatSync(path);
+        if (stat.isSymbolicLink()) return false;
+        const name = basename(path);
+        if (name.startsWith('.') || name === 'node_modules') return false;
+        return stat.isDirectory() || /\.(?:m?js)$/.test(name) || name === 'package.json';
+      },
+    });
+  }
+  cpSync(join(repository, 'package.json'), join(root, 'package.json'));
+  return root;
+}
+
+/** Throwaway source root, removed with the test. Needed by boot-time tests that
+ *  spawn the server directly instead of through the readiness fixture. */
+export function isolatedRoot(t, prefix = 'nexa-isolated-') {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  copySources(root);
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  return root;
+}
+
+/**
+ * Environment for a spawned server: no inherited credentials, NODE_OPTIONS or
+ * live service URLs. `extra` wins, so a test can pin NODE_ENV / NEXA_API_KEY.
+ */
+export function minimalEnv(extra = {}) {
+  const env = { PORT: '0', SUPABASE_URL: 'mock://integration-test', SUPABASE_ANON_KEY: 'mock-key' };
+  for (const name of ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR']) {
+    if (process.env[name]) env[name] = process.env[name];
+  }
+  return Object.assign(env, extra);
+}
+
+/** repository-relative path of the test transport bootstrap (patches listen). */
+export const httpChildBootstrap = bootstrap;
+export const repositoryRoot = repository;
+export const serverEntry = join(repository, 'tools/celia-dashboard-server.mjs');
+
+export async function startIsolatedServer(t, config, commitConfig, options = {}) {
   // root is resolved from the server's import.meta.url, not cwd. Copy sources
   // rather than importing the checkout's server, which would write into it.
   const root = mkdtempSync(join(tmpdir(), 'nexa-celia-http-'));
@@ -58,25 +101,12 @@ export async function startIsolatedServer(t, config, commitConfig) {
     }
   });
 
-  for (const area of ['packages', 'adapters', 'tools']) {
-    cpSync(join(repository, area), join(root, area), {
-      recursive: true,
-      filter(path) {
-        const stat = lstatSync(path);
-        if (stat.isSymbolicLink()) return false;
-        const name = basename(path);
-        if (name.startsWith('.') || name === 'node_modules') return false;
-        return stat.isDirectory() || /\.(?:m?js)$/.test(name) || name === 'package.json';
-      },
-    });
-  }
-  cpSync(join(repository, 'package.json'), join(root, 'package.json'));
+  copySources(root);
 
   // Deliberately do not inherit credentials, NODE_OPTIONS or live service URLs.
-  const env = { PORT: '0', SUPABASE_URL: 'mock://integration-test', SUPABASE_ANON_KEY: 'mock-key' };
-  for (const name of ['PATH', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR']) {
-    if (process.env[name]) env[name] = process.env[name];
-  }
+  // Perimeter/deploy-layer tests pin the runtime env (a key, NODE_ENV) through
+  // options.env without changing any existing caller.
+  const env = minimalEnv(options.env ?? {});
   if (stateDirectory) {
     initializeCommitConsumptionStore({ directory: stateDirectory, root, targetRoot: workspaceCommitRoot(root) });
     env.CELIA_COMMIT_STATE_DIR = stateDirectory;
@@ -112,21 +142,65 @@ export async function startIsolatedServer(t, config, commitConfig) {
     child.on('message', onMessage);
   });
 
-  async function post(path, body) {
+  async function post(path, body, headers = {}) {
     const response = await fetch(`http://127.0.0.1:${port}${path}`, {
       method: 'POST',
       // Identity and capability, if any, are inside the signed body authorization.
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5_000),
       redirect: 'error',
     });
     return { status: response.status, body: await response.json() };
   }
-  async function get(path) {
-    const response = await fetch(`http://127.0.0.1:${port}${path}`, { signal: AbortSignal.timeout(5_000), redirect: 'error' });
+  async function get(path, headers = {}) {
+    const response = await fetch(`http://127.0.0.1:${port}${path}`, {
+      headers,
+      signal: AbortSignal.timeout(5_000),
+      redirect: 'error',
+    });
     return { status: response.status, body: await response.json() };
   }
-  return { root, post, get };
+
+  // Byte-exact transport for contracts that live in the path itself (approval
+  // ids are URIs; a test that proves percent-decoding must not let fetch
+  // re-encode the sequence first) and for cookie/header-level assertions that
+  // the fetch helpers above deliberately do not surface.
+  const { request } = await import('node:http');
+  function raw({ method = 'GET', path, headers = {}, body } = {}) {
+    return new Promise((resolve, reject) => {
+      const payload = body === undefined || body === null
+        ? undefined
+        : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
+      const req = request({
+        host: '127.0.0.1', port, method, path,
+        headers: {
+          ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': payload.length } : {}),
+          ...headers,
+        },
+        agent: false,
+      }, (res) => {
+        const chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString('utf8');
+          let parsed = null;
+          try { parsed = text.length > 0 ? JSON.parse(text) : null; } catch { /* non-JSON body */ }
+          resolve({
+            status: res.statusCode,
+            headers: res.headers,
+            text,
+            body: parsed ?? { raw: text },
+          });
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(5_000, () => req.destroy(new Error('raw request timed out')));
+      if (payload) req.write(payload);
+      req.end();
+    });
+  }
+
+  return { root, port, post, get, raw };
 }
 

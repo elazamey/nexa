@@ -1,4 +1,8 @@
 import { ArtifactReader } from './artifact-reader.js';
+import { evaluateSafeTestingRecord } from './safe-testing.js';
+import { evaluateImpactDemonstration } from './impact-evidence.js';
+import { evaluateBoundaryEvidence } from './boundary-evidence.js';
+import { evaluateScopeAuthorization } from './scope-evidence.js';
 
 /**
  * SevenGateValidator - 7-Question Strict Finding Gate & 4-Gate Triage
@@ -6,6 +10,9 @@ import { ArtifactReader } from './artifact-reader.js';
  *
  * GATE_2_REPRODUCIBILITY تُقيَّم عبر ArtifactReader المستقل فقط (عقد قارئ الـ artifact
  * v0.3 §5.1): locator نصي وحده لا يكفي — يلزم artifact صالح البنية.
+ * GATE_7_SAFE_TESTING_COMPLIANCE (D1.3 / DI-07) كانت `pass: true` حرفيًا؛ صارت تُحسب من
+ * سجل سلوك الاختبار مربوطًا بمنتج الدليل نفسه (`safe-testing.js`) — غياب السجل رفضٌ مُعلَّل.
+ * لا بوابة هنا بقيمة pass حرفية؛ وأي رفض يحمل سبب في failedGates.
  */
 export class SevenGateValidator {
   constructor(options = {}) {
@@ -26,22 +33,38 @@ export class SevenGateValidator {
    * Evaluates a candidate finding through the 7-Question Gate
    */
   evaluateFinding(finding, context = {}) {
+    // الدليل يُقرأ مرة واحدة: صلاحيته تُغذّي GATE_2، ومنتِجه يربط شهادة GATE_7 به (D1.3)
+    const artifactOutcome = this.artifactReader.validate(finding.artifact);
+    const safeTesting = evaluateSafeTestingRecord(
+      finding.safeTesting !== undefined ? finding.safeTesting : context.safeTesting,
+      artifactOutcome.artifact
+    );
+    // D1.4 (DI-06): مسندان مستقلان — الأثر من مضمون الادعاء، والحدود من سجلّ {from,to,kind}
+    // مقيَّد بجدول الأصناف. لا شدة في أيٍّ منهما: رفع severity كان يفتح البوابتين معًا.
+    // D1.5 (DI-13): النطاق يُطابق هنا من سجل بيانات — ادعاء `inScope:true` لا يُجيب البوابة
+    const scope = evaluateScopeAuthorization(finding, context);
+    const impact = evaluateImpactDemonstration(finding);
+    const boundary = evaluateBoundaryEvidence(finding);
     const checks = [
       {
         id: 'GATE_1_SCOPE',
         question: 'Is the asset strictly within authorized program scope?',
-        pass: context.inScope !== false && !finding.outOfScope
+        // D1.5: المطابقة معادة الحساب (target ∈ allow ∖ deny) وأصل الـ finding مطابق للهدف
+        pass: scope.pass,
+        reason: scope.reason
       },
       {
         id: 'GATE_2_REPRODUCIBILITY',
         question: 'Is the vulnerability directly reproducible with deterministic steps?',
         // §5.1: المرور الحصري عبر artifact يجتاز القارئ المستقل — لا مجرد locator نصي
-        pass: this.artifactReader.validate(finding.artifact).valid
+        pass: artifactOutcome.valid
       },
       {
         id: 'GATE_3_DEMONSTRABLE_IMPACT',
         question: 'Does the finding demonstrate concrete security or financial impact?',
-        pass: ['CRITICAL', 'HIGH', 'MEDIUM'].includes(finding.severity)
+        // D1.4: مضمون الادعاء لا ترتيبه — متجه ضرر مسمّى، بلا صياغة احتمال
+        pass: impact.pass,
+        reason: impact.reason
       },
       {
         id: 'GATE_4_POC_EVIDENCE',
@@ -56,12 +79,16 @@ export class SevenGateValidator {
       {
         id: 'GATE_6_BOUNDARY_BYPASS',
         question: 'Does this exploit cross an actual tenant, authorization, or process boundary?',
-        pass: finding.severity === 'CRITICAL' || finding.severity === 'HIGH' || finding.severity === 'MEDIUM'
+        // D1.4: سجلّ حدود مقيَّد بالصنف، لا مرآة لـ GATE_3
+        pass: boundary.pass,
+        reason: boundary.reason
       },
       {
         id: 'GATE_7_SAFE_TESTING_COMPLIANCE',
         question: 'Was the verification conducted non-destructively without service disruption?',
-        pass: true
+        // D1.3 (DI-07): محسوبة من سجلّ سلوك الاختبار، لا من حرف true مهدى
+        pass: safeTesting.pass,
+        reason: safeTesting.reason
       }
     ];
 
@@ -75,7 +102,7 @@ export class SevenGateValidator {
       status: isValid ? 'APPROVED_FOR_REPORT' : 'REJECTED_AT_GATE',
       // المساند السبعة كما حُسبت فعليًا — يستخدمها جسر الشهادة في قاعدة 7/7 (§10.10)
       checks: checks.map(c => ({ id: c.id, question: c.question, pass: c.pass === true })),
-      failedGates: checks.filter(c => !c.pass),
+      failedGates: checks.filter(c => !c.pass).map(c => ({ id: c.id, question: c.question, reason: c.reason || null })),
       verdict: isValid 
         ? 'Finding passed all 7 validation gates. Ready for submission.'
         : `Finding killed by ${checks.filter(c => !c.pass).map(c => c.id).join(', ')}.`

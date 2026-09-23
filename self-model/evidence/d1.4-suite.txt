@@ -1,0 +1,10 @@
+# D1.4 suite — المجموعة الكاملة عند الإغلاق (npm test)، ثم npm run verify بأكمله
+# المُشغِّل: npm test  (node --test + TAP + tests/bootstrap.mjs) — بعد حذف المُعيد وإضافة الحارس الدائم
+# tests 645
+# pass 645
+# fail 0
+# npm run verify (الحفل الكامل: kernel + vectors + audits + tests):
+# verify_exit=0
+# tests 16
+# pass 16
+# fail 0

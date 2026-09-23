@@ -41,17 +41,216 @@ const getStateStyle = (state) => {
   }
 };
 
-export default function NexaDashboard() {
+// === D1.10 perimeter: browser identity is a session cookie, never a secret ===
+// NEXA_API_KEY is an operator/CLI credential read from the server environment.
+// Anything that reaches page JavaScript is public by definition, so this bundle
+// holds no key, reads no Vite env credential and persists nothing: the operator
+// types the key ONCE, the server answers with an HttpOnly session cookie, and
+// the dashboard (polling + SSE) does not mount until that session exists.
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+let nexaCsrfToken = null;
+let nexaCompanionInstalled = false;
+
+function installCsrfCompanion() {
+  // Double-submit companion, installed once for every same-origin /api/ mutation
+  // so no call site can forget it. The token is not a secret — the defense is
+  // that a cross-site document can neither read it nor attach a custom header to
+  // a credentialed request that this origin would accept. HttpOnly alone is not
+  // a CSRF control; this is the missing half.
+  if (nexaCompanionInstalled || typeof window === 'undefined' || typeof window.fetch !== 'function') return;
+  nexaCompanionInstalled = true;
+  const native = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    const raw = typeof input === 'string' ? input : (input && input.url) || '';
+    let sameOrigin = false;
+    let path = raw;
+    try {
+      const parsed = new URL(raw, window.location.href);
+      sameOrigin = parsed.origin === window.location.origin;
+      path = parsed.pathname;
+    } catch { /* unparseable: leave the request untouched */ }
+    const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+    if (!nexaCsrfToken || !sameOrigin || !path.startsWith('/api/') || !STATE_CHANGING_METHODS.has(method)) {
+      return native(input, init);
+    }
+    const base = (init && init.headers) || (typeof input === 'object' && input.headers) || undefined;
+    const headers = new Headers(base);
+    if (!headers.has('x-nexa-csrf')) headers.set('x-nexa-csrf', nexaCsrfToken);
+    return native(input, { ...init, headers, credentials: 'same-origin' });
+  };
+}
+
+// === D1.10 layer 4: a decision is signed, never defaulted ===
+// The browser is the human's *signing hand*, not a key holder: it asks this
+// deployment's server to sign the decision the operator clicked (POST …/sign —
+// which mutates nothing), then submits that signature with an explicit approver
+// and an explicit scope. So no private key ships in this bundle, and no
+// `approve({})` can silently read as "the trusted operator approved once":
+// absence of a decision is a refusal, decided by the server-side contract.
+async function signApprovalDecision(approvalId, { decision, scope, reason }) {
+  const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/sign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      decision,
+      ...(scope ? { scope } : {}),
+      ...(reason ? { reason } : {}),
+    }),
+  });
+  const signed = await res.json().catch(() => ({}));
+  if (!res.ok || typeof signed.signature !== 'string') {
+    throw new Error(signed.error || `signing failed (${res.status})`);
+  }
+  return signed;
+}
+
+async function submitApprovalDecision(approvalId, verb, signed) {
+  const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/${verb}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      approverKid: signed.approverKid,
+      signature: signed.signature,
+      ...(verb === 'approve' ? { scope: signed.scope } : { reason: signed.reason ?? null }),
+    }),
+  });
+  return { status: res.status, body: await res.json().catch(() => ({ ok: false })) };
+}
+
+async function decideAndSubmit(approvalId, verb, { scope, reason } = {}) {
+  const signed = await signApprovalDecision(approvalId, { decision: verb, scope, reason });
+  return submitApprovalDecision(approvalId, verb, signed);
+}
+
+export default function NexaPerimeterGate() {
+  const [session, setSession] = useState(null); // null = probing
+  const [unreachable, setUnreachable] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  const probe = () => fetch('/api/v1/session', { headers: { Accept: 'application/json' } })
+    .then((r) => r.json())
+    .then((data) => {
+      nexaCsrfToken = typeof data?.csrfToken === 'string' ? data.csrfToken : null;
+      setUnreachable(false);
+      setSession(data);
+    })
+    .catch(() => {
+      setUnreachable(true); // never mount blind: the wall state is unknown
+    });
+
+  useEffect(() => {
+    installCsrfCompanion();
+    let cancelled = false;
+    let attempts = 0;
+    const tick = () => {
+      if (cancelled) return;
+      attempts += 1;
+      probe();
+      if (attempts < 3) setTimeout(tick, 1500);
+    };
+    tick();
+    return () => { cancelled = true; };
+  }, []);
+
+  const login = async (event) => {
+    event?.preventDefault?.();
+    const value = apiKey.trim();
+    if (!value || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // One exchange, then the browser holds only an opaque session id. The
+        // value is never stored: not in localStorage, not in a cookie we write.
+        body: JSON.stringify({ apiKey: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || `perimeter rejected the credential (${res.status})`);
+        setApiKey('');
+        return;
+      }
+      nexaCsrfToken = typeof data?.csrfToken === 'string' ? data.csrfToken : null;
+      setApiKey('');
+      await probe();
+    } catch (e) {
+      setError(String(e?.message || e));
+    } finally {
+      setBusy(false);
+      inputRef.current?.focus?.();
+    }
+  };
+
+  const shell = (children) => (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-sm bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        {children}
+      </div>
+    </div>
+  );
+
+  if (session === null) {
+    return shell(
+      <div className="text-slate-400 text-xs font-mono uppercase tracking-widest animate-pulse">
+        {unreachable ? 'Perimeter unreachable — retrying…' : 'Checking session…'}
+      </div>
+    );
+  }
+
+  if (session.required && !session.authenticated) {
+    return shell(
+      <form onSubmit={login} className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <span className="text-slate-200 text-sm font-semibold">NEXA operator sign-in</span>
+        </div>
+        <p className="text-slate-500 text-[11px] leading-relaxed">
+          This deployment requires a perimeter credential for every <code className="text-slate-400">/api/*</code> route.
+          The key is exchanged once for an HttpOnly, SameSite=Strict session cookie — it never enters this bundle.
+          Perimeter identity is not authorization: approvals and gates are still enforced by the kernel.
+        </p>
+        <input
+          ref={inputRef}
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="NEXA operator key"
+          className="bg-slate-950 border border-slate-700 focus:border-emerald-500/60 outline-none rounded-lg px-3 py-2 text-slate-200 text-xs font-mono"
+        />
+        {error && <p className="text-red-400 text-[11px] font-mono break-words">{error}</p>}
+        <button
+          type="submit"
+          disabled={busy || !apiKey.trim()}
+          className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold uppercase tracking-widest px-3 py-2 disabled:opacity-40 transition-colors"
+        >
+          {busy ? 'Signing in…' : 'Start session'}
+        </button>
+      </form>
+    );
+  }
+
+  return <NexaDashboard />;
+}
+
+function NexaDashboard() {
   const [metrics, setMetrics] = useState({
     status: 'LIVE',
+    // D1.17: لا عدد أولي يُعرض كأنه قراءة — ما لا يأتي من response يبقى placeholder
     parallelNodes: 0,
     speculativeHits: 0,
-    memoryDigests: 142,
-    contextUsage: '2.1',
+    memoryDigests: 0,
+    contextUsage: 'not measured',
     executionTime: 0,
-    securityGates: '6/6',
-    evidenceCount: 3,
-    testsPass: '314/314'
+    securityGates: 'not measured',
+    evidenceCount: 0,
+    testsPass: 'not measured'
   });
 
   const [logs, setLogs] = useState([]);
@@ -368,9 +567,7 @@ export default function NexaDashboard() {
     if (!mission?.pending) return;
     try {
       setMissionBusy(true);
-      const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(mission.pending.approvalId)}/approve`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scope: 'once' }),
-      }).then(r => r.json());
+      const { body: res } = await decideAndSubmit(mission.pending.approvalId, 'approve', { scope: 'once' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${res.ok ? '✅ Approved once — mission resuming…' : '✗ Approve failed: ' + (res.error || res.code)}`, ...prev].slice(0,30));
     } catch (e) {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Approve failed: ${e.message}`, ...prev].slice(0,30));
@@ -383,9 +580,7 @@ export default function NexaDashboard() {
     if (!mission?.pending) return;
     try {
       setMissionBusy(true);
-      await fetch(`/api/v1/authorizations/${encodeURIComponent(mission.pending.approvalId)}/deny`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'denied from dashboard' }),
-      });
+      await decideAndSubmit(mission.pending.approvalId, 'deny', { reason: 'denied from dashboard' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ⛔ Denied from dashboard`, ...prev].slice(0,30));
     } catch (e) {
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ✗ Deny failed: ${e.message}`, ...prev].slice(0,30));
@@ -397,10 +592,9 @@ export default function NexaDashboard() {
   const decideAuthorization = async (approvalId, verb, scope) => {
     try {
       setGovernBusy(true);
-      const res = await fetch(`/api/v1/authorizations/${encodeURIComponent(approvalId)}/${verb}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verb === 'approve' ? { scope: scope || 'once' } : { reason: 'denied from Approval Center' }),
-      }).then(r => r.json());
+      const { body: res } = await decideAndSubmit(approvalId, verb, verb === 'approve'
+        ? { scope: scope || 'once' }
+        : { reason: 'denied from Approval Center' });
       setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${res.ok ? (verb === 'approve' ? `✅ Approved (${res.scope})` : '⛔ Denied') + ` — ${String(approvalId).slice(-8)}` : '✗ ' + (res.error || res.code)}`, ...prev].slice(0,30));
       fetchGovernance();
       if (missionIdRef.current) refreshMission(missionIdRef.current);
@@ -446,7 +640,7 @@ export default function NexaDashboard() {
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.8 ultimate // 8-Tier + 7 Physics • Relativistic • Braid • Astrocytic • Holomorphic • DNA • Holographic • Morphic • World-Shaking</p>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 30 tools • 16 DSLs • 15 Engines • Z3 100% proof</p>
+                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> engine claims — not measured (see /api/celia/state → claims)</p>
               </div>
             </div>
           </div>
@@ -478,7 +672,7 @@ export default function NexaDashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <CounterCard title="Parallel DAGs" value={metrics.parallelNodes} unit="Active" icon={Cpu} color="text-cyan-400" bgGlow="bg-cyan-500" pulse={metrics.parallelNodes > 0} subValue={`${dagStats.passed}/${dagStats.total} done`} />
-          <CounterCard title="Speculative ⚡" value={metrics.speculativeHits} unit="Hits" icon={Zap} color="text-yellow-400" bgGlow="bg-yellow-500" subValue="PASTE 48.5% saved" />
+          <CounterCard title="Speculative ⚡" value={metrics.speculativeHits} unit="Hits" icon={Zap} color="text-yellow-400" bgGlow="bg-yellow-500" subValue="PASTE — claim, not measured" />
           <CounterCard title="Governed Mem" value={metrics.memoryDigests} unit="Nodes" icon={Brain} color="text-cyan-400" bgGlow="bg-cyan-500" subValue="PROPOSED→RETIRED" />
           <CounterCard title="RAG Engine" value="Top-12" unit="384d" icon={Layers} color="text-purple-400" bgGlow="bg-purple-500" subValue="pgvector optional" />
           <CounterCard title="Exec Time" value={metrics.executionTime} unit="ms" icon={Clock} color="text-slate-300" bgGlow="bg-slate-500" subValue={`${dagStats.passed} passed`} />
@@ -562,7 +756,7 @@ export default function NexaDashboard() {
                 {dagStats.passed > 0 && <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] text-emerald-300">{dagStats.passed} ✓</span>}
               </h3>
               <div className="flex items-center gap-2 text-[10px] font-mono">
-                <span className="text-slate-500">PASTE 48.5%</span>
+                <span className="text-slate-500">PASTE — claim, not measured</span>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
                 <span className="text-slate-400">maxParallel 3</span>
                 <div className={`w-2 h-2 rounded-full ml-1 ${connectionStatus === 'Live' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></div>

@@ -1,0 +1,27 @@
+# D1.18 green — الحارس 7 من 7 + بروفة تُنفّذ نصّ الخطوات من الـ YAML نفسه على نسخة طارحة نظيفة
+## 1) npm test -- tests/deploy-ci-parity.test.js (الشجرة النهائية بعد قلب السجل)
+ok 1 - D1.18: القارئ المستهدف يفهم الملفين — وإلا كان الحارس أعمى
+ok 2 - D1.18: النشر يثبّت الداشبورد من القفل، بلا install عائم وبلا ||
+ok 3 - D1.18: لا تثبيت في الجذر، والتبرير مقيس لا موروَث
+ok 4 - D1.18: تكافؤ النشر مع CI — نفس القفل ونفس major لـ node
+ok 5 - D1.18: الترتيب والبيانات — hunter قبل البناء، والمخرج فيه data، والرفع من dist
+ok 6 - D1.18: الأدوار معلنة بلا انزلاق — PRs لـ ci.yml والنشر على main، وصلاحيات بلا توسّع
+ok 7 - D1.18: كل أمر يناديه النشر يؤول إلى شيء موجود، والتعليق لا يبني خطوة
+# tests 7
+# pass 7
+# fail 0
+
+## 2) البروفة: نسخة من git ls-files إلى /tmp/deployfix2، وتُقرأ أوامر الخطوات من deploy-pages.yml (لا يُعاد كتابتها يدويًا)
+   [Install pinned dashboard dependencies] working-directory: dashboard → npm ci ⇒ exit 0
+   [Run Agentic Bug Hunter & Pre-Generate Data] working-directory: . → node src/security/agentic-hunter.js packages ⇒ exit 0 (Asserted 22 · تقرير 611B)
+   [Build Dashboard] working-directory: dashboard → npm run build ⇒ ✓ built in 3.05s · mkdir -p dist/data ⇒ 0 · cp -r data/* dist/data/ ⇒ 0
+   dist/data = bug-report.json, hunt-memory.json · عدد ملفات dist = 14 · الحجم 556K · الكل exit 0
+   ملاحظة أمانة: البروفة الأولى كشفت غلطي — كتبتُ cp -r ../data/* من داخل dashboard/ (= جذر المستودع، لا وجود له)،
+   فخرج dist/data فارغة مع exit 1. صُحّح المسار إلى data/* وأصبح الحارس يحلّ المسارات من disk ولا يقارن نصوصًا،
+   وأُزيل || true الذي كان يجعل النشر بلا بيانات أخضر. ما كان أي فحص نصّي للـ YAML ليمسك هذا.
+
+## 3) المجموعة الكاملة عند الإغلاق (npm test)
+   # tests 696
+   # pass 696
+   # fail 0
+   696 = 689 (بعد D1.16) + 7 (tests/deploy-ci-parity.test.js)؛ المُعيد لم يُحتسب (لم يدخل git أصلًا)

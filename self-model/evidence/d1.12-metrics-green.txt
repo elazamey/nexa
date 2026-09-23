@@ -1,0 +1,32 @@
+
+> nexa@0.1.0 metrics
+> node tools/check-metrics.mjs
+
+Gathering measurements...
+Measured metrics:
+  - Total tests: 633
+  - Security tests: 16
+  - Ω attacks: 31
+  - Google identity attacks: 8
+  - Closed gates: 6
+  - Ω error codes: 86
+  - Gated namespaces: 14
+  - Attack categories: 12
+✓ README.md Total tests: 633
+✓ README.md Security tests: 16
+✓ README.md Ω attacks: 31
+✓ README.md Google identity attacks: 8
+✓ README.md Closed gates: 6
+✓ README.md Ω error codes: 86
+✓ README.md Gated namespaces: 14
+✓ README.md Attack categories: 12
+✓ SECURITY.md Total tests: 633
+✓ SECURITY.md Security tests: 16
+✓ SECURITY.md Ω attacks: 31
+✓ SECURITY.md Google identity attacks: 8
+✓ SECURITY.md Closed gates: 6
+✓ SECURITY.md Ω error codes: 86
+✓ SECURITY.md Gated namespaces: 14
+✓ SECURITY.md Attack categories: 12
+
+✓ Metrics check passed: docs match measured reality.

@@ -5,6 +5,7 @@
   "base": "68c4e74244f961dedbd2ac6995b1f0ad19840a3a",
   "head": "68c4e74244f961dedbd2ac6995b1f0ad19840a3a",
   "timestamp": "2026-09-20T11:33:22.519Z",
+  "record_status": "HISTORICAL RECORD dated 2026-09-20T11:33:22.519Z — the measurements in `checks` were true when this plan was signed and are NOT a current claim; current numbers are measured by `npm test` and recorded in self-model/baseline.json (measurement) and the NEXA_METRICS block of README.md/SECURITY.md.",
   "provenance": {
     "digest#1": "6537457ce51b14f4074cf3837d5cbff51d6a6f4dd4f7e8d9d825f30e922054cc",
     "source": "git",

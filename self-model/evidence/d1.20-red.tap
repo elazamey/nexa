@@ -1,0 +1,19 @@
+# D1.20 red-as-proof — المُعيد 2 من 2 أخضر = الفجوة قائمة (قياس عند 2c94fd4)
+## المُعيد
+ok 1 - known-gap D1.20: خطوة النشر تبتلع فشلها بـ || true
+ok 2 - known-gap D1.20: لا حارس على سلوك مسار الإصدار (النشر والابتلاع غير مُختبَرين)
+# tests 2
+# pass 2
+# fail 0
+
+## لماذا لا يمكن لـ npm publish أن ينجح بهذه الإعدادات (القرار نفسه مُسجَّل D1.21، لا D1.20)
+   package.json: name='nexa', private=true, publishConfig={'@elazamey:registry': 'https://npm.pkg.github.com'}
+   publishConfig يوجّه الحزم الموسّعة @elazamey/* فقط — وnexa غير موسّعة؛ وprivate:true يجعل npm publish يفشل دائمًا
+   npm pack --dry-run => nexa-0.1.0.tgz · 698 ملفًا · 6.4MB (كل المستودع داخل الـ tarball)
+   ⇒ || true هو ما يجعل خطوة Publish خضراء بلا شيء منشور؛ والحزم التي يحتاجها hunter/البناء صفر:
+     لا workspace يعلن اعتمادية، وقفل الجذر بلا عقدة خارجية (قِيس في O22/O23) فـ npm ci || npm install no-op ثانٍ
+## جسر الأدلة موجود ويصدّر ما تستعمله خطوة node -e (لا يُقاس ادّعاءً):
+   src/security/hunter/nexa-evidence-bridge.js: export class NexaEvidenceBridge (:18) · signFinding(payload) (:171)
+## تغطية الاختبارات اليوم:
+   tests/env-reference-sync.test.js يذكر .github/workflows/release.yml في PIPELINE_FILES (:18) لفحص قراءات البيئة
+   فقط — لا assert على خطواته؛ ولا حارس غير known-gaps يمس publish/|| true فيه (قِيس في المُعيد)

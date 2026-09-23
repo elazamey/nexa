@@ -27,6 +27,12 @@ NEXA is small on purpose. The rules below exist so it stays checkable.
 9. **No assumed contracts.** Never plan a change on an API route, function, or
    event shape you have not located in the tree. `grep` the router / module
    first; if the anchor is missing, stop and re-locate instead of inventing.
+10. **Docs are indexed, never deleted.** Every new file under `docs/` lands with a
+    row in `docs/README.md` — purpose, class (`سارية` / `سجلّ` / `تخطيط` / `تصميم`),
+    and what keeps it honest. A superseded document is moved to `docs/archive/` and
+    its row is relabelled `مؤرشفة`; deletion erases evidence. Enforced by
+    `tests/docs-index-sync.test.js`, which also rejects a row citing a path that does
+    not exist and a `سجلّ`/`تخطيط` row without a date.
 
 ## Workflow
 
@@ -71,5 +77,5 @@ fix(capability): require parent constraints to be inherited
 
 Dropping a constraint silently relaxed a delegated grant. ...
 
-Verified: npm test (113 pass), npm run demo, npm run report (all gates CLOSED)
+Verified: npm test (the pass count copied from this run), npm run demo, npm run report (all gates CLOSED)
 ```

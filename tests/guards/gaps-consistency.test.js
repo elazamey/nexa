@@ -13,7 +13,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const GAPS_PATH = path.join(ROOT, 'self-model', 'gaps.json');
 const KNOWN_GAPS_DIR = path.join(ROOT, 'tests', 'known-gaps');
-const A_CODE_RE = /^A(0[1-9]|1[0-3])$/; // A01..A13
+// A01..A13 (خط الصيد) + O01..O09 (عائلة التشغيل — ملحق O، gaps.json v2.1.0-ops)
+const A_CODE_RE = /^(A(0[1-9]|1[0-3])|O0[1-9])$/;
+
+function mentionsGap(content, id) {
+  // Boundary-aware: «D1.10» يجب ألا يُطابق «D1.1».
+  // (إصلاح علة كامنة: المطابقة الساذجة بـ includes كانت ستمنع أي D1.1x —
+  //  ملف D1.10 كان سيُحسب مرجعًا للمغلقة D1.1 ويفشل حارس الأيتام.)
+  return new RegExp(`${id.replace('.', '\\.')}(?!\\d)`).test(content);
+}
 
 const gaps = JSON.parse(fs.readFileSync(GAPS_PATH, 'utf8'));
 
@@ -87,7 +95,7 @@ test('Guard D1.1/gaps: لا ملفات known-gaps يتيمة ولا لفجوات
   const allIds = gaps.gaps.map(g => g.id);
   for (const f of knownGapFiles()) {
     const content = fs.readFileSync(path.join(KNOWN_GAPS_DIR, f), 'utf8');
-    const referenced = allIds.filter(id => content.includes(id));
+    const referenced = allIds.filter(id => mentionsGap(content, id));
     assert.ok(referenced.length > 0, `${f}: لا يشير إلى أي فجوة (يتيم)`);
     for (const id of referenced) {
       assert.ok(openIds.includes(id),

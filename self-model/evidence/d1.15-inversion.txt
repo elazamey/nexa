@@ -1,0 +1,90 @@
+# D1.15 green — المرايا مولَّدة من مصدر واحد، وindex.html محسومة (npm test -- tests/duplicate-sync.test.js، الشجرة النهائية)
+ok 1 - D1.15: كل مرآة معلنة مطابقة لمصدرها الآن — والانحراف مكسور
+ok 2 - D1.15: الاتجاه مُعلَّن من جهة الاختبار — لا من الأقرب
+ok 3 - D1.15: لا نسخة ظلّ غير معلنة في الشجرة — التكرار نفسه قرار
+ok 4 - D1.15: index.html محسومة — مدخل Vite إنتاجي، والساكنة legacy بمسار معلن
+ok 5 - D1.15: الفحص لا يكتب، والكتابة idempotent، والسكربت موصَّل في npm
+ok 6 - D1.15: الفاحص يلتقط الانحراف ويكسر — لا يثق بحالة الشجرة
+# tests 6
+# pass 6
+# fail 0
+
+D1.15 INVERSION EVIDENCE — ستّ بارِعاء؛ المقياس: حارس التكرار يحمرّ وحده
+--- INVERSION H1 ---
+variant H1 applied
+   # tests 6 # pass 4 # fail 2  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- INVERSION H2 ---
+variant H2 applied
+   # tests 6 # pass 5 # fail 1  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- INVERSION H3 ---
+variant H3 applied
+   # tests 6 # pass 4 # fail 2  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- INVERSION H4 ---
+variant H4 applied
+   # tests 6 # pass 5 # fail 1  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- INVERSION H5 ---
+variant H5 applied
+   # tests 1 # pass 0 # fail 1  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- INVERSION H6 ---
+variant H6 applied
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> edge-rag-advanced.test.js
+   # tests 7 # pass 7 # fail 0  -> detector-independence.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 9 # pass 9 # fail 0  -> server-perimeter.test.js
+--- post-restore ---
+# tests 6 # pass 6 # fail 0 state: check=in sync · 9 مرآة مطابقة · 0 منحرفة · 0 مفقودة extra=9
+
+SUPPLEMENT — تصحيح نسختين من الانحراف كانتا غير صالحتين (أمانة القياس)
+ملاحظة: H5 أول مرة أنتج خطأ بناء (ملف غير مُحمَّل => 1 اختبار فاشل على مستوى الملف)، وH6 أول مرة كان
+خالي الأثر لأن المرايا متطابقة فلا شيء ليُكتب. أُعيدت صياغة النسختين: H5 يجعل الفاحص يتجاهل الجذر
+الممرر، وH6 يجعل --check يكتب — وقُيِّس كلٌّ على حدة بعد تعزيز الاختبار السادس بما يفحص أن الفحص
+لا يصلّح القرص. أُعيدت الشجرة بعد كل نسخة (syntax ok، وpost-restore 6 من 6).
+--- INVERSION H5 (valid: الفاحص يتجاهل rootDir) ---
+variant H5 (valid form) applied
+   (syntax ok)
+   # tests 6 # pass 5 # fail 1  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- INVERSION H6 (valid: --check يصلح بدل أن يفحص) ---
+variant H6 applied
+   (syntax ok)
+   # tests 6 # pass 5 # fail 1  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+--- post-restore ---
+# tests 6 # pass 6 # fail 0
+[sync-dashboard-assets] in sync · 9 مرآة مطابقة · 0 منحرفة · 0 مفقودة
+1
+
+--- INVERSION H7 (عرضي: حارس D1.13 يردّ على القراءة الجديدة) ---
+قصدًا: قياس أن إضافة tools/sync-dashboard-assets.mjs لقراءة NEXA_SYNC_ROOT لم تمرّ بلا سجل.
+أُزيل صفّ NEXA_SYNC_ROOT من docs/environment-reference.md (القراءة باقية في الكود) ⇒
+   # tests 6 # pass 5 # fail 1 -> env-reference-sync.test.js (not ok 1: «قراءات بيئة بلا توثيق في المرجع»)
+أُعيد الصفّ ⇒ # tests 6 # pass 6 # fail 0. لا تغيير في حارس D1.15 نفسه في هذه النسخة.

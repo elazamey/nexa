@@ -20,8 +20,8 @@
     "adapters/*"
   ],
   "scripts": {
-    "test": "node --test",
-    "audit": "node --test tests/security.test.js",
+    "test": "node --import ./tests/bootstrap.mjs --test",
+    "audit": "node --import ./tests/bootstrap.mjs --test tests/security.test.js",
     "posture": "node tools/check-posture.mjs",
     "proof:permission": "node --permission --allow-fs-read=. tools/permission-proof.mjs",
     "proof:permission:legacy": "node --experimental-permission --allow-fs-read=. tools/permission-proof.mjs",
@@ -38,6 +38,8 @@
     "vectors": "node tools/vectors.mjs && node tools/omega-vectors.mjs && node tools/cellular-vectors.mjs && node tools/google-vectors.mjs",
     "metrics": "node tools/check-metrics.mjs",
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
+    "sync:assets": "node tools/sync-dashboard-assets.mjs --write",
+    "sync:assets:check": "node tools/sync-dashboard-assets.mjs --check",
     "dashboard": "node tools/celia-dashboard-server.mjs",
     "workspace": "node tools/celia-dashboard-server.mjs",
     "learning": "node tools/celia-learning.mjs",

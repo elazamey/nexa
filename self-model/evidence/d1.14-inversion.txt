@@ -1,0 +1,48 @@
+# D1.14 green — فهرس التوثيق متزامن مع docs/ في الاتجاهين (npm test -- tests/docs-index-sync.test.js)
+ok 1 - D1.14: كل ملف أو مجلد في docs/ له صفّ واحد بالضبط، وبلا صفّ يتيم
+ok 2 - D1.14: لا صفّ جامد — كل صفّ يشير إلى ملف موجود (أو أرشيف معلن)
+ok 3 - D1.14: الصنف معلَن من مغلق، والتاريخ لازم لما ليس ساريًا
+ok 4 - D1.14: ما يُسنَد إلى حارس أو دليل موجود فعلًا — لا مسار مُختلَق
+ok 5 - D1.14: الفهرس يعلن قاعدته — لا حذف، وأرشيف موسوم، ولا أرقام منسوخة
+# tests 5
+# pass 5
+# fail 0
+
+D1.14 INVERSION EVIDENCE — خمس بارِعاء؛ المقياس: حارس الفهرس وحده يحمرّ
+--- INVERSION A ---
+variant A applied
+   # tests 5 # pass 4 # fail 1  -> docs-index-sync.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 2 # pass 2 # fail 0  -> evidence-frozen.test.js
+   # tests 6 # pass 6 # fail 0  -> count-claims-sync.test.js
+--- INVERSION B ---
+variant B applied
+   # tests 5 # pass 3 # fail 2  -> docs-index-sync.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 2 # pass 2 # fail 0  -> evidence-frozen.test.js
+   # tests 6 # pass 6 # fail 0  -> count-claims-sync.test.js
+--- INVERSION C ---
+variant C applied
+   # tests 5 # pass 4 # fail 1  -> docs-index-sync.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 2 # pass 2 # fail 0  -> evidence-frozen.test.js
+   # tests 6 # pass 6 # fail 0  -> count-claims-sync.test.js
+--- INVERSION D ---
+variant D applied
+   # tests 5 # pass 4 # fail 1  -> docs-index-sync.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 2 # pass 2 # fail 0  -> evidence-frozen.test.js
+   # tests 6 # pass 6 # fail 0  -> count-claims-sync.test.js
+--- INVERSION E ---
+variant E applied
+   # tests 5 # pass 4 # fail 1  -> docs-index-sync.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+   # tests 2 # pass 2 # fail 0  -> evidence-frozen.test.js
+   # tests 6 # pass 6 # fail 0  -> count-claims-sync.test.js
+--- post-restore ---
+# tests 5 # pass 5 # fail 0 restored: rows=30 scratch=0 protocol=1

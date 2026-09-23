@@ -52,12 +52,12 @@ async function run() {
       ],
       maxParallel: 3,
       speculative: true,
-      pasteSaving: '48.5%'
+      pasteSaving: 'claim — not measured by this demo'
     },
     evidenceRef: 'evidence:dag-parallel-v0.4',
     confidence: 0.95
   });
-  console.log(`   ✓ ${strat2.id} [${strat2.state}] — ${strat2.content.taskIntent} (PASTE 48.5%)`);
+  console.log(`   ✓ ${strat2.id} [${strat2.state}] — ${strat2.content.taskIntent} (PASTE — claim, not measured)`);
 
   // 2. Register failure memories
   console.log('\n2️⃣  Registering Failure Memories (WHAT to avoid)...\n');

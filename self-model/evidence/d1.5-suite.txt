@@ -1,0 +1,7 @@
+# D1.5 suite — المجموعة الكاملة عند الإغلاق (npm test)، ثم npm run verify بأكمله
+# المُشغِّل: npm test (node --test + TAP + tests/bootstrap.mjs) — بعد حذف مُعيد known-gaps/d1.5 وإضافة الحارس
+# tests 651
+# pass 651
+# fail 0
+# npm run verify (kernel + vectors + audits + tests):
+# verify_exit=0

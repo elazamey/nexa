@@ -513,7 +513,7 @@
         "O09"
       ],
       "current": "نفس فئة D1.12 على سطح يُخدم لا في وثيقة: `tools/celia-dashboard-server.mjs:738-742` يضع في mockState حروفًا ثابتة `gates:'6 CLOSED'، tests:'314/314'، promotion:'5/5 READY'، llm_vectors:'2/2 BLOCKED'` مع نثر تسويقي فيه «100% fix/proof»، ويُعيد `GET /api/celia/state` (سطر 943-947) تلك الكتلة حرفيًا؛ وسجل الإقلاع (سطر 3124) يطبع عددًا مختلفًا «Tests: 501/501»؛ ولا شيء يسند mockState.status إلى قياس (الحقل لا يُسنَد إطلاقًا — مُتحقق منه). الأرقام لا تتوقف عند العرض: seedGovernedMemory يزرع belief condition:{gates:'6 CLOSED',tests:'314/314'} (سطر 663)، وseedSemanticMemory يزرع «Security gates 6 CLOSED, 314 tests…» و«PASTE 48.5% latency saved» (سطران 689-690) فتصير معرفة في المحرك؛ وفي الواجهة NexaDashboard.jsx:252 بيانات أولية `testsPass:'314/314'` وDagVisualizer.jsx:185 «48.5% latency reduction». بالمقابل شقيقه `/api/v1/system/status` (سطر 987) يقيس فعلًا عبر getPosture(): أي أن نفس السيرفر يعيّن حارسين لسطح واحد، أحدهما يقيس والآخر يروّي، ويروّي رقمين متناقضين في الملف نفسه",
-      "required": "لا عدد على سطح مخدوم إلا وهو قراءة: إما من قياس حيّ (posture/attacks) أو من سجل مقاس يُطبع مع تاريخه (self-model/baseline.json → live_measurement) موسومًا كسجل لا كتليمترية لحظية؛ ولا رقم أداء غير مقاس (48.5%، 100%) يدخل beliefs أو ذاكرة أو واجهة كثابت؛ وسجل الإقلاع يطابق ما يخدمه أو يصمت عن العدد",
+      "required": "لا عدد على سطح مخدوم إلا وهو قراءة: تُسند gates وllm_vectors إلى getPosture()/قياس فعلي مثلهما في /api/v1/system/status، وحقلا tests وpromotion يُحذفان من /api/celia/state لأن هذا السيرفر لا يقيسهما (حذف الادعاء أولى من وسمه حين لا مصدر له)؛ ولا رقم أداء غير مقاس (48.5%، 100%) يدخل beliefs أو ذاكرة أو بيانات الواجهة الأولية؛ وسجل الإقلاع يطبع ما يخدمه أو يصمت عن العدد",
       "enforced": false,
       "reproducer": "test",
       "acceptance": {
@@ -531,11 +531,13 @@
       "verification": null,
       "opened_at": "2026-09-23T01:35:00Z",
       "closed_at": null,
-      "ticket_status": "open — مُسجَّلة بعد إغلاق D1.12؛ لا إصلاح بعد: الانتظار لترتيب P0-D (D1.4–D1.8) أولًا",
+      "ticket_status": "open — مُسجَّلة بعد إغلاق D1.12 ومُثبتة حمراء؛ الإغلاق مُقرَّر بعد D1.4–D1.8 باتفاق 2026-09-23، وبشكل «قياس حيّ فقط» لا «سجل موسوم»",
       "follow_ups": [
+        "عند الإغلاق: `/api/celia/evidence` و`/api/celia/memory` يخدمان مزروعات مزروعة الأرقام — نفس المعيار يسري عليهما (لا «314 tests» ولا «48.5%»)",
         "النثر في landing page (سطر 3037) و`version:'v0.8-ultimate'` و«56 Engines» ادعاءات قدرة لا أرقام: تُوسم أو تُحذف في التذكرة نفسها إن رُئي ذلك",
         "`llm_vectors:'2/2 BLOCKED'` له قياس فعل (npm run audit/vectors) — يمكن تحويله إلى قراءة بدل حرف"
-      ]
+      ],
+      "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
     }
   ],
   "updated_at": "2026-09-23T01:35:00Z"

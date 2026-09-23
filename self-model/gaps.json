@@ -188,21 +188,34 @@
       "sources": [
         "A11"
       ],
-      "current": "_load يبتلع JSON فاسد بصمت ويرجع ذاكرة فارغة (hunt-memory.js:20-23)؛ save يبتلع أخطاء الكتابة بمجرد console.error (37-40)",
+      "current": "_load كان يبتلع أي استثناء (`catch { // Fallback }`) ويرجع ذاكرة فارغة، وsave يبتلع فشل الكتابة بسطر console.error — فالأثر ليس نسيانًا بل دهسًا: ذاكرة فارغة تُكتب فوق ملف فاسد وتمحو الجلسات السابقة",
       "required": "فشل القراءة/الكتابة يظهر صراحة: خطأ مفهوم أو إشارة حالة تتحققها الاختبارات (DI-14)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/hunt-memory-fail-closed.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.6-red.tap (6 من 6 حمراء عند 86207c3 قبل الإصلاح) → d1.6-green.tap (6/6)؛ d1.6-inversion.txt بثلاث نسخ: إلغاء امتناع الدهس (2/6 حمراء)، وابتلاع _load للفساد (1/6)، وتزفير فشل الكتابة كنجاح (5/6) — وفي الثلاث بقيت حراس D1.2–D1.5 وعزل D1.9 ومُعيد D1.7 خضراء",
         "criteria": [
-          "JSON فاسد → إشارة فشل صريحة قابلة للاختبار لا ذاكرة فارغة صامتة",
-          "فشل الحفظ → إشارة صريحة يستطيع المنسق التصرف بناءً عليها"
+          "مخزن فاسد ⇒ `loadStatus = {ok:false, code:'NEXA-HM-CORRUPT', phase:'load', path, reason}` — لا استثناء في الباني (الجولة تستمر)، ولا ذاكرة صامتة",
+          "الكتابة فوق مخزن غير مقروء ممتنعة: `save()` ⇒ `{ok:false, code:'NEXA-HM-REFUSED-OVERWRITE'}` وBytes الأصل على القرص لا تتغيّر؛ الاستعادة بمفتاح صريح `save({force:true})` وحده",
+          "JSON صحيح الصرف لكنه ليس بنية ذاكرة (مصفوفة، `{}`، sessions ليست مصفوفة، null، رقم) ⇒ `NEXA-HM-MALFORMED` — لا «فارغ» مُعاد تفسيره",
+          "فشل نظام الكتابة ⇒ `NEXA-HM-WRITE-FAILED` مع errno/syscall، كتابة ذرّية (tmp + rename)، ولا ملف مؤقت متروك؛ `console.error` لم يبقَ قناةَ حالة",
+          "القراءة من مسار هو دليل ⇒ `NEXA-HM-READ-FAILED` ثم امتناع حفظ — لا دَهس دليل بمسار غلط",
+          "أول تشغيل (ملف غير موجود) ليس فشلًا: `loadStatus.fresh === true`، ودورة save→reopen تُرجع الجلسات؛ والفساد لا يُوسم `fresh` أبدًا",
+          "كل نقطة كتابة تُرجع حالة: `recordSession`/`rememberTarget` ⇒ `{persisted, status}`، و`garbageCollect` ⇒ حالة أو `null` صريح (لا undefined غامض)",
+          "المنسِّق يتصرّف: autopilot يخزّن النتيجة في `result.memory = {persisted, code, path}` ويحذّر عند الفشل، ولا يزيّف نجاحًا؛ وذاكرته ليست بوابة — الإيصالات لا تُمنح ولا تُسحب بسببها",
+          "عقد مسمَّر من المصدر: لا catch فارغ، لا console.error، والرموز الأربعة موجودة، ومصنع `_blankMemory` واحد للذاكرة الفارغة",
+          "لا توسيع: packages/ وspec/ سليمة، ولا تغيير لسلوك الحجب في البوابات، ولا انتقال لأي حالة من مرفوضة إلى مقبولة"
         ]
       },
-      "verification": null,
+      "verification": "tests/hunt-memory-fail-closed.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T09:40:00Z",
+      "ticket_status": "closed 2026-09-23 — حالة قراءة وحالة كتابة صريحتان بأربعة رموز، وامتناع عن الكتابة فوق مخزن غير مقروء (لا دَهس للجلسات)، واستعادة بمفتاح force، وكتابة ذرّية، والمنسِّق يُبلَّغ result.memory",
+      "follow_ups": [
+        "معرفات الجلسات ما زالت `session_${Date.now()}` (تصادمية وغير مشتقة من المحتوى) — كانت مذكورة في مُعيد التذكرة ولا في معاييريها المسجلة؛ تُغلق في تذكرة هوية/حتمية مستقلة مع §6.3، لا تُضمَّن هنا توسيعًا",
+        "الحالة لا تُشفَّر: `loadStatus.recovered` علامة على أن الملف كُتب بعد force؛ سجلّ استعادة مُوقَّع (من فعلها ومتى) خارج النطاق المسجَّل",
+        "لا قفل تعدد العمليات (multiple processes writing the same store): الكتابة صارت ذرّية لكن آخر rename يفوز — إن صار التخزين متعدد الكُتّاب يُفتح كطلب مستقل"
+      ]
     },
     {
       "id": "D1.7",

@@ -83,13 +83,22 @@ export class AutopilotEngine {
       chainsFormed: chains.length,
       reportsGenerated: reports.length
     };
-    this.memory.recordSession(sessionSummary);
+    // D1.6 (DI-14): نتيجة الحفظ تُبلَّغ في مخرَج الجولة — ذاكرة مكسورة إشارة، لا نجاح مزوَّف
+    const memoryOutcome = this.memory.recordSession(sessionSummary);
+    if (!memoryOutcome.persisted) {
+      console.warn(`⚠️  [Autopilot] hunt memory NOT persisted (${memoryOutcome.status.code}): ${memoryOutcome.status.reason}`);
+    }
 
     return {
       status: 'COMPLETED',
       target,
       surface,
       rankedSurface,
+      memory: {
+        persisted: memoryOutcome.persisted,
+        code: memoryOutcome.status.code ?? null,
+        path: memoryOutcome.status.path
+      },
       rawFindingsCount: rawFindings.length,
       validatedFindings: certifiedFindings,
       chains,

@@ -87,8 +87,12 @@ finding عارٍ من artifact في مسار الاعتماد.
 - المصدر: A12 (`autopilot.js:55` + `seven-gate-validator.js:26` عند التسجيل) — الحالة: **enforced** (D1.5، 2026-09-23؛ التحقق الحيّ في `tests/scope-independence.test.js`)
 
 ### DI-14 — ذاكرة لا تبتلع الفشل
-فشل قراءة/كتابة `HuntMemory` يظهر صراحة (خطأ/إشارة) ولا يستبدل بصمت بذاكرة فارغة.
-- المصدر: A11 (`hunt-memory.js:20-23,37-40`) — الحالة: **open** (D1.6)
+فشل قراءة/كتابة `HuntMemory` يظهر صراحة كحالة مُرمَّزة تُقرأ من المُقيِّمين والمختبرات:
+`loadStatus` (أول تشغيل ≠ فشل؛ `NEXA-HM-READ-FAILED`/`-CORRUPT`/`-MALFORMED`) و`save()`
+(`NEXA-HM-WRITE-FAILED`/`NEXA-HM-REFUSED-OVERWRITE`). الامتناع عن الكتابة فوق مخزن لم يُقرأ هو
+الجوهر: الابتلاع القديم كان يمسح الجلسات السابقة بصمت، والاستعادة تحتاج قرارًا صريحًا
+`save({ force: true })`. الكتابة ذرّية (tmp + rename) وحالاتها تعود من كل نقطة كتابة.
+- المصدر: A11 (`hunt-memory.js:20-23,37-40` عند التسجيل) — الحالة: **enforced** (D1.6، 2026-09-23؛ التحقق الحيّ في `tests/hunt-memory-fail-closed.test.js`)
 
 ### DI-15 — لا كواشف داخل جسم المنسِّق
 كل كاشف وحدة مستقلة قابلة للاختبار المنفرد؛ المنسِّق يركّب ولا يكشف.
@@ -114,6 +118,7 @@ finding عارٍ من artifact في مسار الاعتماد.
 | enforced عبر D1.3 (تحقق حي في `tests/gates-computed.test.js` — أُغلقت 2026-09-23) | DI-07 |
 | enforced عبر D1.4 (تحقق حي في `tests/gate-boundary-vs-impact.test.js` — أُغلقت 2026-09-23) | DI-06 |
 | enforced عبر D1.5 (تحقق حي في `tests/scope-independence.test.js` — أُغلقت 2026-09-23) | DI-13 |
-| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-14, DI-15, DI-16, DI-17 |
+| enforced عبر D1.6 (تحقق حي في `tests/hunt-memory-fail-closed.test.js` — أُغلقت 2026-09-23) | DI-14 |
+| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-15, DI-16, DI-17 |
 
 **العدد الكلي: 17 assertion** (يُفحص آليًا في `tests/guards/docs-consistency.test.js`).

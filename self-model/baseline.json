@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "9cda12b3739a9fb2eaa9ab043fc42d1ac2182215",
-    "tree_state": "D1.5 closure worktree (measured before the closure commit)",
+    "commit": "86207c39f93aeb2a78e16ee00086b9e68f1f9adb",
+    "tree_state": "D1.6 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 651,
-    "pass": 651,
+    "tests": 655,
+    "pass": 655,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 651 = 645 (إغلاق D1.4) + 8 (tests/scope-independence.test.js) − 2 (مُعيد known-gaps/d1.5 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 655 = 651 (إغلاق D1.5) + 6 (tests/hunt-memory-fail-closed.test.js) − 2 (مُعيد known-gaps/d1.6 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -81,6 +81,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.5 (P0-D / A12 / DI-13): GATE_1 صارت محسوبة من سجل نطاق يعيد المُقيِّم مطابقته بنفسه (مضيف + allow/deny، أو جذر مسار مع اختبار احتواء) بدل كلمة المتصل؛ الجسر لم يعوّض الغياب بترخيص، وautopilot يشتق سجله من recon؛ 651/651 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.6 (P0-D / A11 / DI-14): HuntMemory لا يبتلع — حالة قراءة وحالة كتابة بأربعة رموز (CORRUPT/MALFORMED/READ-FAILED/WRITE-FAILED) وامتناع عن الكتابة فوق مخزن غير مقروء يمنع دَهس الجلسات، واستعادة بمفتاح force صريح، وكتابة ذرّية، والمنسِّق يُبلَّغ result.memory؛ 655/655 أخضر"
     }
   ],
   "post_d1_2": {
@@ -241,6 +245,30 @@
       "docs/repository-audit-2026-09-22.ar.md §O12"
     ],
     "residual": "قائمة النطاق يصرّح بها المشغِّل ولا تُثبت من مصدر خارجي موقَّع؛ وReconAgent يحتفظ بإباحة العدّ عند غياب الأنماط عمدًا — الفارق بين «يُسمح بالعدّ» و«يُصدَق عليه» صار عند البوابة لا عند الاستطلاع",
+    "side_effects_restored": []
+  },
+  "d1.6_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.6 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 655,
+    "pass": 655,
+    "fail": 0,
+    "breakdown": "651 بعد D1.5 + 6 (tests/hunt-memory-fail-closed.test.js) − 2 (مُعيد known-gaps/d1.6 حُذف)؛ لا تغيير في أي قالب لتذكرة أخرى (الحارس مستقل من أول سطر)",
+    "red_evidence": "self-model/evidence/d1.6-red.tap (6 من 6 حمراء عند 86207c3 قبل أي تعديل src)",
+    "green_evidence": "self-model/evidence/d1.6-green.tap (6/6) + d1.6-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.6-inversion.txt — ثلاث نسخ: إلغاء الامتناع عن الدهس ⇒ 2 من 6 حمراء؛ ابتلاع _load (عودة الـ fallback الصامت) ⇒ 5 من 6؛ تزفير فشل الكتابة كنجاح ⇒ 1 من 6. في الثلاث: scope-independence 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، test-output-isolation 3/3، مُعيد D1.7 2/2",
+    "tools_changed": [
+      "src/security/hunter/hunt-memory.js (loadStatus/saveStatus، أربعة رموز، امتناع الدهس، force، كتابة ذرّية، حالات من كل نقطة كتابة)",
+      "src/security/hunter/autopilot.js (نتيجة الحفظ تُبلَّغ في result.memory + تحذير، ولا تزييف نجاح)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-14 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 655)",
+      "docs/repository-audit-2026-09-22.ar.md §O13"
+    ],
+    "residual": "معرفات الجلسات ما زالت طابعًا زمنيًا (خارج معايير التذكرة، مُسجَّلة كمتابعة)، ولا قفل بين العمليات، وforce لا يُسجَّل من فعله؛ القصور الثلاثة مذكورة في follow_ups ولا تُغلق على المقاس",
     "side_effects_restored": []
   }
 }

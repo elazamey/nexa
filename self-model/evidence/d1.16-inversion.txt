@@ -1,0 +1,61 @@
+# D1.16 INVERSION EVIDENCE — ثماني نسخ على الشجرة النهائية (بعد قلب السجل وحذف المُعيد)
+المقياس المطلوب: نسخة الانحراف تُحمرّ حارس D1.16 وحده؛ الحراس المجاورون خضر.
+--- INVERSION I1 ---
+variant I1
+   # tests 6 # pass 3 # fail 3  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I2 ---
+variant I2
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I3 ---
+variant I3
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I4 ---
+variant I4
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I5 ---
+variant I5
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I6 ---
+variant I6
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION I7 ---
+variant I7
+   # tests 6 # pass 5 # fail 1  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- INVERSION R1 ---
+variant R1
+   # tests 6 # pass 4 # fail 2  -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0  -> duplicate-sync.test.js
+   # tests 4 # pass 4 # fail 0  -> edge-rag.test.js
+   # tests 6 # pass 6 # fail 0  -> docs-consistency.test.js
+   # tests 5 # pass 5 # fail 0  -> gaps-consistency.test.js
+--- post-restore ---
+# tests 27 # pass 27 # fail 0 لا Tabs في ci.yml: 0 · dist متتبَّع: 0 ملف · حالة git: 7 سطر (مقصود)
+ملاحظة أمانة: R1 ليست فجوة في الإصلاح بل في الحارس — وُجدت بعد أن كان التعليق وحده يرضي assert.match، ولم تُترك صامتة.

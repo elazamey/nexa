@@ -1,0 +1,33 @@
+# D1.16 red-as-proof — القياس الأول عند HEAD 6be9aa (أخضر = الفجوة قائمة)
+## 1) known-gap D1.16 (أخضر = إثبات أن ci.yml لا يذكر الداشبورد)
+ok 1 - known-gap D1.16 (O08): سير عمل CI لا يبني الداشبورد
+# tests 1
+# pass 1
+# fail 0
+## 2) أين يُبنى الداشبورد فعلًا اليوم (مقيس)
+--- .github/workflows/ci.yml
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+--- .github/workflows/deploy-pages.yml
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+33:          cache-dependency-path: dashboard/package-lock.json
+38:          npm --prefix dashboard install
+46:          npm --prefix dashboard run build
+47:          mkdir -p dashboard/dist/data
+48:          cp -r dashboard/data/* dashboard/dist/data/ || true
+56:          path: 'dashboard/dist'
+--- .github/workflows/metrics.yml
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+## 3) البناء محليًا نجح (فالنابض الجديد سيُثبت أنه كان أخضر لو وُجد)

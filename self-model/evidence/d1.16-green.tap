@@ -1,0 +1,34 @@
+# D1.16 green — وظيفة البناء في PR + نابض المرايا، والحارس يقرأ الشيفرة لا التعليقات
+## 1) الحارس (npm test -- tests/dashboard-ci.test.js)
+ok 1 - D1.16: القارئ المستهدف نفسه يعمل — وإلا كان الحارس أعمى
+ok 2 - D1.16: وظيفة بناء الداشبورد موجودة، تُثبَّت وتبني وتفحص المخرج
+ok 3 - D1.16: تُرى في PRs — لا push فقط، ولا فلترة فروعا
+ok 4 - D1.16: وظيفتنا تعمل على أدوات موجودة فعلًا (لا أسماء مكسورة في YAML)
+ok 5 - D1.16: نابض D1.15 (المرايا) موصول في CI ولا يُبتلع
+ok 6 - D1.16: وظيفة kernel تبقى بلا تثبيت، والمخرج لا يُتتبَّع في git
+# tests 6
+# pass 6
+# fail 0
+
+## 2) بروفة محليّة لأوامر الوظيفة نفسها (خطوة خطوة، من جذر المستودع حيث يلزم)
+$ (cd dashboard && npm ci)
+added 131 packages, and audited 132 packages in 3s
+25 packages are looking for funding
+   exit=0
+$ (cd dashboard && npm run build)
+dist/index.html                   0.41 kB │ gzip:   0.29 kB
+dist/assets/index-CfwOIxUQ.css   47.64 kB │ gzip:   8.62 kB
+dist/assets/index-C2AE4Llf.js   405.24 kB │ gzip: 109.84 kB
+✓ built in 2.80s
+   exit=0
+$ test -f dashboard/dist/index.html; grep -q 'assets/index-.*\.js' dashboard/dist/index.html; test ! -e dashboard/public/index.html
+   exit=0 (الثلاثة) — dist/index.html يشير إلى أصل باسمه بصمة المحتوى ولا ظلّ في publicDir
+$ test -z "$(git ls-files -- dashboard/dist)"
+   exit=0 — لا مخرج بناء متتبَّع (0 ملف)
+$ npm run sync:assets:check
+[sync-dashboard-assets] in sync · 9 مرآة مطابقة · 0 منحرفة · 0 مفقودة
+   exit=0
+
+## 3) مقيس قبل الإصلاح: أين كان البناء يحدث
+   deploy-pages.yml: on.push.branches = [main] + workflow_dispatch (لا pull_request) ⇒ الكسر يصل main أولًا
+   ci.yml (كل PR): كان بلا كلمة dashboard — انظر d1.16-red.tap

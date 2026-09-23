@@ -577,21 +577,35 @@
       "sources": [
         "O08"
       ],
-      "current": "بناء Vite/React يُختبر فقط في deploy-pages على main — كسر الواجهة لا يُكتشف في PRs",
+      "current": "ci.yml (الوحيد الذي يرى كل pull_request) فيه وظيفة dashboard مستقلة: npm ci بقفل الداشبورد ثم vite build ثم فحص مخرج (dist/index.html يشير إلى أصل باسمه بصمة المحتوى، ولا ظلّ في publicDir، ولا مخرج متتبَّع)، ونابض D1.15 sync:assets:check موصول في وظيفة kernel بلا تثبيت",
       "required": "job منفصل في ci.yml يبني الداشبورد لكل PR؛ job الباكند (zero-dep) يبقى بلا install كما هو",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "فحص CI نفسه (مخطط: assertion على ci.yml)",
+        "inversion_test": "self-model/evidence/d1.16-red.tap (المُعيد أخضر 1 من 1 = الفجوة قائمة؛ مقيس أين كان البناء يحدث) → d1.16-green.tap (الحارس 6 من 6 + بروفة محليّة لأوامر الوظيفة نفسها كلها exit 0: npm ci بـ 131 حزمة، vite build في 2.80s، فحوص المخرج، git ls-files فارغ، sync:assets:check)؛ d1.16-inversion.txt بثماني نسخ: حذف وظيفة dashboard ⇒ 3 من 6؛ continue-on-error على البناء ⇒ 1؛ cache-dependency-path إلى قفل لا وجود له ⇒ 1؛ npm install داخل وظيفة kernel ⇒ 1؛ نزع خطوة sync:assets:check ⇒ 1؛ تغيير اسم سكربت build في dashboard/package.json ⇒ 1؛ إلغاء استثناء dashboard/dist من .gitignore ⇒ 1؛ R1 (تعليق ينتحل خطوات npm ci/build) ⇒ 2 — يثبت أن الحارس يقرأ الشيفرة لا التعليقات. في الثمانية بقيت حارس المرايا (6) وedge-rag (4) وdocs-consistency (6) وgaps-consistency (6) خضراء؛ الاستعادة 27 من 27",
         "criteria": [
-          "ci.yml يحوي job بناء داشبورد يعمل على pull_request",
-          "فشل بناء الداشبورد يفشل الـ PR ( jobs منفصلة، إشارات مستقلة)"
+          "ci.yml فيه وظيفة dashboard مستقلة عن verify، تعمل على كل pull_request (بدون فلترة فروع على job ولا شرط refs/heads/main)",
+          "التثبيت npm ci من قفل الداشبورد، وcache-dependency-path يشير إلى ملف موجود فعلًا ويساوي dashboard/package-lock.json",
+          "البناء npm run build ثم فحص مخرج لا رمز خروج فقط: dist/index.html موجود، يشير إلى أصل باسمه بصمة المحتوى، ولا dashboard/public/index.html",
+          "لا continue-on-error في وظيفة الداشبورد — الكسر أحمر لا أصفر",
+          "وظيفة verify تبقى بلا أي npm install/npm ci (invariant صفر-الاعتمادية)، وnpm test يبقى أول خطوة فيها",
+          "نابض D1.15: npm run sync:assets:check خطوة في CI (في وظيفة kernel حيث لا تثبيت) وبلا continue-on-error، والسكربت الذي تناده package.json موجود",
+          "كل npm run <script> تناديه وظيفة الداشبورد موجود في dashboard/package.json — لا اسم مكسور في YAML",
+          "dashboard/dist مستثنى في .gitignore وغير متتبَّع في git (مقاس من الفهرس بـ git ls-files، لا من التخمين)",
+          "قارئ الحارس المستهدف نفسه مُختبَر: لا Tabs، ولا وظيفة تبتلعها مسافة بادئة خاطئة، وسطر تعليق لا يرضي أي assert"
         ]
       },
-      "verification": null,
+      "verification": "tests/dashboard-ci.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-24T02:55:00Z",
+      "ticket_status": "enforced — البناء يُرى في PR لا على main؛ deploy-pages يبقى مسار النشر ولا يُلمَس",
+      "follow_ups": [
+        "deploy-pages.yml يثبّت بـ npm --prefix dashboard install (بلا قفل) وبعد `npm ci || npm install` في الجذر — مسار النشر لا يثبّت بما يثبّته CI؛ توحيدهما (ci لهما) تذكرة نشر مستقلة",
+        "metrics.yml يعيد npm test على PRs إلى main بعد أن غطّاه ci.yml — إلغاء التكرار أو حصره في metrics فقط، تذكرة مستقلة",
+        "لا actionlint ولا مخطط YAML في CI؛ الحارس يقرأ البنية بقارئ مستهدف مُختبَر. إضافة actionlint خطوة بناء مستقلة",
+        "توليد بيانات النشر في deploy-pages (node src/security/agentic-hunter.js packages) لا يُجرى في PRs؛ كسره يكسر النشر لا الدمج",
+        "الحارس يقرأ ci.yml بقارئ مستهدف (لا pyyaml ولا actionlint في نطاق صفر-اعتمادية): لو تطلّب الأمر شروطاً مركّبة (matrix include, uses@major aliases) فالحارس يحتاج مخططًا حقيقيًا لا توسيع regex"
+      ]
     },
     {
       "id": "D1.17",
@@ -629,5 +643,5 @@
       "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
     }
   ],
-  "updated_at": "2026-09-24T01:50:00Z"
+  "updated_at": "2026-09-24T02:55:00Z"
 }

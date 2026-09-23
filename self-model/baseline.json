@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "794c40f5f081eb42ddd5f1f32fe2c77fd0248d47",
-    "tree_state": "D1.15 closure worktree (measured before the closure commit)",
+    "commit": "6be9aacec4f91f12f6fc58fea304f2f16ea7b503",
+    "tree_state": "D1.16 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 684,
-    "pass": 684,
+    "tests": 689,
+    "pass": 689,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 684 = 679 (إغلاق D1.14) + 1 (سطر أُضيف إلى مُعيد D1.15 بعد ذلك القياس) + 6 (tests/duplicate-sync.test.js) − 2 (مُعيد D1.15 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 689 = 684 (إغلاق D1.15) + 6 (tests/dashboard-ci.test.js) − 1 (مُعيد D1.16 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -109,6 +109,10 @@
     {
       "date": "2026-09-24",
       "event": "إغلاق D1.15 (P1-D / O07): التكرار قرار معلَن — تسع مرايا تُولَّد من مصدرها بحارس يفحص ولا يصلح، وازدواج index.html محسوم بأرشفة موسومة؛ 684/684 أخضر"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.16 (P2 / O08): بناء الداشبورد صار مقيسًا في كل PR بوظيفة مستقلة تفحص المخرج لا رمز الخروج، ونابض المرايا من D1.15 موصول في CI؛ 689/689 أخضر، ولا فجوة مفتوحة في السجل"
     }
   ],
   "post_d1_2": {
@@ -337,7 +341,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-24T02:15:00Z",
+  "updated_at": "2026-09-24T03:10:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -393,5 +397,19 @@
     "green_evidence": "self-model/evidence/d1.15-green.tap (6 من 6) + d1.15-suite.txt (684/684/0)",
     "inversion_evidence": "d1.15-inversion.txt — سبع نسخ: تحرير المرآة يدويًا ⇒ 2 من 6؛ نسخة ظلّ غير معلنة ⇒ 1؛ عودة index.html إلى publicDir ⇒ 2؛ فحص بلا exit 1 ⇒ 1؛ الفاحص يتجاهل الجذر الممرر ⇒ 1؛ --check يصلح القرص ⇒ 1؛ H7 عرضيًا: إزالة صف NEXA_SYNC_ROOT تُحمرّ حارس D1.13 (5 من 6) وتُخضرّ بإعادته. الأسوار خضراء في الكل (edge-rag 4 و6، detector-independence 7/7، docs-consistency 6/6، server-perimeter 9/9). الملحق يوثّق أن H5/H6 أُعيدت صياغتهما بعد نسخة غير صالحة/خالية الأثر",
     "note": "الفحص جافّ والكتابة idempotent وذرّية (tmp+rename)؛ 9 مرايا معلنة بـ (source→dest) وسبب؛ لا حذف: ساكنة public/index.html أُرشفت إلى dashboard/legacy/ وتُخدَم عند /dashboard-static.html موسومة non-production. وأول قياس حيّ لحارس D1.13 على قراءة السكربت الجديدة (H7)"
+  },
+  "d1.16_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.16 (انظر git log)",
+    "command": "npm test && npm run sync:assets:check && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 689,
+    "pass": 689,
+    "fail": 0,
+    "breakdown": "684 بعد D1.15 + 6 (حارس CI) − 1 (مُعيد D1.16 المحذوف)",
+    "red_evidence": "self-model/evidence/d1.16-red.tap (المُعيد 1 من 1 أخضر-كإثبات + قياس أين كان البناء يحدث فعلًا)",
+    "green_evidence": "self-model/evidence/d1.16-green.tap (الحارس 6 من 6 + بروفة محليّة لأوامر الوظيفة: npm ci 131 حزمة، vite build 2.80s، فحوص المخرج، git ls-files فارغ، sync:assets:check) + d1.16-suite.txt (689/689/0)",
+    "inversion_evidence": "d1.16-inversion.txt — ثماني نسخ: حذف وظيفة dashboard ⇒ 3 من 6؛ continue-on-error ⇒ 1؛ cache-dependency-path إلى قفل غير موجود ⇒ 1؛ npm install في وظيفة kernel ⇒ 1؛ نزع خطوة sync:assets:check ⇒ 1؛ تغيير اسم سكربت build ⇒ 1؛ إلغاء استثناء dashboard/dist ⇒ 1؛ R1 تعليق ينتحل خطوات ⇒ 2. المجاورون خضر في الثمانية (duplicate-sync 6، edge-rag 4، docs-consistency 6، gaps-consistency 5) والاستعادة 27 من 27",
+    "note": "سجل الفجوات صار كاملًا: لا مفتوحة. deploy-pages.yml لم يُمَس (مسار النشر)، وما لم يُفعل عمدًا مسجَّل follow_ups أربعًا (تثبيت النشر بلا قفل، تكرار npm test في metrics.yml، لا actionlint، توليد بيانات Hunter لا يُختبر في PRs)"
   }
 }

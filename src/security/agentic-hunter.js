@@ -85,46 +85,105 @@ export class AgenticBugHunter {
   }
 
   _generateReport() {
-    // D1.5 (DI-13): جولة المصدر المحلي تُرخَّص بجذرها الصريح — الأصل الذي يُطابق هو file
+    // D1.5 (DI-13): جولة المصدر المحلي تُرخَّص بجذرها الصريح — الأصل الذي يُطابق
     // كل finding، فلا يستعير finding عن /etc/passwd ترشيح هذه الشجرة.
     const gateContext = { scope: { target: this.targetDir, allow: [this.targetDir], deny: [] } };
 
-    // Validate findings with the 7-Gate Validator
     const triage = this.validator.filterValidFindings(this.findings, gateContext);
 
-    // Cryptographically certify validated findings
-    const certifiedFindings = triage.validated.map(f => ({
+    // D1.8 (A13 / DI-17): التفصيل يُصدَر مع الإيصال لا مع التصريح. المُصرَّح به عند
+    // المُقيِّم قد لا يحصل على إيصال (قارئ الجسر مستقل)؛ فيُدرج في refused بسببه، ولا
+    // يظهر في details — وإلا كان التقرير يقول «مُصدَّق» ما لم يُصدَّق.
+    const attempted = triage.validated.map(f => ({
       ...f,
       receipt: this.evidenceBridge.certifyFinding(f, this.targetDir, { gateContext })
     }));
+    // الإيصال الصادر هو ما حقّقه الجسر (verified + signature)؛ الرفض يحمل certified:false
+    const isIssued = (f) => Boolean(f.receipt) && f.receipt.verified === true && typeof f.receipt.signature === 'string' && f.receipt.certified !== false;
+    const issued = attempted.filter(isIssued);
+    const refused = attempted
+      .filter(f => !isIssued(f))
+      .map(f => ({
+        title: f.title,
+        type: f.type,
+        vulnClass: f.vulnClass,
+        severity: f.severity,
+        file: f.file,
+        line: f.line,
+        code: f.receipt?.code ?? 'NEXA-E-NO-RECEIPT',
+        gateScore: f.receipt?.gateScore ?? null,
+        reasons: Array.isArray(f.receipt?.reasons) && f.receipt.reasons.length > 0
+          ? f.receipt.reasons
+          : ['the evidence bridge returned no reasons for this refusal']
+      }));
+
+    const severityOf = (list) => ({
+      critical: list.filter(f => f.severity === 'CRITICAL').length,
+      high: list.filter(f => f.severity === 'HIGH').length,
+      medium: list.filter(f => f.severity === 'MEDIUM').length,
+      low: list.filter(f => f.severity === 'LOW').length
+    });
+    const assertedSeverity = severityOf(this.findings);
+    const certifiedSeverity = severityOf(issued);
 
     const summary = {
       timestamp: new Date().toISOString(),
       targetDir: this.targetDir,
       totalFilesScanned: this._getFilesRecursive(this.targetDir).length,
+      // totalIssues يبقى بالمعنى القديم (كل ما أُبلِغ) — أساسُه مُعلَن ولا يُقرأ حكمًا
       totalIssues: this.findings.length,
-      critical: this.findings.filter(f => f.severity === 'CRITICAL').length,
-      high: this.findings.filter(f => f.severity === 'HIGH').length,
-      medium: this.findings.filter(f => f.severity === 'MEDIUM').length,
-      low: this.findings.filter(f => f.severity === 'LOW').length,
+      ...assertedSeverity,
+      severityBasis: 'asserted',
+      certifiedSeverity,
+      certifiedSeverityBasis: 'certified',
       gateValidation: triage.stats,
-      details: certifiedFindings
+      counts: {
+        asserted: this.findings.length,
+        validated: triage.stats.passed,
+        certified: issued.length,
+        refused: refused.length
+      },
+      certified: issued.length,
+      details: issued.map(f => ({
+        ...f,
+        findingId: f.receipt.findingId,
+        artifactDigest: f.receipt.artifactDigest
+      })),
+      refused
     };
 
-    // حفظ التقرير في مجلد لوحة التحكم
     // D1.9: NEXA_BUG_REPORT يعزل مخرجات الاختبار؛ الافتراضي الإنتاجي unchanged.
     const reportPath = process.env.NEXA_BUG_REPORT || path.join(path.resolve('dashboard/data'), 'bug-report.json');
-    const outputDir = path.dirname(reportPath);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    let persistence;
+    try {
+      const outputDir = path.dirname(reportPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      const tempPath = `${reportPath}.${process.pid}.tmp`;
+      const body = `${JSON.stringify(summary, null, 2)}\n`;
+      fs.writeFileSync(tempPath, body, 'utf8');
+      fs.renameSync(tempPath, reportPath);
+      // حالة الكتابة تُضاف بعد الكتابة: لا سجل حفظ يسبق الحفظ نفسه
+      persistence = { ok: true, path: path.resolve(reportPath), bytes: Buffer.byteLength(body) };
+      summary.persistence = persistence;
+    } catch (err) {
+      persistence = {
+        ok: false,
+        code: 'NEXA-REPORT-WRITE-FAILED',
+        path: path.resolve(reportPath),
+        reason: `cannot write the report: ${err.message}`
+      };
+      summary.persistence = persistence;
     }
 
-    fs.writeFileSync(
-      reportPath,
-      JSON.stringify(summary, null, 2)
+    console.log(
+      `✅ [Agentic Bug Hunter] Scan complete. Asserted ${summary.counts.asserted} · validated ` +
+        `${summary.counts.validated} · certified ${summary.counts.certified} · refused ${summary.counts.refused} · ` +
+        (persistence.ok
+          ? `saved to ${persistence.path} (${persistence.bytes}B)`
+          : `NOT SAVED (${persistence.code}): ${persistence.reason}`)
     );
-
-    console.log(`✅ [Agentic Bug Hunter] Scan complete. Found ${summary.totalIssues} issue(s). Validated: ${triage.stats.passed}. Saved to dashboard/data/bug-report.json`);
     return summary;
   }
 }

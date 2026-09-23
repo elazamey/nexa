@@ -260,24 +260,33 @@
       "sources": [
         "A13"
       ],
-      "current": "التقرير يكتب gateValidation من triage وdetails من certified فقط؛ الجوهر الإيصالي (ختم 7/7 الدائم) يعالج في D1.2",
+      "current": "details تُصفّى إلى الإيصالات الصادرة (verified + signature)، والمرفوض في refused برمزعه وأسبابه؛ counts={asserted,validated,certified,refused} وcertified===details.length؛ كل detail مربوط بـ findingId/artifactDigest الخاصين بإيصاله",
       "required": "أرقام التقرير (totalIssues/validated/certified) تطابق الإيصالات الصادرة فعلًا وتُوثق علاقتها (DI-17)",
-      "enforced": false,
-      "reproducer": "none",
-      "blocked_by": [
-        "D1.2"
-      ],
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "blocked_by": [],
       "acceptance": {
-        "inversion_test": "tests/bug-report-consistency.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.8-reproducer.tap (4 من 4 خضراء-كإثبات عند f7459bd، تُثبت الفجوة لا خطأ الاختبار) → d1.8-green.tap (7 من 7)؛ d1.8-inversion.txt بأربع نسخ: عودة details بلا فلتر ⇒ 2 من 7 حمراء؛ ادّعاء حفظ رغم فشل الكتابة ⇒ 1 من 7؛ استعادة تذييل «7/7 PASSED» الثابت ⇒ 2 من 7؛ تقارير autopilot لكل مُصرَّح به ⇒ 1 من 7. وفي الأربع بقيت حراس D1.2–D1.7 خضراء (detector-independence 7/7، scope 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6، test-output-isolation 3/3)",
         "criteria": [
-          "كل detail يحمل إيصالًا صادرًا فعلًا (certified:true) أو لا يظهر",
-          "عدد certified في التقرير = عدد الإيصالات في details"
+          "لا detail بلا إيصال صادر: detail لكل finding تحقق فيه receipt.verified===true && typeof signature==='string' && certified!==false؛ المرفوض لا يظهر في details إطلاقًا بل في refused مع code وreasons غير فارغين",
+          "العدّادات معلنة العلاقة: counts={asserted,validated,certified,refused} وcertified===details.length مثبَّت آليًا، وrefused===counts.validated-counts.certified",
+          "العلاقة مُوثَّقة بالمعرّف لا بالاسم: كل detail يحمل findingId مطابقًا /^NEXA-EVID-[0-9a-f]{16}$/ وartifactDigest مساويًا لقيمة الإيصال — فالتقرير قابل للتحقق ضد الإيصالات التي يُضمِّنها",
+          "أساس الأرقام معلن: totalIssues يبقى بمعنى المُبلَّغ (توافق) مع severityBasis:'asserted'، وcritical/high/medium/low على المُبلَّغ، وcertifiedSeverity على المُصدَّق وحده مع certifiedSeverityBasis:'certified' — فلا تُقرأ أرقام قديمة أحكامًا",
+          "لا ادعاء حفظ: السطر المطبوع يذكر path الحقيقي (reportPath أو المسار الافتراضي) وحالة الكتابة؛ الفشل يُرجع persistence={ok:false,code:'NEXA-REPORT-WRITE-FAILED',reason} والكتابة ذرّية (tmp+rename) مع ok:true وbytes — لا «Saved to dashboard/data/bug-report.json» حرفيًا",
+          "تذييل report-writer مشتق من finding.receipt: معرّف الإيصال وgateScore وبصمة التوقيع عند الإصدار، وNOT CERTIFIED مع الرمز والأسباب خلاف ذلك — حُذف حرفيّا «(7-Question Gate: 7/7 PASSED)» و«cryptographically pre-validated»",
+          "جولة autopilot تخضع لنفس العقد: reports وvalidatedFindings للإيصالات الصادرة فقط، وcounts={discovered,validated,certified,refused,reports} وrefusedFindings مرئية في النتيجة"
         ]
       },
-      "verification": null,
+      "verification": "tests/bug-report-consistency.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open — محجوبة بـ D1.2"
+      "closed_at": "2026-09-23T21:40:00Z",
+      "ticket_status": "enforced — أرقام التقرير مقيَّدة بالإيصالات الصادرة، والحفظ والتذييل صادقان (667/667، اكتملت مجموعة P0-D: D1.3–D1.8)",
+      "follow_ups": [
+        "الإيصال الصادر لا يحمل certified===true بل verified===true؛ العقد مُثبَّت على ذلك في الحارس، وتوحيد الاسم (certified/verified) قرار كسر توافق يُترك لتذكرة عقد",
+        "certifyFinding يولّد زوج مفاتيح عابرًا عند غياب مفتاح — فكل مُصرَّح به يُصدَّق عمليًا، والرفض لا يُبلَّغ عبر مفتاح مفقود. الحارس يستعمل حقن جسر مرفوض ليُثبت المسار؛ الربط الحقيقي بسياسة التوقيع خارج النطاق",
+        "SecretsHunter يُصدِّر findings بلا artifact فتُرفض عند GATE_2 — مرئي في counts.asserted > counts.validated ولا يُصلح هنا (تذكرة كاشف-الدليل المستقلة)",
+        "لا مخطط JSON لـ bug-report.json: لا شيء يفحص الملف المكتوب ضد الحقول الجديدة وقت الإنتاج؛ يُقترح مخطط عند消费需求 حقيقية"
+      ]
     },
     {
       "id": "D1.9",
@@ -586,5 +595,5 @@
       "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
     }
   ],
-  "updated_at": "2026-09-23T01:35:00Z"
+  "updated_at": "2026-09-23T21:40:00Z"
 }

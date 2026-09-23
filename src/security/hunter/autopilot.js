@@ -61,12 +61,24 @@ export class AutopilotEngine {
     const chains = this.chainBuilder.synthesizeChains(triage.validated);
 
     // Step 6: Cryptographic NEXA Certification
-    const certifiedFindings = triage.validated.map(f => ({
+    // D1.8 (DI-17): تُعدّ issued ما صدر له إيصال فعلًا — الرفض يبقى مرئيًا بلا أن يُروَّج
+    const attempted = triage.validated.map(f => ({
       ...f,
       receipt: this.evidenceBridge.certifyFinding(f, target, { gateContext })
     }));
+    // نفس عقد الإيصال الصادر: verified + signature (والرفض certified:false)
+    const isIssued = (f) => Boolean(f.receipt) && f.receipt.verified === true && typeof f.receipt.signature === 'string' && f.receipt.certified !== false;
+    const certifiedFindings = attempted.filter(isIssued);
+    const refusedFindings = attempted
+      .filter(f => !isIssued(f))
+      .map(f => ({
+        title: f.title,
+        vulnClass: f.vulnClass || f.type,
+        code: f.receipt?.code ?? 'NEXA-E-NO-RECEIPT',
+        reasons: Array.isArray(f.receipt?.reasons) ? f.receipt.reasons : []
+      }));
 
-    // Step 7: Report Generation
+    // Step 7: Report Generation — تقرير لكل إيصال صادر، مربوطًا به بالمعرّف
     const reports = certifiedFindings.map(f => ({
       findingId: f.receipt.findingId,
       severity: f.severity,
@@ -99,6 +111,14 @@ export class AutopilotEngine {
         code: memoryOutcome.status.code ?? null,
         path: memoryOutcome.status.path
       },
+      counts: {
+        discovered: rawFindings.length,
+        validated: triage.validated.length,
+        certified: certifiedFindings.length,
+        refused: refusedFindings.length,
+        reports: reports.length
+      },
+      refusedFindings,
       rawFindingsCount: rawFindings.length,
       validatedFindings: certifiedFindings,
       chains,

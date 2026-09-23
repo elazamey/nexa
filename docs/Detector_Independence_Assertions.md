@@ -111,8 +111,14 @@ finding عارٍ من artifact في مسار الاعتماد.
 
 ### DI-17 — صدق المخرجات المكتوبة
 `bug-report.json` وأمثاله لا يدّعي شهادة لم تحدث؛ أرقامه تطابق الإيصالات الصادرة فعلًا.
-- المصدر: A13 (`agentic-hunter.js:119-125`) — الحالة: **open** (D1.8 — محجوبة بـ D1.2؛
-  جوهرها الإيصالي عولج في D1.2، والمتبقي اتساق أرقام التقرير)
+التفصيل لا يُكتب إلا لإيصال صادر (`verified` + توقيع)، والمرفوض يُدرج في `refused` برمزعه
+وأسبابه؛ `counts = {asserted, validated, certified, refused}` مع `certified === details.length`،
+وكل detail مربوط بإيصاله بالمعرّف (`findingId`, `artifactDigest`). أرقام الشدة تحمل أساسها
+المُعلن (`severityBasis: 'asserted'` مقابل `certifiedSeverity`)، وسطر الحالة يطبع المسار
+الحقيقي وحالة الكتابة (`NEXA-REPORT-WRITE-FAILED` عند الفشل، وكتابة ذرّية tmp+rename)، وتذييل
+التقرير الفردي مشتق من `finding.receipt` — حُذف حرفيّا «(7-Question Gate: 7/7 PASSED)» و
+«cryptographically pre-validated» اللذان كانا يُروَّيان لكل finding بلا نظر في إيصال.
+- المصدر: A13 (`agentic-hunter.js:_generateReport`، `report-writer.js:42`) — الحالة: **enforced** (D1.8، 2026-09-23؛ التحقق الحيّ في `tests/bug-report-consistency.test.js`)
 
 ---
 
@@ -126,6 +132,6 @@ finding عارٍ من artifact في مسار الاعتماد.
 | enforced عبر D1.5 (تحقق حي في `tests/scope-independence.test.js` — أُغلقت 2026-09-23) | DI-13 |
 | enforced عبر D1.6 (تحقق حي في `tests/hunt-memory-fail-closed.test.js` — أُغلقت 2026-09-23) | DI-14 |
 | enforced عبر D1.7 (تحقق حي في `tests/detector-independence.test.js` — أُغلقت 2026-09-23) | DI-01, DI-15, DI-16 |
-| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-17 |
+| enforced عبر D1.8 (تحقق حي في `tests/bug-report-consistency.test.js` — أُغلقت 2026-09-23) | DI-17 |
 
 **العدد الكلي: 17 assertion** (يُفحص آليًا في `tests/guards/docs-consistency.test.js`).

@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "7ad20f1dfc3fccf70a39c94fd92f0836c3f3272d",
-    "tree_state": "D1.7 closure worktree (measured before the closure commit)",
+    "commit": "f7459bd7a7b99c4f05f73881ed05bd60b4e66033",
+    "tree_state": "D1.8 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 660,
-    "pass": 660,
+    "tests": 667,
+    "pass": 667,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 660 = 655 (إغلاق D1.6) + 7 (tests/detector-independence.test.js) − 2 (مُعيد known-gaps/d1.7 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 667 = 660 (إغلاق D1.7) + 7 (tests/bug-report-consistency.test.js)؛ مُعيد D1.8 كان غير متتبَّع فلم يدخل أي عدّاد، وحُذف بعد أن حُمِّل إثباتًا"
   },
   "frozen_claims": {
     "tests_545": {
@@ -89,6 +89,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.7 (P0-D / A05+A06 / DI-01، DI-15، DI-16): الكواشف الثلاثة صارت وحدات نقية تُجمَّع في SOURCE_DETECTORS، والحكم في نطاق الدالة (try في دالة أخرى لا يسكت) وعلى المورد نفسه؛ كل finding بحجة يقبلها القارئ المستقل وشهادة مربوطة، وبقي الرفض عند GATE_6 سببه الصحيح بلا توسيع جدول الحدود؛ 660/660 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.8 (P0-D / A13 / DI-17): bug-report.json لا يعرض إلا ما صُدِّر له إيصال، ويعلن counts وعلاقة كل detail بإيصاله، ويطبع مساره وحالة كتابته الصادقة، وreport-writer يشتق تذييله من finding.receipt بدل «7/7 PASSED» الثابت؛ 667/667 أخضر واكتملت P0-D"
     }
   ],
   "post_d1_2": {
@@ -302,5 +306,20 @@
     ],
     "residual": "مطابقة الأقواس الحرفية لا AST؛ SecretsHunter بلا دليل بعد (متابعة مسجلة)؛ والأصناف الثلاثة تبقى مرفوضة عند GATE_6 عن قصد — تقارير الجودة تحتاج مسار إصدار منفصلا لا بوابة مُوسَّعة",
     "side_effects_restored": []
-  }
+  },
+  "d1.8_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.8 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 667,
+    "pass": 667,
+    "fail": 0,
+    "breakdown": "660 بعد D1.7 + 7 (tests/bug-report-consistency.test.js)؛ مُعيد known-gaps/d1.8 كان غير متتبَّع (أُثبت في الدورة نفسها) فلم يدخل العد، وحُذف بعد التحميل",
+    "red_evidence": "self-model/evidence/d1.8-reproducer.tap (4 من 4 خضراء-كإثبات للفجوة عند f7459bd) + d1.8-guard-red.tap (6 من 6 حمراء للحارس قبل الإصلاح؛ السابع أُضيف معه)",
+    "green_evidence": "self-model/evidence/d1.8-green.tap (7 من 7) + d1.8-suite.txt (المجموعة الكاملة 667/667/0 عند الإغلاق)",
+    "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
+    "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
+  },
+  "updated_at": "2026-09-23T21:40:00Z"
 }

@@ -1,0 +1,48 @@
+D1.8 INVERSION EVIDENCE — أربع بارِعاء تُعطَّل على حدة، والمقياس: حارس D1.8 يحمرّ وحده
+--- INVERSION A ---
+variant A applied
+  # tests 7 # pass 5 # fail 2 <- bug-report-consistency.test.js
+  # tests 7 # pass 7 # fail 0 <- detector-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- hunt-memory-fail-closed.test.js
+  # tests 8 # pass 8 # fail 0 <- scope-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # tests 6 # pass 6 # fail 0 <- gates-computed.test.js
+  # tests 16 # pass 16 # fail 0 <- artifact-reader.test.js
+  # tests 10 # pass 10 # fail 0 <- agentic-hunter.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION B ---
+variant B applied
+  # tests 7 # pass 6 # fail 1 <- bug-report-consistency.test.js
+  # tests 7 # pass 7 # fail 0 <- detector-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- hunt-memory-fail-closed.test.js
+  # tests 8 # pass 8 # fail 0 <- scope-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # tests 6 # pass 6 # fail 0 <- gates-computed.test.js
+  # tests 16 # pass 16 # fail 0 <- artifact-reader.test.js
+  # tests 10 # pass 10 # fail 0 <- agentic-hunter.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION C ---
+variant C applied
+  # tests 7 # pass 5 # fail 2 <- bug-report-consistency.test.js
+  # tests 7 # pass 7 # fail 0 <- detector-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- hunt-memory-fail-closed.test.js
+  # tests 8 # pass 8 # fail 0 <- scope-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # tests 6 # pass 6 # fail 0 <- gates-computed.test.js
+  # tests 16 # pass 16 # fail 0 <- artifact-reader.test.js
+  # tests 10 # pass 10 # fail 0 <- agentic-hunter.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- INVERSION D ---
+variant D applied
+  # tests 7 # pass 6 # fail 1 <- bug-report-consistency.test.js
+  # tests 7 # pass 7 # fail 0 <- detector-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- hunt-memory-fail-closed.test.js
+  # tests 8 # pass 8 # fail 0 <- scope-independence.test.js
+  # tests 6 # pass 6 # fail 0 <- gate-boundary-vs-impact.test.js
+  # tests 6 # pass 6 # fail 0 <- gates-computed.test.js
+  # tests 16 # pass 16 # fail 0 <- artifact-reader.test.js
+  # tests 10 # pass 10 # fail 0 <- agentic-hunter.test.js
+  # tests 3 # pass 3 # fail 0 <- test-output-isolation.test.js
+--- post-restore ---
+# tests 7 # pass 7 # fail 0
+anchors: src/security/agentic-hunter.js:1 src/security/hunter/autopilot.js:1  footer=1 persistence=2

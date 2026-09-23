@@ -18,6 +18,34 @@
   },
   "gaps": [
     {
+      "id": "D1.11",
+      "area": "methodology",
+      "title": "SEC-NEXT-03: عقد فاحص الأسرار — تصنيف fixtures بالتلخيص والمسار المُعلَن لا whitelist المسارات",
+      "sources": [],
+      "current": "(قبل الإغلاق) خطوة grep واحدة في security-scan.yml حمراء على main بمضربين: كتل PEM الثلاثة في tools/google-fixtures.mjs والرمز المجرد nexa:key:priv: في anthropic-constitutional.js؛ الفاحص لا يميز رمز بروتوكول خاملًا من مادة سرية ولا يعترف بـ fixtures مُعلَنة، وتعبيره BEGIN (PRIVATE|RSA|EC) KEY لا يلتقط RSA/EC PEM أصلًا",
+      "required": "القرار الموثق في docs/sec-next-03-secret-scanner-contract.ar.md (إعادة بناء العقد المعتمد الذي فُقد قبل وصوله إلى Git): الاستثناء الوحيد = تصنيف محتوى مثبَّت بالتلخيص القانوني ومربوط بمسار مُعلَن في tools/secret-fixtures.registry.json؛ الرمز المجرد خامل والملزوم مادة (S7)؛ القواعد R1–R5 مع fail-closed على السجل ورموز خروج 0/1/2",
+      "enforced": true,
+      "acceptance": {
+        "inversion_test": "tests/secret-scanner.test.js",
+        "pre_condition": "الاختبار يُكتب ويُشغَّل قبل التنفيذ ويفشل — أحمر موثق في self-model/evidence/sec-next-03-red.tap (ERR_MODULE_NOT_FOUND على tools/nexa-secret-scan.mjs)",
+        "criteria": [
+          "فحص المستودع الحقيقي verdict:clean والـ fixtures الثلاثة recognizedFixtures مربوطة بمسارها المُعلَن وfilesScanned>0 (§4.1)",
+          "بوابة التذكرة: مادة مفتاح جديدة تُلحق بنسخة ملف الـ fixtures تُلتقط UNDECLARED_KEY_MATERIAL بملف:سطر، والمُعلَن لا يُوسم (§4.2، R2)",
+          "تلخيص مُعلَن في مسار مختلف يُلتقط FIXTURE_OUTSIDE_REGISTERED_PATH مع تسمية المسار المُعلَن (§4.3، R3)",
+          "nexa:key:priv: المجرد خامل يُحصى ولا يُسقط، والملزوم بحمولة ≥8 أحرف يلتقط BOUND_PRIV_URN (§4.4، R4، S7)",
+          "سجل مفقود/فاسد/مكرر/بتلخيص غير صالح = REGISTRY_ERROR وخروج 2 — لا فحص بلا سجل (§4.5، fail-closed)",
+          "القيد المتقادم REGISTRY_STALE انتهاك لا تحذير صامت (§4.6، R5)",
+          "security-scan.yml يستدعي tools/nexa-secret-scan.mjs ولا يحوي أنبوب grep القديم (§4.7)",
+          "CLI على الجذر الحقيقي خروج 0 وverdict clean مع JSON حتمي في --json وملخص بشري بدونه (§4.8)"
+        ],
+        "closure": "enforced:true + verification:tests/secret-scanner.test.js + closed_at في نفس تغيير التنفيذ، مع الأحمر ثم الأخضر (sec-next-03-red.tap / sec-next-03-green.tap) ولقطة التشغيل الكامل (sec-next-03-full.tap)، وتحديث صف SEC-NEXT-03 في docs/nexa-execution-backlog.csv"
+      },
+      "verification": "tests/secret-scanner.test.js",
+      "opened_at": "2026-09-23T00:00:00Z",
+      "closed_at": "2026-09-23T14:20:00Z",
+      "ticket_status": "closed — العقد أول commit في PR-A (docs/sec-next-03-secret-scanner-contract.ar.md، وسوم إعادة بناء صريحة)، ثم أحمر موثق (sec-next-03-red.tap) ثم تنفيذ الفاحص والسجل وإعادة توصيل الـ workflow فأخضر (sec-next-03-green.tap 8/8) في تغيير الإغلاق نفسه"
+    },
+    {
       "id": "D1.1",
       "area": "methodology",
       "title": "طبقة منهجية الجلسة: تقرير + assertions + عقد + فهرس فجوات + حراس",
@@ -270,5 +298,5 @@
       "ticket_status": "open — NOT VERIFIED (docs/agent-loop.md §9)"
     }
   ],
-  "updated_at": "2026-09-22T22:45:00Z"
+  "updated_at": "2026-09-23T14:20:00Z"
 }

@@ -36,8 +36,29 @@
     {
       "date": "2026-09-22",
       "event": "إغلاق D1.2: 584/584 أخضر (545 أساس + 39 إضافات؛ صفر فشل، صفر كسر). الشواهد: self-model/evidence/d1.2-red.tap ثم d1.2-green.tap"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "baseline PR-A قبل الإغلاق: 613/613 أخضر عند 3393b04 (منقول من إبلاغ الجلسة السابقة وأُعيد قياسه محليًا قبل أي تغيير)"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.11 (SEC-NEXT-03 عقد فاحص الأسرار): 621/621 أخضر (613 أساس + 8 اختبارات انعكاس؛ صفر فشل، صفر كسر). الشواهد: self-model/evidence/sec-next-03-red.tap ثم sec-next-03-green.tap وsec-next-03-full.tap"
     }
   ],
+  "post_sec_next_03": {
+    "date": "2026-09-23",
+    "commit": "working tree — تغيير إغلاق D1.11/SEC-NEXT-03 (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 621,
+    "pass": 621,
+    "fail": 0,
+    "breakdown": "613 الأساس عند 3393b04 + 8 اختبارات انعكاس D1.11 (tests/secret-scanner.test.js)",
+    "side_effects_restored": [
+      "dashboard/data/hunt-memory.json"
+    ]
+  },
   "post_d1_2": {
     "date": "2026-09-22",
     "commit": "working tree — تغيير إغلاق D1.2 (انظر git log)",

@@ -17,15 +17,15 @@
   "live_measurement": {
     "date": "2026-09-24",
     "commit": "41226003898bf896083b5ccf95283e0ac025d729",
-    "tree_state": "handoff worktree فوق 39c35b1 (قِيست قبل commit D1.27)",
+    "tree_state": "handoff worktree فوق 3a56ef3 (قِيست قبل commit D1.28)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 723,
-    "pass": 723,
+    "tests": 725,
+    "pass": 725,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 723 = 721 (D1.26) + 2 (tests/known-gaps/d1.27-codeql-triage.test.js — مصافحة الفحص الساكن)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 725 = 723 (D1.27) + 2 (tests/known-gaps/d1.28-rate-limit-audit-sink.test.js — صنبور تحقيق لا يُستدعى)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -153,6 +153,16 @@
       "suite": {
         "tests": 723,
         "pass": 723,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T10:25:00Z",
+      "event": "إعادة قياس CodeQL بعد النظافة + تسجيل D1.28",
+      "detail": "أصبحت annotations خمسة: تنبيهان حدوديان مطبَّلة (D1.27) وثلاثة dead-code، أُزيل واحد منها كان في حارس هذه الجلسة (jobIndent في tests/deploy-ci-parity.test.js)، وبقي اثنان في tests/served-telemetry-honesty.test.js:34 وtools/celia-rate-limit.mjs:85. الثاني كشف فجوة أعمق من النظافة: صنبور onAudit معلن ومستقبَل وغير مستدعى، والخادم يمرّره ظنًّا أن 429 يُرى — سُجّلت D1.28 بمعيد يقيس الرفض بلا نداء.",
+      "suite": {
+        "tests": 725,
+        "pass": 725,
         "fail": 0
       }
     }

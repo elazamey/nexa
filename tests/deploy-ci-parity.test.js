@@ -29,7 +29,6 @@ function jobSteps(text, jobName) {
   assert.ok(jobsBlock, 'لا مقطع jobs: — تغيّرت البنية التي يقرأها هذا الحارس');
   const lines = jobsBlock.split('\n');
   let inJob = false;
-  let jobIndent = 0;
   const steps = [];
   let step = null;
   let blockKey = null;
@@ -38,7 +37,7 @@ function jobSteps(text, jobName) {
     if (!line.trim()) continue;
     const indent = line.length - line.trimStart().length;
     const jobMatch = new RegExp(`^ {2}${jobName}:\\s*$`).exec(line);
-    if (jobMatch) { inJob = true; jobIndent = 2; continue; }
+    if (jobMatch) { inJob = true; continue; }
     if (inJob && /^ {2}\S/.test(line)) { inJob = false; }
     if (!inJob) continue;
     if (line.match(/^ {6}-\s+/)) {

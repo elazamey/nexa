@@ -929,7 +929,32 @@
       "reproducer": "test",
       "verification": null,
       "opened_at": "2026-09-24T09:55:00Z"
+    },
+    {
+      "id": "D1.28",
+      "track": "P2",
+      "severity": "medium",
+      "area": "telemetry-honesty",
+      "sources": [
+        "O08"
+      ],
+      "title": "createRateLimiter يوثّق options.onAudit ويستقبله ولا يستدعيه أبدًا: رفض 429 لا يصل DAG الداشبورد من أي طريق",
+      "current": "مفتوحة",
+      "notes": "مقيس: tools/celia-rate-limit.mjs يعرّف onAudit في JSDoc (:72) ويربطه (:85) ولا يوجد له استدعاء في الملف (grep: onAudit( = 0)؛ مقابل ذلك tools/celia-perimeter-auth.mjs يستدعيه فعلًا (:400 و:407). والمستدعي tools/celia-dashboard-server.mjs:118-120 يمرّر (entry) => emitDagEvent(entry.type, entry) فيظن أن رفض الحدّ يُرى. ولا حدث DAG آخر باسم RATELRimit يغطّيه (قِيس بنفس الملف).",
+      "required": "إمّا استدعاء الصنبور عند الرفض بنفس شكل سطر الـ perimeter (type/at/ip أو bucketId،بلا محتويات دلو ولا بيانات غيرة) وحراسته، أو إلغاء الخيار من الواجهة ومن المستدعي — لا تعليق صامت يترك التصريح كاذبًا. الإصلاح عند الحدود: لا مسّ لـ packages/.",
+      "acceptance": {
+        "criteria": [
+          "الصنبور يُستدعى مرة واحدة على الأقل لكل رفض (اختبار يبني limiter بـ max:1 ويعدّ النداءات) — أو يُحذف الخيار من JSDoc والتوقيع ومن caller في نفس التغيير",
+          "السطر المنشور لا يحمل محتويات الدلو ولا معرّفات callers أخرى؛ لا مفتاح ولا تجزئته (ورث سياسة: لا سرّ في السجل)",
+          "إبطال مُثبَت: تعطيل الاستدعاء (أو إبقاؤه محذوفًا مع التصريح) يُحمِرّ هذا الحارس وحده — يُقاس بـ mutation ثم استعادته",
+          "لو اختير مسار الإلغاء فـ emitDagEvent لا يستقبل نوعًا مجهولًا، ويُحدَّث ملحق O في الوثيقة بلا إعادة كتابة ما سبق"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T10:25:00Z"
     }
   ],
-  "updated_at": "2026-09-24T09:55:00Z"
+  "updated_at": "2026-09-24T10:25:00Z"
 }

@@ -567,26 +567,25 @@
       "sources": [
         "O09"
       ],
-      "current": "نفس فئة D1.12 على سطح يُخدم لا في وثيقة: `tools/celia-dashboard-server.mjs:738-742` يضع في mockState حروفًا ثابتة `gates:'6 CLOSED'، tests:'314/314'، promotion:'5/5 READY'، llm_vectors:'2/2 BLOCKED'` مع نثر تسويقي فيه «100% fix/proof»، ويُعيد `GET /api/celia/state` (سطر 943-947) تلك الكتلة حرفيًا؛ وسجل الإقلاع (سطر 3124) يطبع عددًا مختلفًا «Tests: 501/501»؛ ولا شيء يسند mockState.status إلى قياس (الحقل لا يُسنَد إطلاقًا — مُتحقق منه). الأرقام لا تتوقف عند العرض: seedGovernedMemory يزرع belief condition:{gates:'6 CLOSED',tests:'314/314'} (سطر 663)، وseedSemanticMemory يزرع «Security gates 6 CLOSED, 314 tests…» و«PASTE 48.5% latency saved» (سطران 689-690) فتصير معرفة في المحرك؛ وفي الواجهة NexaDashboard.jsx:252 بيانات أولية `testsPass:'314/314'` وDagVisualizer.jsx:185 «48.5% latency reduction». بالمقابل شقيقه `/api/v1/system/status` (سطر 987) يقيس فعلًا عبر getPosture(): أي أن نفس السيرفر يعيّن حارسين لسطح واحد، أحدهما يقيس والآخر يروّي، ويروّي رقمين متناقضين في الملف نفسه",
+      "current": "الحالة المخدومة تُبنى من القياس: servedStatus() تقرأ أسطر NEXA_METRIC من check-posture (عيّنة بـ TTL ثانيتين)، وعند تعذّر القياس تُخدَم الكتلة بلا عدد مع measurement_error؛ لا tests ولا promotion في الحمولة أصلًا؛ النثر مُعلَّق في claims.kind='claim'؛ سجل الإقلاع يطبع القياس نفسه أو يصمت؛ والمزروعات والواجهة بلا أعداد",
       "required": "لا عدد على سطح مخدوم إلا وهو قراءة: تُسند gates وllm_vectors إلى getPosture()/قياس فعلي مثلهما في /api/v1/system/status، وحقلا tests وpromotion يُحذفان من /api/celia/state لأن هذا السيرفر لا يقيسهما (حذف الادعاء أولى من وسمه حين لا مصدر له)؛ ولا رقم أداء غير مقاس (48.5%، 100%) يدخل beliefs أو ذاكرة أو بيانات الواجهة الأولية؛ وسجل الإقلاع يطبع ما يخدمه أو يصمت عن العدد",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/served-telemetry-honesty.test.js (مخطط) — يُكتب عند الإغلاق، ويُلغى known-gaps/d1.17 في نفس التغيير",
+        "inversion_test": "self-model/evidence/d1.17-guard-red.tap (6 من 6 حمراء عند 5d54d46 قبل الإصلاح؛ الاختبار السابع أُضيف معه) + d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) → d1.17-green.tap (7 من 7)؛ d1.17-inversion.txt بخمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في تعريف الحالة ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ العدد معرفةً مزروعة في belief ⇒ 2 من 7؛ سجل يروّي 501/501 ⇒ 1 من 7. وفي الخمس بقيت أسوار D1.10/D1.11 والالتزام خضراء (perimeter 9/9، rate-limit 7/7، failfast 6/6، startup-guard 8/8، commit-http 3/3، commit-auth 19/19، hardening 3/3， workspace-http 1/1، write-auth 16/16، output-isolation 3/3) — ملحق الإثبات يُصحّح سطرًا كان يحمل اسم ملف غير موجود",
         "criteria": [
-          "GET /api/celia/state لا يعيد عدد اختبارات ولا حكم ترقية كحقل خام: إما قيمة مقاسة، أو موسومة {value, source, measuredAt}، أو الحقل محذوف",
-          "لا تناقض داخلي: ما يُطبع في سجل الإقلاع هو ما تُعيده الحالة نفسها، أو لا عدد في كليهما",
-          "mockState.status (أو ما يحل محله) يُسند من getPosture()/baseline لا من حرف — يُفحص أن مصدر القيمة ليس نصًا ثابتًا",
-          "لا رقم أداء غير مقاس في المزروعات: beliefs/semantic memories لا تحمل «314 tests» ولا «48.5%» كثوابت معرفة؛ النثر التسويقي يوسم claim/demo",
-          "الواجهة: لا عدد أولي يُعرض كقراءة؛ إما placeholder صريح («غير مقاس») أو يُنتظر response",
-          "الحارس الدائم يكسر عند أي `tests: '<digits>/<digits>'` أو `promotion: '5/5 READY'` حرفيين في أدوات الحدود، وعند عودة 48.5% كثابت مقاس",
-          "لا مسّ بسلوك الجدار/المصادقة (D1.10) ولا بحارس الاستمرارية (D1.11) ولا تفكيك للسيرفر (Phase 1 خارج النطاق)"
+          "GET /api/celia/state لا يعيد tests ولا promotion كحقل خام، ولا نسبة «ن/م» ولا 314 ولا 501 ولا 48.5% ولا 100% في كتلة الحالة",
+          "gates وسائر الأعداد تُقرأ من القياس: في جذر فيه spec/ تساوي الحمولة مخرج check-posture حرفًا بحرف (parity test)، وفي بيئة لا تقيس (لا spec/) تُخدَم الكتلة بلا عدد مع NEXA-POSTURE-UNAVAILABLE/UNMEASURABLE — لا جواب محفوظ",
+          "لا حرف '6 CLOSED' ولا tests:'ن/م' ولا promotion:'ن/م READY' ولا Tests: ن/م في tools/celia-dashboard-server.mjs خارج التعليقات — تُفحص الشيفرة بعد تجبيب التعليقات",
+          "المزروعات: condition الاعتقاد لا يحمل أعدادًا بل يُحيل إلى القياس؛ لا «314 tests» ولا «gates 6 CLOSED» ولا 48.5% في الحقائق الدلالية؛ pasteSaving رواية موسومة لا نسبة مُروَّاة (السيرفر والأداة التجريبية معًا)",
+          "الواجهة: المبدئيات placeholder صريح ('not measured'/صفر) لا أعداد تُعرض كقراءة؛ سطر «6 gates CLOSED … Z3 100% proof» صار claim موسومًا؛ كل ذكر لـ 48.5% أو 100% في المكوّنين يحمل وسم رواية",
+          "التوافق: status باقٍ كحقل (بمحتوى مقيس) وclaims إضافة؛ لا مسّ بسلوك الجدار (D1.10) ولا بحارس الإقلاع (D1.11) ولا تفكيك للسيرفر؛ /api/posture و/api/v1/system/status كما هما"
         ]
       },
-      "verification": null,
+      "verification": "tests/served-telemetry-honesty.test.js",
       "opened_at": "2026-09-23T01:35:00Z",
-      "closed_at": null,
-      "ticket_status": "open — مُسجَّلة بعد إغلاق D1.12 ومُثبتة حمراء؛ الإغلاق مُقرَّر بعد D1.4–D1.8 باتفاق 2026-09-23، وبشكل «قياس حيّ فقط» لا «سجل موسوم»",
+      "closed_at": "2026-09-23T22:55:00Z",
+      "ticket_status": "enforced — السطح المخدوم يقيس أو يصمت؛ العدد المحذوف أصدق من الوسم (670/670)",
       "follow_ups": [
         "عند الإغلاق: `/api/celia/evidence` و`/api/celia/memory` يخدمان مزروعات مزروعة الأرقام — نفس المعيار يسري عليهما (لا «314 tests» ولا «48.5%»)",
         "النثر في landing page (سطر 3037) و`version:'v0.8-ultimate'` و«56 Engines» ادعاءات قدرة لا أرقام: تُوسم أو تُحذف في التذكرة نفسها إن رُئي ذلك",
@@ -595,5 +594,5 @@
       "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
     }
   ],
-  "updated_at": "2026-09-23T21:40:00Z"
+  "updated_at": "2026-09-23T22:55:00Z"
 }

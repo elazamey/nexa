@@ -11,7 +11,8 @@
  *   → http://localhost:3001 (API) + http://localhost:5173 (Vite frontend)
  * 
  * API:
- *   GET  /api/celia/state — returns { thinking, evidence, memory, status }
+ *   GET  /api/celia/state — returns { thinking, evidence, memory, status (measured via
+ *          check-posture), claims (labelled prose, never a measurement) }
  *   POST /api/celia/run-demo — runs celia-demo and returns new state
  *   GET  /api/celia/evidence — evidence chain
  *   GET  /api/celia/memory — memory digests
@@ -640,7 +641,7 @@ async function seedGovernedMemory() {
     await governedEngine.registerStrategy({
       taskIntent: 'parallel DAG execution',
       condition: { maxParallel: 3, speculative: true },
-      strategyDAG: { nodes: [{ id: 'discover' }, { id: 'inspect', parallel: true }, { id: 'verify', critical: true }], maxParallel: 3, pasteSaving: '48.5%' },
+      strategyDAG: { nodes: [{ id: 'discover' }, { id: 'inspect', parallel: true }, { id: 'verify', critical: true }], maxParallel: 3, pasteSaving: 'claim — not measured by this build' },
       evidenceRef: 'evidence:dag-v0.4',
       confidence: 0.95
     });
@@ -660,7 +661,8 @@ async function seedGovernedMemory() {
     });
     await governedEngine.registerBelief({
       belief: 'Tool registry default deny + evidence_ref + allow-list + RLS + digest-only is required (defense in depth)',
-      condition: { gates: '6 CLOSED', tests: '314/314' },
+      // D1.17: شرط الاعتقاد لا يحمل أرقامًا مروَّاة — القياس وحده يُحال إليه
+      condition: { posture: 'measured by `node tools/check-posture.mjs` (see /api/posture)' },
       evidenceRef: 'evidence:belief-v0.5',
       confidence: 0.9
     });
@@ -686,8 +688,8 @@ async function seedSemanticMemory() {
     { content: 'Memory is digest-only, never raw content, with RLS, evidence-bound.', meta: { type: 'policy', tier: 'semantic' } },
     { content: 'Tool registry default deny, allow-listed paths, 9 tools including semantic recall.', meta: { type: 'policy', tier: 'working' } },
     { content: 'SSE stream provides real-time DAG visualization, heartbeat 15s.', meta: { type: 'architecture', tier: 'working' } },
-    { content: 'Speculative execution PASTE 48.5% latency saved, maxParallel 3.', meta: { type: 'architecture', tier: 'working' } },
-    { content: 'Security gates 6 CLOSED, 314 tests, 2 LLM vectors BLOCKED.', meta: { type: 'security', tier: 'episodic' } },
+    { content: 'Speculative execution (PASTE) starts B while A runs with maxParallel 3; the latency saving is a claim, not measured by this server.', meta: { type: 'architecture', tier: 'working' } },
+    { content: 'Security gate closure is measured by `node tools/check-posture.mjs`; this server serves that reading and never a memorised count.', meta: { type: 'security', tier: 'episodic' } },
     { content: 'Glassmorphism dashboard: HUD + Telemetry + Arena, Tailwind + lucide-react, 55KB gzip.', meta: { type: 'ui', tier: 'working' } },
     { content: 'Supabase pgvector 384d embeddings, cosine similarity, Top-12 RAG for planner.', meta: { type: 'architecture', tier: 'semantic' } },
     { content: 'Evidence chain hash-chained, signed receipts, ledger records every message.', meta: { type: 'policy', tier: 'semantic' } },
@@ -713,6 +715,57 @@ export function emitDagEvent(type, payload) {
 }
 
 // Mock data — in production, read from Supabase port
+// D1.17 (O09 / قياس مخدوم): الحالة المخدومة تُقرأ من قياس الجوار نفسه الذي يستعمله
+// /api/v1/system/status. عيّنة قصيرة العمر (TTL) لأن اللوحة تُستطلع بالتكرار، و`measured_at`
+// يصرّح بوقت العيّنة. عند تعذّر القياس تُخدَم حالة بلا عدد — لا قيمة احتياطية.
+const POSTURE_SAMPLE_TTL_MS = 2_000;
+let postureSample = null;
+
+function measurePosture() {
+  const now = Date.now();
+  if (postureSample && now - postureSample.at < POSTURE_SAMPLE_TTL_MS) return postureSample;
+  let sample;
+  try {
+    const out = execSync('node tools/check-posture.mjs', { cwd: root, encoding: 'utf8' });
+    const metrics = {};
+    for (const line of String(out).split('\n')) {
+      const parsed = /^NEXA_METRIC ([a-z_]+)=(\d+)$/.exec(line);
+      if (parsed) metrics[parsed[1]] = Number(parsed[2]);
+    }
+    sample = Number.isInteger(metrics.closed_gates)
+      ? { ok: true, metrics, at: now }
+      : { ok: false, code: 'NEXA-POSTURE-UNMEASURABLE', reason: 'posture check returned no measured closed_gates', at: now };
+  } catch (e) {
+    sample = { ok: false, code: 'NEXA-POSTURE-UNAVAILABLE', reason: `posture check failed: ${e.message}`, at: now };
+  }
+  postureSample = sample;
+  return sample;
+}
+
+function servedStatus() {
+  const sample = measurePosture();
+  if (!sample.ok) {
+    return {
+      measurement: 'node tools/check-posture.mjs',
+      measurement_error: `${sample.code}: ${sample.reason}`
+    };
+  }
+  const m = sample.metrics;
+  return {
+    gates: `${m.closed_gates} CLOSED`,
+    gated_namespaces: m.gated_namespaces,
+    gated_actions: m.gated_actions,
+    omega_gate_stages: m.omega_gate_stages,
+    attack_categories: m.attack_categories,
+    kernel_modules: m.kernel_modules,
+    omega_error_codes: m.omega_error_codes,
+    membrane_steps: m.membrane_steps,
+    cell_states: m.cell_states,
+    measurement: 'node tools/check-posture.mjs',
+    measured_at: new Date(sample.at).toISOString()
+  };
+}
+
 let mockState = {
   thinking: {
     model: 'grok-2',
@@ -735,13 +788,16 @@ let mockState = {
     { id: '2', tier: 'semantic', digest: 'sha256:789xyz...', owner_kid: 'nexa:key:ed25519:z6MkCelia...', evidence_ref: '9a8b7c6d', created_at: new Date().toISOString() },
     { id: '3', tier: 'working', digest: 'sha256:qwerty...', owner_kid: 'nexa:key:ed25519:z6MkCelia...', evidence_ref: '1a2b3c4d', created_at: new Date().toISOString() },
   ],
-  status: {
-    gates: '6 CLOSED',
-    tests: '314/314',
-    promotion: '5/5 READY',
-    llm_vectors: '2/2 BLOCKED',
+  // D1.17 (O09): ما يُخدَم هنا قراءة لا حروف — تُحدَّث الكتلة من القياس عند كل طلب.
+  // لا tests ولا promotion: هذا السيرفر لا يقيس الاختبارات ولا الترقية، وحذف الادعاء
+  // أولى من وسمه برقم قديم (قرار المالك 2026-09-23؛ لا baseline عبر الشبكة).
+  status: servedStatus(),
+  // النثر الوصفي معلَّق صراحةً: ادّعاء قدرة لا تليمترية (D1.12/D1.17 — رقم بلا قياس رواية)
+  claims: {
+    kind: 'claim',
+    note: 'descriptive claims below are not measurements and are not verified by any check',
     version: 'v0.8-ultimate',
-    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Astrocytic Neuromodulators mood auto, Holomorphic Cauchy-Riemann no hallucinations, Molecular DNA A-T-C-G PCR microsecond, Holographic wave interference photonic speed, Morphic Resonance phase frequency zero bandwidth + 16 DSLs 50-70% saving + Z3 100% proof + WASM + Egress zero-trust',
+    rag: 'Ultimate Agent OS: 8-Tier Unified + 7 Physics Engines: Relativistic Minkowski Light Cones zero race, Topological Braid Jones Polynomial 100% fix, Tensor Field Gradient',
     memoryEngine: 'Poincaré Hyperbolic O(log N) + Molecular DNA A-T-C-G + Morphic Resonance + Governed State Machine + 15 Engines Unified'
   },
   semanticMemory: [],
@@ -941,6 +997,8 @@ const server = createServer(async (req, res) => {
 
   // API routes
   if (url.pathname === '/api/celia/state') {
+    // D1.17: تُعاد قراءة القياس عند الطلب — ما يخدمه operator هو ما يقيسه السيرفر الآن
+    mockState.status = servedStatus();
     mockState.thinking.timestamp = new Date().toISOString();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(mockState));
@@ -978,6 +1036,7 @@ const server = createServer(async (req, res) => {
     } catch (e) {
       console.log('[dashboard-server] demo failed', e.message);
     }
+    mockState.status = servedStatus();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(mockState));
     return;
@@ -3121,5 +3180,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   Terminal: POST http://localhost:${PORT}/api/v1/terminal/execute { program, args, approvalId }`);
   console.log(`   Governance: GET http://localhost:${PORT}/api/v1/authorizations|/timeline|/system/status (v13-4)`);
   console.log(`   Frontend dev: cd dashboard && npm run dev → http://localhost:5173`);
-  console.log(`   Gates: 6 CLOSED, Tests: 501/501, Promotion: 5/5 READY, Engine: v1.1 Omega 56 Engines — 10 Omega (3 missing 34 + 7 transcendental) + 20 Singularity + 11 Infinite + 8 Advanced + 7 Ultimate Physics + 8-Tier + 16 DSLs + Z3 100% proof + 80 components beyond singularity true final world-shaking omega`);
+  {
+    const boot = servedStatus();
+    console.log(`   Gates: ${boot.gates ?? 'not measured'} (measured: ${boot.measurement})`);
+    if (boot.measurement_error) console.log(`   Gates: NOT MEASURED — ${boot.measurement_error}`);
+    console.log('   Tests / promotion: not measured by this process — see `npm test` and the release ceremony (D1.17)');
+    console.log('   Engine: descriptive claim, not a measurement (see /api/celia/state → claims)');
+  }
 });

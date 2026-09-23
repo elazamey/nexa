@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "f7459bd7a7b99c4f05f73881ed05bd60b4e66033",
-    "tree_state": "D1.8 closure worktree (measured before the closure commit)",
+    "commit": "5d54d462c16baacc81ddcc8b5ffcd42bcec0d142",
+    "tree_state": "D1.17 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 667,
-    "pass": 667,
+    "tests": 670,
+    "pass": 670,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 667 = 660 (إغلاق D1.7) + 7 (tests/bug-report-consistency.test.js)؛ مُعيد D1.8 كان غير متتبَّع فلم يدخل أي عدّاد، وحُذف بعد أن حُمِّل إثباتًا"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 670 = 667 (إغلاق D1.8) + 7 (tests/served-telemetry-honesty.test.js) − 4 (مُعيد known-gaps/d1.17 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -93,6 +93,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.8 (P0-D / A13 / DI-17): bug-report.json لا يعرض إلا ما صُدِّر له إيصال، ويعلن counts وعلاقة كل detail بإيصاله، ويطبع مساره وحالة كتابته الصادقة، وreport-writer يشتق تذييله من finding.receipt بدل «7/7 PASSED» الثابت؛ 667/667 أخضر واكتملت P0-D"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.17 (P1-A / O09): /api/celia/state تقيس أو تصمت — gates من check-posture بحرفية القياس، وtests/promotion محذوفان، والمزروعات والواجهة وسجل الإقلاع بلا أعداد مروَّاة؛ 670/670 أخضر"
     }
   ],
   "post_d1_2": {
@@ -321,5 +325,19 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-23T21:40:00Z"
+  "updated_at": "2026-09-23T22:55:00Z",
+  "d1.17_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.17 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 670,
+    "pass": 670,
+    "fail": 0,
+    "breakdown": "667 بعد D1.8 + 7 (حارس القياس المخدوم) − 4 (مُعيد D1.17 المُسجَّل حُذف عند الإغلاق)؛ الأسوار (perimeter/rate-limit/failfast/startup/commit) لم يتغيّر عددها ولا نتائجها",
+    "red_evidence": "self-model/evidence/d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) + d1.17-guard-red.tap (6 من 6 حمراء قبل الإصلاح)",
+    "green_evidence": "self-model/evidence/d1.17-green.tap (7 من 7) + المجموعة الكاملة 670/670/0 عند الإغلاق",
+    "inversion_evidence": "d1.17-inversion.txt — خمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في التعريف ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ عددٌ مزروع في belief ⇒ 2 من 7؛ سجل إقلاع يروّي ⇒ 1 من 7. أسوار D1.10/D1.11 خضراء في الخمس (57 اختبارًا)، وملحق يُصحّح اسم ملف كان غائبًا في السجل",
+    "note": "شكل الإغلاق كما قرّر المالك: قياس حيّ فقط — gates من check-posture، وtests/promotion محذوفان من الحمولة (لا وسم بتاريخ، ولا baseline عبر الشبكة). وبهذا تُغلق آخر تذكرة صفر-حرج مُسجَّلة في الصنف «أعداد مُروَّاة»"
+  }
 }

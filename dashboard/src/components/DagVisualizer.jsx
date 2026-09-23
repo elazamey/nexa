@@ -182,7 +182,7 @@ export default function DagVisualizer() {
 
         <div style={{marginTop: '12px', padding: '8px', background: '#0a0a0b', borderRadius: '6px', fontSize: '10px', color: '#71717a'}}>
           <div>🔌 SSE: Server-Sent Events — lightweight, uni-directional, no external libs</div>
-          <div>⚡ Speculative: start B while A runs (PASTE 48.5% latency reduction)</div>
+          <div>⚡ Speculative: start B while A runs (PASTE — claim, not measured)</div>
           <div>🔀 Parallel: max 3 nodes per level, topological sort</div>
           <div>🛡️ Edge cases: auto-reconnect on disconnect, heartbeat every 15s</div>
         </div>

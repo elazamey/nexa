@@ -242,14 +242,15 @@ export default function NexaPerimeterGate() {
 function NexaDashboard() {
   const [metrics, setMetrics] = useState({
     status: 'LIVE',
+    // D1.17: لا عدد أولي يُعرض كأنه قراءة — ما لا يأتي من response يبقى placeholder
     parallelNodes: 0,
     speculativeHits: 0,
-    memoryDigests: 142,
-    contextUsage: '2.1',
+    memoryDigests: 0,
+    contextUsage: 'not measured',
     executionTime: 0,
-    securityGates: '6/6',
-    evidenceCount: 3,
-    testsPass: '314/314'
+    securityGates: 'not measured',
+    evidenceCount: 0,
+    testsPass: 'not measured'
   });
 
   const [logs, setLogs] = useState([]);
@@ -639,7 +640,7 @@ function NexaDashboard() {
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-[11px] text-slate-500 font-mono">celia_agent // v0.8 ultimate // 8-Tier + 7 Physics • Relativistic • Braid • Astrocytic • Holomorphic • DNA • Holographic • Morphic • World-Shaking</p>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
-                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> 6 gates CLOSED • 30 tools • 16 DSLs • 15 Engines • Z3 100% proof</p>
+                <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1"><Box className="w-3 h-3" /> engine claims — not measured (see /api/celia/state → claims)</p>
               </div>
             </div>
           </div>
@@ -671,7 +672,7 @@ function NexaDashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <CounterCard title="Parallel DAGs" value={metrics.parallelNodes} unit="Active" icon={Cpu} color="text-cyan-400" bgGlow="bg-cyan-500" pulse={metrics.parallelNodes > 0} subValue={`${dagStats.passed}/${dagStats.total} done`} />
-          <CounterCard title="Speculative ⚡" value={metrics.speculativeHits} unit="Hits" icon={Zap} color="text-yellow-400" bgGlow="bg-yellow-500" subValue="PASTE 48.5% saved" />
+          <CounterCard title="Speculative ⚡" value={metrics.speculativeHits} unit="Hits" icon={Zap} color="text-yellow-400" bgGlow="bg-yellow-500" subValue="PASTE — claim, not measured" />
           <CounterCard title="Governed Mem" value={metrics.memoryDigests} unit="Nodes" icon={Brain} color="text-cyan-400" bgGlow="bg-cyan-500" subValue="PROPOSED→RETIRED" />
           <CounterCard title="RAG Engine" value="Top-12" unit="384d" icon={Layers} color="text-purple-400" bgGlow="bg-purple-500" subValue="pgvector optional" />
           <CounterCard title="Exec Time" value={metrics.executionTime} unit="ms" icon={Clock} color="text-slate-300" bgGlow="bg-slate-500" subValue={`${dagStats.passed} passed`} />
@@ -755,7 +756,7 @@ function NexaDashboard() {
                 {dagStats.passed > 0 && <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] text-emerald-300">{dagStats.passed} ✓</span>}
               </h3>
               <div className="flex items-center gap-2 text-[10px] font-mono">
-                <span className="text-slate-500">PASTE 48.5%</span>
+                <span className="text-slate-500">PASTE — claim, not measured</span>
                 <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
                 <span className="text-slate-400">maxParallel 3</span>
                 <div className={`w-2 h-2 rounded-full ml-1 ${connectionStatus === 'Live' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></div>

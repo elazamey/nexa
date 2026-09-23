@@ -93,7 +93,7 @@ function stepsOf(text) {
 function internalCommands() {
   const tool = read('tools/check-metrics.mjs');
   const cmds = new Set();
-  for (const m of tool.matchAll(/runCommand\(\['test'\]\)/g)) cmds.add('npm test');
+  if (/runCommand\(\['test'\]\)/.test(tool)) cmds.add('npm test');
   for (const m of tool.matchAll(/runCommand\(\['run', '([^']+)'\]\)/g)) cmds.add(`npm run ${m[1]}`);
   return cmds;
 }

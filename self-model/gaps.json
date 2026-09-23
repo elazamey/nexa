@@ -903,7 +903,33 @@
       "reproducer": "test",
       "verification": null,
       "opened_at": "2026-09-24T09:10:00Z"
+    },
+    {
+      "id": "D1.27",
+      "track": "P3",
+      "severity": "low",
+      "area": "static-analysis-triage",
+      "sources": [
+        "O08"
+      ],
+      "title": "تنبيهات الفحص الساكن بلا مصافحة معلنة: فرعان من أربعة على نمط مُراجَع في tools/celia-perimeter-auth.mjs يُبقيان كل PR أحمر",
+      "current": "مفتوحة",
+      "notes": "مقيس من PR #29: gh api check-runs/107161367785/annotations أعطى أربعة failure — اثنان نظافة في حراس هذه الجلسة (صُحّبا في نفس الجولة: متغيّر حلقة غير مستعمل، وهروب تنصيص بـ replace)، واثنان على tools/celia-perimeter-auth.mjs:76 (»Password … hashed insecurely« على timingSafeEqual(sha256(presented), sha256(expected))) و:102 («property name to write to depends on a user-provided value» على كتابة الكوكيز). الاثنان الأخيران مطبَّلة بالقياس: المفتاح المشترك ليس كلمة مرور مخزّنة فتقوية KDF بلا معنى مع مقارنة متساوية الوقت، والكتابة على Object.create(null) مع حجب __proto__/constructor لا تصل نموذجًا. API القائمة الكاملة مرفوض (403 لصلاحية الـ token) فالقياس من annotations فقط.",
+      "required": "مصافحة قابلة للمراجعة لا إسكاتًا أعمى: سجلّ في المستودع يسمّي الـ query ids والملف والسبب والمالك، أو تعطيل محلي للـ query بنمط يفهمه الأداة؛ ويُبقى على فشل البوابة أمام أي تنبيه جديد غير مُصافَح.",
+      "acceptance": {
+        "criteria": [
+          "ملف مصافحة في المستودع (أحد المسارات الثلاثة التي يسمّيها المُعيد) يذكر الـ query ids والملف وسبب كل تصنيف وتاريخه",
+          "لا يُسقَط الفحص كاملًا ولا يُفعَّل continue-on-error على وظيفة التحليل (ورث D1.19/D1.20: لا ابتلاع فشل)",
+          "تنبيه جديد غير مُصافَح يُبقي الـ PR أحمر — يُقاس بحقن تنبيه تجريبي في نسخة لا في المستودع، أو بتعليق على PR حقيقي",
+          "المُعيد الحالي يظل يفشل لو تغيّر نمط perimeter (المقارنة أو Object.create(null)) فالحارس مربوط بالشيفر لا بالتصريح",
+          "تُذفَع المصافحة إلى self-model/decision-log.json بتذكرة قرار، لأن تعطيل query قرار حوكمة لا تفصيل تقني"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T09:55:00Z"
     }
   ],
-  "updated_at": "2026-09-24T09:10:00Z"
+  "updated_at": "2026-09-24T09:55:00Z"
 }

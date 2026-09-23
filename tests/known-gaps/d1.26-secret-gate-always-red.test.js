@@ -17,7 +17,9 @@ const SCAN = 'grep -rn --include="*.js" --include="*.mjs" --include="*.json" -E 
 test('known-gap D1.26: أمر الفحص حرفيًا من security-scan.yml يجد ما يُفشل البوابة', () => {
   const wf = read('.github/workflows/security-scan.yml');
   const step = wf.split('- name: Scan for Exposed Secret Patterns')[1].split('- name:')[0];
-  assert.ok(step.includes(SCAN.replace(/"/g, '\\"')) || step.includes(SCAN),
+  // مقارنة بلا التنصيص: الـ YAML يكتب الأمر داخل اقتباس مع \"، فنُزيل التنصيص من الطرفين
+  const unquote = (x) => x.split('"').join('');
+  assert.ok(unquote(step).includes(unquote(SCAN)),
     'تغيّر نصّ الأمر في الـ workflow — حدّث المُعيد ليطابق الحرفي الجديد');
   const out = execFileSync('bash', ['-lc', `${SCAN} || true`], { cwd: ROOT, encoding: 'utf8' });
   const hits = out.split('\n').filter(Boolean);

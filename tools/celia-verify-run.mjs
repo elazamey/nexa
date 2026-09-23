@@ -37,4 +37,6 @@ const descriptor = validateDescriptor(JSON.parse(readFileSync(options.descriptor
 const evidence = verifyRun({ verifier: { keys, kid: keys.kid }, subject: options.subject, descriptor, files: options.test });
 const output = JSON.stringify({ source: evidence.source, records: evidence.records }, null, 2);
 if (options.out) writeFileSync(options.out, output + '\n', { mode: 0o600 }); else process.stdout.write(output + '\n');
-console.error(`verify-run: ${evidence.verdict} by ${keys.kid} (${evidence.run.summary.pass ?? '?'} pass / ${evidence.run.summary.fail ?? '?'} fail, exit ${evidence.run.exitCode})`);
+const { summary } = evidence.run;
+console.error(`verify-run: ${evidence.verdict} by ${keys.kid} (${summary.files} files, ${summary.pass} pass / ${summary.fail} fail / ${summary.cancelled} cancelled)`);
+for (const reason of evidence.records[1].detail.reasons ?? []) console.error(`  - ${reason}`);

@@ -172,3 +172,24 @@ It runs `node --test` in a clean subprocess, parses the TAP summary, and signs a
 object a COMMIT request carries. The tool refuses to sign when verifier == subject.
 End-to-end proof: `tests/verify-run.test.js` — real subprocess → evidence → real COMMIT,
 with the failing variant refused and the filesystem unchanged.
+
+### 8.1 Why the judge never reads stdout
+
+`# pass 1` printed by a test is a **claim by the process under test**, not evidence.
+`verify-run` therefore runs each file in its own runner with
+`--test-reporter=junit --test-reporter-destination=<private random file>`; the report is
+written by the *runner* (the parent of the test), and the judge reads only that:
+
+```text
+Execution → Structured Test Result (runner report) → Independent Judge → Evidence → Gate
+```
+
+Pinned attacks (`tests/verify-run.test.js`, each also refused at COMMIT with the
+filesystem unchanged):
+
+| Attack | What a stdout parser sees | What the judge sees |
+| --- | --- | --- |
+| failing test prints a perfect TAP summary | `# pass 1 # fail 0` | report: `fail 1` → DENY |
+| perfect summary then `process.exit(0)` | exit 0 + `# pass 1` | report names the *file* as the only testcase → "exited without reporting" → DENY |
+| test that never resolves | nothing | real `spawnSync` `ETIMEDOUT`, no report → DENY, timeout recorded in evidence |
+| one forged file among passing files | 2 pass | any bad file poisons the run → DENY |

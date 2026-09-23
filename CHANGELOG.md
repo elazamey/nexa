@@ -18,8 +18,11 @@ and the project uses semantic versioning once it leaves `0.x`.
   `npm run verify-run -- …`) — runs real tests in a subprocess and signs the outcome
   with the verifier key as evidence bound to one exact commit descriptor. A failing
   run produces DENY evidence, never silence. Never commits, never grants capability.
-* Tests: `tests/verification-gate.test.js` (10), `tests/verify-run.test.js` (5, real
-  subprocess → evidence → real COMMIT), 8 gate tests in
+  The judge reads the **runner's** junit report from a private destination file — never
+  the test's stdout — so forged `# pass` output, `process.exit(0)` before reporting, and
+  real `ETIMEDOUT` hangs all yield DENY (pinned in `tests/verify-run.test.js`).
+* Tests: `tests/verification-gate.test.js` (10), `tests/verify-run.test.js` (9, real
+  subprocess → evidence → real COMMIT, incl. forged-stdout and real-timeout attacks), 8 gate tests in
   `tests/celia-workspace-commit-auth.test.js` / `…-h2.test.js` at the real boundary.
 
 ### Changed (breaking, fail-closed)

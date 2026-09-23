@@ -134,6 +134,11 @@ try {
     'Ω attacks': getMetric(attacksOut, 'omega_blocked'),
     'Google identity attacks': getMetric(googleOut, 'google_blocked'),
     'Closed gates': getMetric(postureOut, 'closed_gates'),
+    // D1.12: كل عدد تُصرّح به الوثائق، لا أعداد الاختبارات وحدها — وإلا بقيت أرقام مثل
+    // «72 Ω error codes» حرفيةً لا يربطها بها فحص.
+    'Ω error codes': getMetric(postureOut, 'omega_error_codes'),
+    'Gated namespaces': getMetric(postureOut, 'gated_namespaces'),
+    'Attack categories': getMetric(postureOut, 'attack_categories'),
   };
 } catch (e) {
   console.error(`❌ Metric extraction failed: ${e.message}`);

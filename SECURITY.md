@@ -128,12 +128,15 @@ useful possible report.
 
 ## Measured security metrics (enforced by CI)
 
-The block below records the historical all-green baseline. H1 durable consumption
-now passes its unchanged restart/ABA test and 20 additional persistence tests.
-H2 atomicity and H3 external-writer concurrency still fail; neither is skipped.
-Latest `verify` after the isolated learning addition: **392 passing / 2 failing
-of 394**, stopping at the test stage. WRITE/COMMIT HTTP regression plus H1
-persistence tests: **59/59** (39 + 20).
+The block below is the only place a number is stated: `npm run metrics` re-measures
+every line from a live run and fails when a documented number does not match the
+measurement. Counts are not restated in prose (D1.12 — an unreferenced literal is a
+claim, not evidence); the last recorded measurement is `live_measurement` in
+`self-model/baseline.json`, and `tests/count-claims-sync.test.js` fails if a prose
+count creeps back into either document.
+H1 durable consumption passes its unchanged restart/ABA test; H2 atomicity and H3
+external-writer concurrency were resolved in the 2026-09-22 verification and their
+tests run unskipped in `npm test`.
 COMMIT requires a pre-provisioned private persistent `CELIA_COMMIT_STATE_DIR`
 outside the target root; missing/uncertain storage fails closed. Do not reset the
 store or clear stale reservation locks to restore availability.
@@ -141,11 +144,14 @@ See [H1 evidence and storage assumptions](docs/celia-workspace-commit-h1-persist
 and [the original H1/H2/H3 RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 545
+- Total tests: 633
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8
 - Closed gates: 6
+- Ω error codes: 86
+- Gated namespaces: 14
+- Attack categories: 12
 <!-- NEXA_METRICS:END -->
 
 ## Celia workspace HTTP write boundary

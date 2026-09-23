@@ -17,19 +17,44 @@ check_fail() {
   echo "  ❌ $1 - $2"
 }
 
-echo "[1/5] gates_closed - checking posture..."
-if npm run posture 2>&1 | grep -q "6 gates CLOSED"; then
-  check_pass "gates_closed: 6 gates CLOSED"
+echo "[1/5] gates_closed - asking the posture checker, then reading its measured count..."
+# D1.12: كان الفحص `grep -q "6 gates CLOSED"` — عدد حرفي داخل بوابة: تُحكم البوابة على صيغة
+# سطر لا على قرار الفاحص، وتنكسر لو صار للبوابات سابع (أو لو تغيّر نص السطر وهو أخضر).
+# المعتبر: رمز خروج tools/check-posture.mjs (صاحب القاعدة) + العدد الذي قاسه هو فعلًا.
+if POSTURE_OUT="$(npm run posture 2>&1)"; then POSTURE_OK=1; else POSTURE_OK=0; fi
+CLOSED_N=$(printf '%s\n' "$POSTURE_OUT" | sed -n 's/^NEXA_METRIC closed_gates=\([0-9][0-9]*\)$/\1/p' | tail -1)
+if [[ "$POSTURE_OK" -ne 1 ]]; then
+  check_fail "gates_closed" "tools/check-posture.mjs refused the posture"
+elif [[ -z "$CLOSED_N" ]]; then
+  check_fail "gates_closed" "posture passed but printed no NEXA_METRIC closed_gates"
 else
-  check_fail "gates_closed" "posture check failed"
+  check_pass "gates_closed: $CLOSED_N gates, as measured by the posture checker"
 fi
 
 echo ""
-echo "[2/5] tests_green - checking tests..."
-if npm test 2>&1 | tail -30 | grep -q "314" || npm test 2>&1 | grep -q "pass"; then
-  check_pass "tests_green: 314/314"
+echo "[2/5] tests_green - measuring the suite once, reading its TAP summary..."
+# D1.12: لا رقم حرفيًا في هذا الفحص. القديم كان يقرأ "314" في آخر 30 سطرًا ويهنّئ
+# المجموعة بنصّه الثابت «tests_green: 314/314» — مقيسًا مُختلَق لا قراءة: مع مجموعة من
+# اختبارين فقط كان يطبع 314/314 ويمنح بوابة النشر ختمًا لم يحدث، ولا يقرأ # fail إطلاقًا.
+# المعتبر الآن: ملخص TAP من تشغيل واحد (# tests/# pass/# fail) + أرضية مسجلة في
+# self-model/baseline.json، فمجموعة منكمشة أو مُستبَدة تُرفض ولا تُزَكّى.
+TAP_OUT="$(npm test 2>&1 || true)"
+TAP_TESTS=$(printf '%s\n' "$TAP_OUT" | sed -n 's/^# tests \([0-9][0-9]*\)$/\1/p' | tail -1)
+TAP_PASS=$(printf '%s\n' "$TAP_OUT" | sed -n 's/^# pass \([0-9][0-9]*\)$/\1/p' | tail -1)
+TAP_FAIL=$(printf '%s\n' "$TAP_OUT" | sed -n 's/^# fail \([0-9][0-9]*\)$/\1/p' | tail -1)
+FLOOR=$(node -p "JSON.parse(require('fs').readFileSync('self-model/baseline.json','utf8')).live_measurement.tests" 2>/dev/null || echo "")
+if [[ -z "$TAP_TESTS" || -z "$TAP_PASS" || -z "$TAP_FAIL" ]]; then
+  check_fail "tests_green" "no TAP summary (# tests / # pass / # fail) parsed from the suite run"
+elif [[ "$TAP_FAIL" -ne 0 ]]; then
+  check_fail "tests_green" "$TAP_FAIL failing test(s) of $TAP_TESTS"
+elif [[ "$TAP_PASS" -ne "$TAP_TESTS" ]]; then
+  check_fail "tests_green" "inconsistent TAP: # pass $TAP_PASS but # tests $TAP_TESTS with # fail 0"
+elif [[ -z "$FLOOR" ]]; then
+  check_fail "tests_green" "no recorded measurement floor in self-model/baseline.json"
+elif [[ "$TAP_TESTS" -lt "$FLOOR" ]]; then
+  check_fail "tests_green" "suite shrank below the recorded floor: $TAP_TESTS < $FLOOR"
 else
-  check_fail "tests_green" "tests failed"
+  check_pass "tests_green: $TAP_PASS pass / $TAP_FAIL fail of $TAP_TESTS (recorded floor $FLOOR)"
 fi
 
 echo ""
@@ -54,21 +79,23 @@ fi
 
 echo ""
 echo "[4/5] digest#1_provenance - checking publish plan provenance..."
+# D1.12: كان الفحص يقارن حجم الخطة بـ 4892 بايتًا — رقم يُرضى بأي حشو (_padding) ولا يثبت
+# شيئًا عن الصدق. المعتبر الآن: الخطة موقّعة provenance، وموسومة صراحةً كسجل تاريخي
+# مؤرَّخ حتى لا تُقرأ ادّعاءً حاليًا (وإلا كانت «314/314» تُروَّج كأنها راهنة).
 if [[ ! -f "$PLAN_FILE" ]]; then
-  check_fail "digest#1_provenance" "missing $PLAN_FILE (expected 4892 bytes)"
+  check_fail "digest#1_provenance" "missing $PLAN_FILE"
 else
-  SIZE=$(wc -c < "$PLAN_FILE")
-  if [[ "$SIZE" -ne 4892 ]]; then
-    echo "  ⚠️  Plan size $SIZE != 4892"
-  fi
+  HAS_RECORD=$(node -p "(()=>{const p=JSON.parse(require('fs').readFileSync('$PLAN_FILE','utf8'));return String(p.record_status||'').includes(String(p.timestamp||'~'))?'yes':'no';})()" 2>/dev/null || echo "no")
   HAS_SIG=$(node -p "JSON.parse(require('fs').readFileSync('$PLAN_FILE','utf8')).signatures.ceremony ? 'yes' : 'no'" 2>/dev/null || echo "no")
   DIGEST=$(node -p "JSON.parse(require('fs').readFileSync('$PLAN_FILE','utf8')).provenance['digest#1'] || ''" 2>/dev/null || echo "")
   if [[ -z "$DIGEST" ]]; then
     check_fail "digest#1_provenance" "missing provenance.digest#1"
+  elif [[ "$HAS_RECORD" != "yes" ]]; then
+    check_fail "digest#1_provenance" "$PLAN_FILE carries no record_status naming its own timestamp - a stale plan must be labelled historical"
   elif [[ "$HAS_SIG" != "yes" ]]; then
     check_fail "digest#1_provenance" "missing ceremony signature - digest#1 provenance not yet authorized (run ceremony.sh)"
   else
-    check_pass "digest#1_provenance: $DIGEST verified + ceremony signed"
+    check_pass "digest#1_provenance: $DIGEST verified + ceremony signed + record dated"
   fi
 fi
 

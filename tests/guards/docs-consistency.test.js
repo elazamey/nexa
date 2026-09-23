@@ -94,10 +94,16 @@ test('Guard D1.1/docs: العقد v0.3 يحمل البنود المرجعية ل
 });
 
 test('Guard D1.1/docs: خط الأساس المقاس يطابق ما يدّعيه التقرير', () => {
-  assert.equal(baseline.measured.tests, 545);
-  assert.equal(baseline.measured.pass, 545);
-  assert.equal(baseline.measured.fail, 0);
-  assert.ok(audit.includes('545 / 545'), 'التقرير لا يذكر 545/545');
+  // D1.12: لا أرقام حرفية هنا — الحارس يقرأ رقم التقرير نفسه ويقارنه بالسجل.
+  // التثبيت الحرفي (545) كان يجعل كل إعادة قياس انكسارًا للحارس بدل تصحيح للوثيقة.
+  const m = audit.match(/اختبارات المجموعة الكاملة \| \*\*(\d+) \/ (\d+) نجاح \/ (\d+) فشل/);
+  assert.ok(m, 'التقرير لم يعد يحمل صف «اختبارات المجموعة الكاملة» — حدّث الحارس عمدًا أو أعِد الرقم');
+  assert.equal(baseline.measured.tests, Number(m[1]), 'baseline.measured.tests لا يطابق رقم التقرير');
+  assert.equal(baseline.measured.pass, Number(m[2]), 'baseline.measured.pass لا يطابق رقم التقرير');
+  assert.equal(baseline.measured.fail, Number(m[3]), 'baseline.measured.fail لا يطابق رقم التقرير');
+  // القياس الحيّ سجل منفصل موسوم بتاريخه ولحظته — لا يُخلط بالقياس المجمّد للتقرير.
+  assert.ok(baseline.live_measurement, 'baseline.live_measurement مفقود: الوثائق بلا سجل تُحال إليه');
+  assert.match(baseline.live_measurement.date, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(audit.includes('13'), 'التقرير يجب أن ينقل ادعاء الـ 13 probes كما هو');
   // الادعاء غير القابل للتحقق يجب أن يبقى موسومًا كذلك — لا تحويله إلى "متحقق"
   assert.ok(baseline.frozen_claims.probes_13.status.startsWith('unverifiable'));

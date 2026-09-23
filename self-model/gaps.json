@@ -362,22 +362,35 @@
       "sources": [
         "O04"
       ],
-      "current": "ثلاثة أرقام متضاربة: README يقول 501/501 (سطر 66 و504) و545 (سطر 512) والفعلي 584؛ الخطط تقول 314/314؛ pub-verifier.sh يفحص '314' حرفيًا مع fallback ضعيف",
-      "required": "مصدر حقيقة واحد قابل للفحص: المحقق يقرأ العدد ديناميكيًا من ناتج المجموعة (لا أرقام حرفية)، والتوثيق يشير إلى القياس المسجل في baseline بدل ادعاء رقم ثابت",
-      "enforced": false,
-      "reproducer": "test",
+      "current": "ثلاثة أرقام متضاربة بلا رابط فحص: README يقول 501/501 (سطران) و545 (كتلة NEXA_METRICS)، والخطة تقول 314/314، والفعلي 629 يوم القراءة. والأخطر أن pub-verifier.sh كان يهنّئ المجموعة بنصّه الثابت «tests_green: 314/314» بعد بحث عن \"314\" في آخر 30 سطرًا: مقيس مُختلَق لا قراءة — مجموعة من اختبارين فقط تنال الختم (مُثبَت بالقياس)، ولا تُقرأ # fail ولا أرضية، فمجموعة منكمشة تُزَكّى. وحارس المزامنة نفسه كان يثبّت 545 حرفيًا، فتُكسر كل إعادة قياس بدل أن تُصحَّح الوثيقة",
+      "required": "لا ادعاء عدد بلا قياس: المحقق يقرأ # tests/# pass/# fail من تشغيل واحد ويرفض أي فشل أو انكماش تحت الأرضية المسجلة، والوثائق تُحيل إلى سجل قياس واحد (self-model/baseline.json → live_measurement) بدل أرقام حرفية، وكل خطة نشر موسومة HISTORICAL RECORD بتاريخها؛ وnpm run metrics يبقى السنَد الذي يربط السجل بالواقع",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/count-claims-sync.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.12-red.tap (الحارس الجديد tests/count-claims-sync.test.js ضد شجرة ما قبل الإصلاح: 5 من 6 حمراء؛ ومُعيد known-gaps أخضر 5/5 = الفشل مُعاد إنتاجه) + self-model/evidence/d1.12-metrics-red.txt (npm run metrics: Measured 632 ≠ Documented 545، exit 1) → d1.12-green.tap (6/6) + d1.12-metrics-green.txt (docs match measured reality، exit 0) + d1.12-gate-bypass.txt (قياس البوابة نفسها بمُخرَج مُصطنع: القديم يختم «314/314» لمجموعة من اختبارين، والجديد يرفض الانكماش تحت 633 ويرفض # fail≠0)",
         "criteria": [
-          "لا رقم اختبارات حرفي في README (إحالة إلى baseline)",
-          "pub-verifier.sh يستخرج العدد من المخرجات ويفشل عند عدم التطابق (لا grep pass)",
-          "الخطط القديمة مؤرشفة أو موسومة بتاريخها بدل ادعاء راهنية"
-        ]
+          "لا صيغة «N PASS / M FAIL of K» ولا وسم «Latest verification» بعدد في README.md ولا SECURITY.md — القياس الوحيد المسموح هو كتلة NEXA_METRICS",
+          "كتلتا README/SECURITY متطابقتان وتساويان baseline.live_measurement (tests وsecurity_tests)، ولا رقم حر في النثر",
+          "pub-verifier.sh [2/5]: تشغيل واحد للمجموعة، قراءة # tests/# pass/# fail، رفض عند fail>0 أو pass≠tests أو نزول العدد تحت أرضية السجل؛ لا grep -q \"pass\" ولا حرفيات عدد",
+          "pub-verifier.sh [4/5]: لا فحص حجم بالبايتات (كان يُرضى بحشو _padding)؛ المطلوب أن تحمل الخطة record_status يذكر تاريخها",
+          "كل publish-v0.*.plan.json فيها checks.tests تحمل وسم HISTORICAL RECORD صريحًا ينفي الراهنية ويحوّل إلى مصدر القياس الحي",
+          "حارس المزامنة لم يعد يثبّت 545: يقرأ رقم التقرير المجمّد من التقرير نفسه ويقارن بالسجل، ويفصل live_measurement عن measured",
+          "توسعة النطاق المعلن: check-metrics يقيس الآن Ω error codes وGated namespaces وAttack categories أيضًا، فلا يبقى عدد في الوثائق بلا سنَد (72 كان حرفيًا لا يفحصه شيء مقابل 86 مقاسًا)",
+          "إلغاء الحارس ممكن: أي رقم حرفي يُعاد إلى الوثائق، أو أي grep -q \"pass\" يعود إلى المحقق، أو تُزال إحالة baseline → اختبار واحد على الأقل يكسر",
+          "لا مس للجوهر: packages/ وspec/ لم تُمَس؛ الوثائق والأدوات فقط",
+          "بوابة gates_closed لا تُحكم بنمط نص فيه عدد حرفي («6 gates CLOSED»): رمز خروج tools/check-posture.mjs هو الحكم، وعدد البوابات يُقرأ من NEXA_METRIC closed_gates الذي يطبعه الفاحص نفسه"
+        ],
+        "closure": "إغلاق في نفس التغيير الذي حذف tests/known-gaps/d1.12-stale-counts.test.js ووضع الاختبار الحي tests/count-claims-sync.test.js"
       },
-      "verification": null,
+      "verification": "tests/count-claims-sync.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T02:40:00Z",
+      "ticket_status": "closed 2026-09-23 — الأعداد تُقراء من القياس لا من نص حرفي؛ لا تغيير في المجموعة سوى حذف المُعيد وإضافة الحارس (629 → 633)",
+      "follow_ups": [
+        "_padding (3281 و3724 حرف X) ما زال داخل الخطتين الموقّعتين: لم يعد فحص الحجم يطلبه، وتنظيفه يغيّر بايتات خطة موقّعة فَيُترك لقرار صريح",
+        "مقارنة الوثائق بالقياس تُنفَّذ في CI (.github/workflows/metrics.yml) لا داخل npm run verify؛ نقلها إلى verify يعني تشغيل المجموعة ثلاث مرات لكل بوابة — متروك عمدًا",
+        "أرقام مؤرخة داخل نثر تاريخي (مثل «207 tests at that release») مسموح بها صراحةً لأنها موسومة بتاريخها؛ التوسيع القادم إن أُريد هو وسم آلي لهذا النمط"
+      ]
     },
     {
       "id": "D1.13",
@@ -481,5 +494,5 @@
       "ticket_status": "open"
     }
   ],
-  "updated_at": "2026-09-23T01:40:00Z"
+  "updated_at": "2026-09-23T02:40:00Z"
 }

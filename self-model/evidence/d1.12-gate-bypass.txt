@@ -1,0 +1,22 @@
+# D1.12 — قياس بوابة النشر بمُخرَج مُصطنع (npm وهمي على PATH)، لا استنتاج من نص
+
+## الحالة المختبرة: مجموعة من اختبارين فقط، 2/2 أخضر (npm test يخرج 0)
+--- pub-verifier.sh @ 82e7b2c (قبل D1.12):
+    [2/5] tests_green - checking tests...
+      ✅ tests_green: 314/314
+
+--- pub-verifier.sh بعد D1.12:
+    [2/5] tests_green - measuring the suite once, reading its TAP summary...
+      ❌ tests_green - suite shrank below the recorded floor: 2 < 633
+
+
+## الحالة المختبرة الثانية: مجموعة حمراء (# fail 2، # pass 98، # tests 100)
+--- بعد D1.12:
+    [2/5] tests_green - measuring the suite once, reading its TAP summary...
+      ❌ tests_green - 2 failing test(s) of 100
+
+
+## النتيجة: القديم يختم «314/314» لمجموعة من اختبارين؛ الجديد يقرأ الملخص ويرفض
+## الانكماش تحت الأرضية المسجلة (633) ويرفض أي # fail غير صفري.
+## ملاحظة موثِّقة: old-check كان يمرّ أيضًا عبر `grep "314" || grep "pass"` تحت
+## set -o pipefail، فالحُكم الفعلي كان رمز الخروج لا العدد — والعدد المطبوع مختلَق.

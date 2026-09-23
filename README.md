@@ -45,15 +45,18 @@ optional experimental ranking. No shell execution, patch application, COMMIT or 
 activation. The 200-entry catalog distinguishes audit maturity from runtime integration;
 registration does **not** mean implementation. See the [Arabic operator guide](docs/celia-system.ar.md).
 
-**2026-09-20 verification (before the research-library addition):** 39/39 advisory/learning tests and 59/59 boundary regression
-tests pass. Full verification is **413 PASS / 2 FAIL of 415**, with six gates CLOSED.
-H2 atomicity and H3 external-writer concurrency remain unresolved; no production-readiness
-or deployment claim.
+**2026-09-20 verification (before the research-library addition):** 39 advisory/learning tests
+and 59 boundary regression tests were green; that day's suite measured 415 with two failures left
+open on record, with six gates CLOSED. H2 atomicity and H3 external-writer concurrency remained
+unresolved; no production-readiness or deployment claim.
 
 The later [research/skills advisory library](docs/celia-research-skills.ar.md) adds
 10 source-linked references and 10 non-executable skill cards (`library`, `skills`).
-Latest verification: **426 PASS / 2 KNOWN FAIL of 428**; targeted advisory/learning
-52/52 and boundary regression 59/59. H2/H3 and the P00 provenance HOLD remain unresolved.
+That 2026-09-21 snapshot recorded 426 green and two documented known-failures; it is a dated
+record, not a current claim. Current counts are never restated in prose: the single source of
+truth is `self-model/baseline.json` (`live_measurement`, refreshed by `npm run metrics`), mirrored
+in the enforced NEXA_METRICS block below and checked by `tests/count-claims-sync.test.js`.
+H2/H3 and the P00 provenance HOLD remained unresolved at that snapshot.
 
 **2026-09-22 verification:** H3 external-writer concurrency is **resolved** — the
 bounded COMMIT executor now re-verifies each target **at the write point** (before and
@@ -62,10 +65,9 @@ that mutates a target at the moment of the write is seen before the approved byt
 land; the stale COMMIT is denied (`COMMIT_BASE_CHANGED`, 403), the external edit is
 preserved and no other target is applied. The reserved write moves no bytes and
 changes no mtime/ctime, so a denial or a kill at that point leaves zero trace.
-Full verification via `npm run verify`: posture **ALL SIX GATES CLOSED**,
-**501 PASS / 0 FAIL of 501** (previously 500/501), audit, three demos, adversarial
-suite blocked, gate report. H1 (consumed authority across restart/ABA), H2 (compensating
-rollback) and H3 are all green.
+Full verification via `npm run verify`: posture **ALL SIX GATES CLOSED**, the suite green end to
+end (measured 2026-09-22), audit, three demos, adversarial suite blocked, gate report. H1
+(consumed authority across restart/ABA), H2 (compensating rollback) and H3 are all green.
 
 ## NEXA Ω — language · runtime · Evolution Gate · learning
 
@@ -492,8 +494,9 @@ not the one it can assert:
 0 evidence-chain breaks                (one edited field fails verification)
 0 kernel mutations                     (six modules, refused before any stage runs)
 0 unsigned or forged modules admitted  (REFUSED, not quarantined)
-6 gates CLOSED · 14 gated namespaces · 72 Ω error codes · 207 tests · 0 runtime
-                                       dependencies
+gates · namespaces · Ω error codes · cell states: `npm run posture` prints them, and
+`npm run metrics` fails CI unless the NEXA_METRICS block below matches — this fence
+                                      deliberately does not restate any of those numbers
 ```
 
 > Hardening status: **H1 persistence passes**, including actual restart/ABA,
@@ -501,7 +504,10 @@ not the one it can assert:
 > H2 atomicity and H3 external-writer concurrency are **green**: H2 via compensating
 > rollback under exclusive-root ownership; H3 via write-point re-verification
 > (zero-byte reserved write, then a post-check before the approved bytes are applied).
-> Latest `verify`: **501 PASS / 0 FAIL of 501**, with the six gates CLOSED.
+> `npm run verify` re-counts the suite on every run; the last recorded measurement lives in
+> `self-model/baseline.json` (`live_measurement`) and in the enforced block below — no count is
+> restated in prose here (D1.12: a number that no check compares against measurement is a claim,
+> not evidence; `tests/count-claims-sync.test.js` fails if a literal creeps back in).
 > The metrics block below is enforced by `npm run metrics` (docs must match measured
 > reality) and tracks the current suite.
 > COMMIT now also requires a pre-provisioned, external persistent `CELIA_COMMIT_STATE_DIR`.
@@ -509,11 +515,14 @@ not the one it can assert:
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 545
+- Total tests: 633
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8
 - Closed gates: 6
+- Ω error codes: 86
+- Gated namespaces: 14
+- Attack categories: 12
 <!-- NEXA_METRICS:END -->
 
 Deliberately **not** in v0.1 or Ω v1: any execution of arbitrary code, filesystem or

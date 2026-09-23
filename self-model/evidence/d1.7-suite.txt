@@ -1,0 +1,6 @@
+# D1.7 suite — المجموعة الكاملة عند الإغلاق (npm test)، ثم npm run verify بأكمله
+# tests 660
+# pass 660
+# fail 0
+# npm run verify:
+# verify_exit=0

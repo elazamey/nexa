@@ -13,7 +13,8 @@ import {
   ReportWriter,
   NexaEvidenceBridge,
   HuntMemory,
-  AutopilotEngine
+  AutopilotEngine,
+  SOURCE_DETECTORS
 } from './hunter/index.js';
 
 /**
@@ -64,55 +65,23 @@ export class AgenticBugHunter {
     return results;
   }
 
-  async _inspectFile(filePath) {
+  // D1.7 (A05/A06 / DI-01، DI-15، DI-16): لا كاشف هنا — المنسِّق يقرأ الملف ويسلّمه للوحدات
+  // المسجلة، ويجمع ما تُرجعه. شرط الكشف ونطاقه ودليله كلُّها داخل الوحدة المختصة.
+  _inspectFile(filePath) {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const relativePath = path.relative(process.cwd(), filePath);
-    const lines = content.split('\n');
+    // الأصل مُعرَّف نسبةً إلى جذر الجولة المُرَخَّص — لا إلى cwd العملية: مسار يبدأ بـ ../
+    // يخرج من الجذر عند GATE_1 (D1.5) ويجعل الأصل غير قابل للإغلاق على نطاق الجولة.
+    const relativePath = path.relative(this.targetDir, filePath);
 
-    // Scan for secrets via SecretsHunter
-    const secretFindings = this.secretsHunter.scanContent(content, relativePath);
-    for (const sf of secretFindings) {
-      this.findings.push(sf);
+    for (const finding of this.secretsHunter.scanContent(content, relativePath)) {
+      this.findings.push(finding);
     }
 
-    lines.forEach((line, index) => {
-      const lineNum = index + 1;
-
-      // 1. فحص التعامل الأسيء مع الوعود (Unhandled Async/Promises)
-      if (line.includes('async ') && !content.includes('try {') && !content.includes('.catch(') && !content.includes('Promise.')) {
-        this.findings.push({
-          severity: 'MEDIUM',
-          type: 'UNHANDLED_ASYNC_ERROR',
-          file: relativePath,
-          line: lineNum,
-          description: 'دالة غير متزامنة بدون كتل try/catch أو معالجة للأخطاء (قد تسبب انهيار العملية).'
-        });
+    for (const detector of SOURCE_DETECTORS) {
+      for (const finding of detector.detect({ relativePath, content })) {
+        this.findings.push(finding);
       }
-
-      // 2. فحص استخدام التشفير الضعيف (Weak Crypto Detection)
-      if (/\b(createHash\(['"](?:md5|sha1)['"])\b/i.test(line) && !line.includes('// ignore-security')) {
-        this.findings.push({
-          severity: 'HIGH',
-          type: 'WEAK_CRYPTOGRAPHY',
-          file: relativePath,
-          line: lineNum,
-          description: 'استخدام خوارزمية تشفير ضعيفة أو غير آمنة (MD5/SHA1).'
-        });
-      }
-
-      // 3. فحص استدعاءات الذاكرة والموارد المفتوحة (Resource Leaks)
-      if (line.includes('fs.openSync') || line.includes('createReadStream')) {
-        if (!content.includes('.close') && !content.includes('.destroy')) {
-          this.findings.push({
-            severity: 'LOW',
-            type: 'POTENTIAL_RESOURCE_LEAK',
-            file: relativePath,
-            line: lineNum,
-            description: 'فتح مجرى ملفات دون إغلاقه صراحة (احتمالية تسريب موارد).'
-          });
-        }
-      }
-    });
+    }
   }
 
   _generateReport() {

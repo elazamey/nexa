@@ -15,9 +15,11 @@
 
 ---
 
-### DI-01 — نقاء الكواشف
-ناتج الكاشف دالة في مدخلاته المعلنة فقط؛ لا يقرأ ولا يكتب حالة المنسِّق (orchestrator).
-- المصدر: A05 (`src/security/agentic-hunter.js:81-116`) — الحالة: **open** (D1.7)
+### DI-01 — نقاء الكاشف
+ناتج الكاشف دالة في مدخلاته المعلنة فقط (`{relativePath, content}`): لا `fs.*` call، ولا
+`process.cwd/env`، ولا حقل لحظي، ولا كتابة في حالة المنسِّق — فتُستدعى مرّتين على نفس المدخل
+بنفس الناتج، وتُختبر بلا ترتيب. الباني المشترك `detector-evidence.js` يمنع انحراف أي وحدة عن العقد.
+- المصدر: A05 (`src/security/agentic-hunter.js:81-116` عند التسجيل) — الحالة: **enforced** (D1.7، 2026-09-23؛ التحقق الحيّ في `tests/detector-independence.test.js`)
 
 ### DI-02 — أصالة الـ artifact
 كل finding مرشَّح للشهادة يحمل `artifact` أنتجه كاشفه (provenance: `producedBy`)، ولا يُقبل
@@ -95,13 +97,17 @@ finding عارٍ من artifact في مسار الاعتماد.
 - المصدر: A11 (`hunt-memory.js:20-23,37-40` عند التسجيل) — الحالة: **enforced** (D1.6، 2026-09-23؛ التحقق الحيّ في `tests/hunt-memory-fail-closed.test.js`)
 
 ### DI-15 — لا كواشف داخل جسم المنسِّق
-كل كاشف وحدة مستقلة قابلة للاختبار المنفرد؛ المنسِّق يركّب ولا يكشف.
-- المصدر: A05 (`agentic-hunter.js:81-116`) — الحالة: **open** (D1.7)
+كل كاشف وحدة مستقلة (`detector-*.js`) ومُدخلة في قائمة تجميع واحدة (`SOURCE_DETECTORS`)؛ المنسِّق
+يقرأ الملف ويسلّمه للوحدات ويجمع ما تُرجعه فقط. ويُتحقق من المصدر: لا أصناف كشف ولا شروط ولا
+`this.findings.push({…}` داخل `agentic-hunter.js`.
+- المصدر: A05 (`agentic-hunter.js:81-116` عند التسجيل) — الحالة: **enforced** (D1.7، 2026-09-23؛ التحقق الحيّ في `tests/detector-independence.test.js`)
 
 ### DI-16 — كشف قابل لإعادة الإنتاج
-نفس المدخل يعطي نفس النتائج؛ شروط الكشف تُقيَّم في نطاق الهدف (الدالة/السطر) لا على
-محتوى الملف كاملًا.
-- المصدر: A06 (`agentic-hunter.js:81,104`) — الحالة: **open** (D1.7)
+نفس المدخل يعطي نفس النتائج (بلا زمن ولا عشوائية)، والشرط في **نطاق هدفه**: أول `await` غير
+معالَج داخل الدالة نفسها — فـ`try` في دالة أخرى لا يُسكِت كشفًا حقيقيًا؛ والإغلاق محسوب لنفس
+المتغير في نطاق إطلاقه، لا لأي `.close` في أي مكان. كل حكم يحمل نطاقه في دليله
+(`evidence.scope = {function, startLine, endLine}`) فيُعاد إنتاجه من القراءة وحدها.
+- المصدر: A06 (`agentic-hunter.js:81,104` عند التسجيل) — الحالة: **enforced** (D1.7، 2026-09-23؛ التحقق الحيّ في `tests/detector-independence.test.js`)
 
 ### DI-17 — صدق المخرجات المكتوبة
 `bug-report.json` وأمثاله لا يدّعي شهادة لم تحدث؛ أرقامه تطابق الإيصالات الصادرة فعلًا.
@@ -119,6 +125,7 @@ finding عارٍ من artifact في مسار الاعتماد.
 | enforced عبر D1.4 (تحقق حي في `tests/gate-boundary-vs-impact.test.js` — أُغلقت 2026-09-23) | DI-06 |
 | enforced عبر D1.5 (تحقق حي في `tests/scope-independence.test.js` — أُغلقت 2026-09-23) | DI-13 |
 | enforced عبر D1.6 (تحقق حي في `tests/hunt-memory-fail-closed.test.js` — أُغلقت 2026-09-23) | DI-14 |
-| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-01, DI-15, DI-16, DI-17 |
+| enforced عبر D1.7 (تحقق حي في `tests/detector-independence.test.js` — أُغلقت 2026-09-23) | DI-01, DI-15, DI-16 |
+| open — فجواتها مفتوحة وتُعاد بالإنتاج في known-gaps | DI-17 |
 
 **العدد الكلي: 17 assertion** (يُفحص آليًا في `tests/guards/docs-consistency.test.js`).

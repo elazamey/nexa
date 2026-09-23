@@ -225,22 +225,33 @@
         "A05",
         "A06"
       ],
-      "current": "ثلاثة كواشف داخل _inspectFile تدفع إلى this.findings (agentic-hunter.js:81-116)؛ شرط UNHANDLED_ASYNC_ERROR على محتوى الملف كاملًا فيفقد كشفًا حقيقيًا بسبب try في دالة أخرى",
+      "current": "ثلاثة كواشف في جسم المنسِّق (agentic-hunter.js:81-116) تدفع في this.findings، وشرطا UNHANDLED_ASYNC_ERROR وPOTENTIAL_RESOURCE_LEAK يُقيَّمان على محتوى الملف كاملًا (!content.includes('try {') و!content.includes('.close')) — فـtry في دالة أخرى يسكت كشفًا حقيقيًا، وكل سطر async يعيد نفس الحكم، ولا artifact ولا شهادة عند أي منها",
       "required": "كل كاشف وحدة مستقلة (ملف خاص) تُختبر منفردة؛ الشروط تُقيَّم في نطاق الهدف (DI-01، DI-15، DI-16)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/detector-independence.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.7-red.tap (7 من 7 حمراء عند 7ad20f1 — كل اختبار يفشل على ادّعائه لا على خطأ استيراد) → d1.7-green.tap (7/7)؛ d1.7-inversion.txt بثلاث نسخ: عودة الشرط على الملف كله (5 من 7 حمراء)، وحذف الشهادة من الباني المشترك (4 من 7)، وتفريغ قائمة التجميع (5 من 7) — وفي الثلاث بقيت حراس D1.2–D1.6 وD1.9 خضراء (scope 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6)",
         "criteria": [
-          "لا كواشف في جسم AgenticBugHunter — استيراد وحدات فقط",
-          "كشف async غير المعالج ينجح بوجود try في دالة أخرى (نطاق الدالة)",
-          "الكواشف الجديدة مغطاة باختبارات منفردة"
+          "لا كاشف في جسم AgenticBugHunter: مصدر المنسِّق خالٍ من الأصناف الثلاثة ومن createHash/fs.openSync/createReadStream، ولا `this.findings.push({` (بناء يدوي) — التجميع عبر SOURCE_DETECTORS فقط",
+          "كل كاشف وحدة مستقلة (detector-unhandled-async / -weak-crypto / -resource-leak) تُصدِّر دالة تُدعى بمدخلات معلنة {relativePath, content}، بلا fs.* calls ولا process.cwd/env ولا حقل لحظي — فتُختبر منفردة وتُستدعى مررتين بنفس الناتج",
+          "DI-16: async غير معالَج يُكتشف رغم try في دالة أخرى، وبحكم واحد لكل دالة على أول await خاص بها، وجسم النطاق مُقنَّع بنطاقاتها الداخلية (الدالة الداخلية مسؤولة عن أخطائها، والخارجية لا تُرحَم بها) — ثلاث دوال = ثلاثة أحكام لا تكرار لكل سطر",
+          "الإغلاق يُحسب على المورد نفسه في نطاقه: closeSync(fd)/fd.close() لنفس المتغير؛ موردان في سطر واحد = حُلمان؛ ولا يُرحَم بإغلاق جارٍ لموارد غيره",
+          "التشفير الضعيف سطر-نطاق: التعليق لا يُحتسب، و// ignore-security محترم على سطر هو لا على مستوى الملف — لم تُزوَّد الأنماط (لا توسيع كشف ضمن هذه التذكرة)",
+          "كل finding يحمل artifact (content-match، locator=file:<rel>#L<n>) يقبله ArtifactReader بلا رفض، وsafeTesting مربوطًا بنفس المنتج (عقد D1.3) — فتُستوفى GATE_2/GATE_7/GATE_1 فعلا، وisValid تبقى false لأن GATE_6 ترفض صنفا ليس عابرا لحد",
+          "الصدق مُثبَّت: الكاشف لا يبتكر finding.boundary، وحارس D1.4 يتحقق بنيويًا أن جدول BOUNDARY_KINDS_BY_CLASS لم يُوَسَّع على مقاس الأصناف الثلاثة — لا 7/7 مُهداة مقابل فصل الوحدات",
+          "الأصل نسبةً إلى جذر الجولة (path.relative(this.targetDir, …)) لا إلى cwd العملية — وإلا صار كل مسار يبدأ بـ../ خارج الجذر عند GATE_1",
+          "جولة كاملة حتمية على شجرة مؤقتة: findings من الوحدات فقط، والدالة المعالَجة لا تُبلَّغ، وnpm run metrics/verify أخضر"
         ]
       },
-      "verification": null,
+      "verification": "tests/detector-independence.test.js",
       "opened_at": "2026-09-22T22:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T10:25:00Z",
+      "ticket_status": "closed 2026-09-23 — الكواشف وحدات نقية تُجمَّع في SOURCE_DETECTORS، والحكم في نطاق الدالة وعلى المورد نفسه؛ كل finding بدليل يقبله القارئ المستقل وشهادة مربوطة؛ الرفض المتبقي (GATE_6) لسبب صحيح لا لعيب في الدليل",
+      "follow_ups": [
+        "SecretsHunter يُصدِّر findings بلا artifact ولا شهادة (نفس داء A05 في وحدة جيدة البنية) — يُغطى في تذكرة دليل-للكاشف المستقلة، ولا يُضمَّن هنا توسيعًا",
+        "مطابقة الأقواس الحرفية تفوقها AST حقيقي: سلاسل نصية داخل أقواس غير متوازنة أو تعليق متعدد الأسطر قد يزيح النطاق؛ تُترك لتذكرة parser إن طُلبت الدقة اللغوية",
+        "الأصناف الثلاثة تبقى مرفوضة عند GATE_6 عمدا (جودة كود لا تعبر حدًا)؛ إن أراد المشغِّل تقارير جودة فلا تُشترى بـ7/7 بل بمسار إصدار منفصل"
+      ]
     },
     {
       "id": "D1.8",

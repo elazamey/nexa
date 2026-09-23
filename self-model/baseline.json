@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "86207c39f93aeb2a78e16ee00086b9e68f1f9adb",
-    "tree_state": "D1.6 closure worktree (measured before the closure commit)",
+    "commit": "7ad20f1dfc3fccf70a39c94fd92f0836c3f3272d",
+    "tree_state": "D1.7 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 655,
-    "pass": 655,
+    "tests": 660,
+    "pass": 660,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 655 = 651 (إغلاق D1.5) + 6 (tests/hunt-memory-fail-closed.test.js) − 2 (مُعيد known-gaps/d1.6 حُذف عند الإغلاق)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 660 = 655 (إغلاق D1.6) + 7 (tests/detector-independence.test.js) − 2 (مُعيد known-gaps/d1.7 حُذف عند الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -85,6 +85,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.6 (P0-D / A11 / DI-14): HuntMemory لا يبتلع — حالة قراءة وحالة كتابة بأربعة رموز (CORRUPT/MALFORMED/READ-FAILED/WRITE-FAILED) وامتناع عن الكتابة فوق مخزن غير مقروء يمنع دَهس الجلسات، واستعادة بمفتاح force صريح، وكتابة ذرّية، والمنسِّق يُبلَّغ result.memory؛ 655/655 أخضر"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.7 (P0-D / A05+A06 / DI-01، DI-15، DI-16): الكواشف الثلاثة صارت وحدات نقية تُجمَّع في SOURCE_DETECTORS، والحكم في نطاق الدالة (try في دالة أخرى لا يسكت) وعلى المورد نفسه؛ كل finding بحجة يقبلها القارئ المستقل وشهادة مربوطة، وبقي الرفض عند GATE_6 سببه الصحيح بلا توسيع جدول الحدود؛ 660/660 أخضر"
     }
   ],
   "post_d1_2": {
@@ -269,6 +273,34 @@
       "docs/repository-audit-2026-09-22.ar.md §O13"
     ],
     "residual": "معرفات الجلسات ما زالت طابعًا زمنيًا (خارج معايير التذكرة، مُسجَّلة كمتابعة)، ولا قفل بين العمليات، وforce لا يُسجَّل من فعله؛ القصور الثلاثة مذكورة في follow_ups ولا تُغلق على المقاس",
+    "side_effects_restored": []
+  },
+  "d1.7_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.7 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 660,
+    "pass": 660,
+    "fail": 0,
+    "breakdown": "655 بعد D1.6 + 7 (tests/detector-independence.test.js) − 2 (مُعيد known-gaps/d1.7 حُذف)؛ لا قالب لتذكرة أخرى تغيّر — الوحدات الجديدة لا يستهلكها سواها",
+    "red_evidence": "self-model/evidence/d1.7-red.tap (7 من 7 حمراء عند 7ad20f1، بحمول ديناميكي يفشل على الادعاء لا على الاستيراد)",
+    "green_evidence": "self-model/evidence/d1.7-green.tap (7/7) + d1.7-suite.txt (المجموعة الكاملة عند الإغلاق)",
+    "inversion_evidence": "d1.7-inversion.txt — ثلاث نسخ: عودة الشرط على الملف كله ⇒ 5 من 7 حمراء؛ حذف الشهادة من الباني المشترك ⇒ 4 من 7؛ تفريغ SOURCE_DETECTORS ⇒ 5 من 7. في الثلاث: scope-independence 8/8، gate-boundary 6/6، gates-computed 6/6، artifact-reader 16/16، agentic-hunter 10/10، hunt-memory 6/6",
+    "tools_changed": [
+      "src/security/hunter/detector-evidence.js (جديد — باني finding واحد: content-match artifact + شهادة مربوطة + نطاقات الدوال)",
+      "src/security/hunter/detector-unhandled-async.js (جديد — أول await في نطاق الدالة، جسم مُقنَّع بالداخلي)",
+      "src/security/hunter/detector-weak-crypto.js (جديد — سطر-نطاق، تعليق مُستثنى، suppression سطري)",
+      "src/security/hunter/detector-resource-leak.js (جديد — الإغلاق لنفس المتغير في نفس النطاق، موردان = حُلمان)",
+      "src/security/hunter/source-detectors.js (جديد — قائمة التجميع الوحيدة) وindex.js يُصدّرها",
+      "src/security/agentic-hunter.js (_inspectFile يركّب فقط؛ الأصل نسبةً إلى جذر الجولة)"
+    ],
+    "docs_changed": [
+      "docs/Detector_Independence_Assertions.md (DI-01 + DI-15 + DI-16 → enforced + جدول الملخص)",
+      "README.md/SECURITY.md (Total tests: 660)",
+      "docs/repository-audit-2026-09-22.ar.md §O14"
+    ],
+    "residual": "مطابقة الأقواس الحرفية لا AST؛ SecretsHunter بلا دليل بعد (متابعة مسجلة)؛ والأصناف الثلاثة تبقى مرفوضة عند GATE_6 عن قصد — تقارير الجودة تحتاج مسار إصدار منفصلا لا بوابة مُوسَّعة",
     "side_effects_restored": []
   }
 }

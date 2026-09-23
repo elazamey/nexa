@@ -193,3 +193,22 @@ filesystem unchanged):
 | perfect summary then `process.exit(0)` | exit 0 + `# pass 1` | report names the *file* as the only testcase → "exited without reporting" → DENY |
 | test that never resolves | nothing | real `spawnSync` `ETIMEDOUT`, no report → DENY, timeout recorded in evidence |
 | one forged file among passing files | 2 pass | any bad file poisons the run → DENY |
+
+## 9. Security boundary status — PROVEN vs NOT VERIFIED
+
+"611/611 PASS" proves the regression suite passes. It does **not** prove the verifier is
+tamper-proof. The boundary is tracked in two columns and must stay that way.
+
+| Item | Status | Proof |
+| --- | --- | --- |
+| Forged TAP on stdout by a failing test | **PROVEN closed** | RED on old judge reproduced; `verify-run.test.js` "forged TAP" |
+| Forged summary + `process.exit(0)` before reporting | **PROVEN closed** (specific defensive rule) | RED reproduced: even junit showed the file as 1 pass; judge rule "testcase == input file ⇒ unreported ⇒ DENY" |
+| Real hanging test | **PROVEN closed** | real `spawnSync` `ETIMEDOUT`, no injected flag |
+| One bad file in a multi-file run | **PROVEN closed** | "poisons the whole run" |
+| **SEC-NEXT-01** Report-writer isolation — the test process runs as the same user and could in principle write the report file | **NOT VERIFIED** | random 16-byte destination in a private `mkdtemp` is obscurity, not a boundary; needs user/namespace/container isolation and an adversarial test that *fails to* tamper |
+| **SEC-NEXT-02** Global execution deadline — per-file timeout only | **NOT VERIFIED** | reproduced as an open gap in `tests/known-gaps/sec-next-02-global-deadline.test.js` |
+
+Rule for closing either: the `process.exit(0)` finding showed that *a structured reporter
+is not a root of trust by itself*. Neither item becomes PROVEN because code exists or a
+test passes; it becomes PROVEN when an adversarial attempt is executed and shown to fail,
+and the known-gap test is removed in the same change.

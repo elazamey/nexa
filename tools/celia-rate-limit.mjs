@@ -135,6 +135,16 @@ export function createRateLimiter(options = {}) {
     }
     const retryAfterSec = Math.max(1, Math.ceil((bucket.windowStart + windowMs - at) / 1000));
     rejected += 1;
+    // D1.28: الرفض يصل صنبور التحقيق — بنفس شكل سطر الـ perimeter (type/at) لأن الـ DAG يخلط
+    // الاثنين، وبـ bucket هو الوسم القاصر الذي يعيده الحكم نفسه (لا الدلو الخام ولا عنوان صاحبه).
+    // الصنبور لا يُلفّ بـ try: صنبورٌ يرمي خلل في صاحبه، وإسكاته بصمت يعيد عادة || true.
+    onAudit({
+      type: 'RATE_LIMIT_REJECTED',
+      at: new Date(now()).toISOString(),
+      bucket: id,
+      limit,
+      retryAfterSec,
+    });
     return { ok: false, limit, retryAfterSec, bucket: id };
   }
 

@@ -17,15 +17,15 @@
   "live_measurement": {
     "date": "2026-09-24",
     "commit": "41226003898bf896083b5ccf95283e0ac025d729",
-    "tree_state": "handoff worktree فوق 3a56ef3 (قِيست قبل commit D1.28)",
+    "tree_state": "D1.28 closure worktree (قِيست قبل commit الإغلاق)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 725,
-    "pass": 725,
+    "tests": 727,
+    "pass": 727,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 725 = 723 (D1.27) + 2 (tests/known-gaps/d1.28-rate-limit-audit-sink.test.js — صنبور تحقيق لا يُستدعى)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 727 = 725 (D1.28 مسجَّلة) + 4 (tests/rate-limit-audit-sink.test.js) − 2 (مُعيد D1.28 حُذف في الإغلاق)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -163,6 +163,16 @@
       "suite": {
         "tests": 725,
         "pass": 725,
+        "fail": 0
+      }
+    },
+    {
+      "at": "2026-09-24T11:20:00Z",
+      "event": "D1.28 مغلقة — صنبور التحقيق في محدود المعدّل يُستدعى عند الرفض",
+      "detail": "tools/celia-rate-limit.mjs: نداء onAudit في فرع الرفض بشكل سطر الـ perimeter، وبوسم الدلو القاصر لا بالخام؛ الحارس tests/rate-limit-audit-sink.test.js (4) يشمل منع الثرثرة على القبول، والمنع عند الإطفاء، وعدم تسريب مادّة المفتاح/العنوان/محتويات الدلو، وعدم الابتلاع بـ try.",
+      "suite": {
+        "tests": 727,
+        "pass": 727,
         "fail": 0
       }
     }
@@ -393,7 +403,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-24T07:45:00Z",
+  "updated_at": "2026-09-24T11:20:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -505,5 +515,20 @@
     "green_evidence": "self-model/evidence/d1.20-green.tap (7 من 7 + بروفة تنفيذ جسم خطوة Publish: (أ) private:true ⇒ rc 0 مع ::warning:: وSKIP_PUBLISH في الـ summary، (ب) private:false ⇒ rc 1 على registry وهمي محلي) + d1.20-suite.txt (711/711/0)",
     "inversion_evidence": "d1.20-inversion.txt — تسع نسخ + ملحق: || true على النشر ⇒ 1؛ إعادة خطوة التثبيت الجذري ⇒ 2؛ كسر مسار الجسر ⇒ 1؛ تغيير --pack-destination وحده ⇒ 1؛ actions: write ⇒ 1؛ node 21 خارج المصفوفة ⇒ 1؛ private:false بلا حسم ⇒ 1؛ إسكات الـ warning ⇒ 1؛ حذف الإيصال من files: ⇒ 1. المجاورون خضر (تداخل workflows 6، تكافؤ النشر 7، CI 6، المرايا 6، مرجع البيئة 6). والملحق يروي خطأين في قياس لا في الشجرة: gaps-consistency كان أحمرّ في كل نسخة لأن D1.21 سُجّلت بمُعيد غير موجود، والحظر الحرفي كان يقرأ «|| true» داخل نص التحذير نفسه",
     "note": "لا قرار في هوية الحزمة: private:true واسم غير موسّع وscope @elazamey = إعداد لا يمكن أن ينجح معه النشر (مقيس)؛ صار التخطّي معلنًا بدل الابتلاع، وحُسمت D1.21 للمالك. الحارس يبني على الـ YAML نفسه (المسارات، الدوال المستعمَلة، المجلدات، الصلاحيات) فأي انزياح في release.yml يُرى لا يُفترَض"
+  },
+  "d1.28_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.28 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 727,
+    "pass": 727,
+    "fail": 0,
+    "breakdown": "725 + 4 (حارس صنبور التحقيق) − 2 (مُعيد فجوة معلّقة حُذف في نفس commit)",
+    "red_evidence": "self-model/evidence/d1.28-red.tap (3 من 4 حمراء قبل الإصلاح؛ الرابعة «القبول لا يثرثر» وظيفتها منع الانزلاق فتبقى خضراء طرفي التغيير)",
+    "green_evidence": "self-model/evidence/d1.28-green.tap (4/4 بعد النداء في فرع الرفض)",
+    "inversions": "self-model/evidence/d1.28-inversion.txt (I1 حذف النداء يُحمِرّ الحارس وحده 3؛ I3 خام، I4 ابتلاع، I5 محتويات دلو، I6 تصريح كاذب، I7 فصل الوصلة — كل واحدة يمسكها الحارس؛ I2 إفراط عمدي يمسك الحارس أوله ثم تتبعه جيرانه لأن الوصلة حقيقية حتى الشاشة)",
+    "method": "مرسى الطفرة يجب أن يكون فريدًا: أول محاولة لـ I3 استبدلت bucket: id في مسار القبول لا في سطر التحقيق فخرج قياس أخضر كاذبًا؛ أعيد بالكتلة كاملة بعد تثبيت count==1",
+    "untouched": "packages/ وspec/ وvectors؛ لا قائمة أنواع DAG في docs/ فكان الدخول الجديد بلا انجراف توثيق"
   }
 }

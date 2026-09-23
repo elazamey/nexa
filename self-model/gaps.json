@@ -63,7 +63,7 @@
           "يرفض artifact بحكم ذاتي (AR-E06) وبنية ناقصة (AR-E01..E05) والاستثناءات (AR-E00) — لا يرمي ولا يمرر عند الشك (DI-04، DI-12، §10.9)",
           "GATE_2 يفشل بدون artifact صالح ولا يمر بمجرد locator نصي (DI-05، §5.1، A03)",
           "certifyFinding يرفض بلا توقيع: finding بلا artifact، أو لم يجتز 7/7، أو أي استثناء — رفض معلَّل NEXA-E-REJECTED (DI-08، DI-12، §6.1/§10.9)",
-          "الجسر يعيد التقييم بنفسه ولا يثق بgateCheck مرفق (DI-08، §6.1)",
+          "الجسر يعيد التقييم بنفسه ولا يثق بـ gateCheck مرفقًا (DI-08، §6.1)",
           "الإيصال حتمي: نفس (finding,target) → نفس findingId وdigest؛ canonicalJSON بمفاتيح مرتبة بلا حقول لحظية محقونة (DI-10، §6.3، A07)",
           "verifyReceipt(receipt, finding) يعيد حساب digest ويرفض الحمولة المستبدلة (DI-11، §6.3، A08)",
           "gateScore/verified في الإيصال من التحقق الفعلي فقط + artifactDigest يربط الإيصال بدليله (DI-09، §6.2)",
@@ -225,7 +225,7 @@
         "A05",
         "A06"
       ],
-      "current": "ثلاثة كواشف في جسم المنسِّق (agentic-hunter.js:81-116) تدفع في this.findings، وشرطا UNHANDLED_ASYNC_ERROR وPOTENTIAL_RESOURCE_LEAK يُقيَّمان على محتوى الملف كاملًا (!content.includes('try {') و!content.includes('.close')) — فـtry في دالة أخرى يسكت كشفًا حقيقيًا، وكل سطر async يعيد نفس الحكم، ولا artifact ولا شهادة عند أي منها",
+      "current": "ثلاثة كواشف في جسم المنسِّق (agentic-hunter.js:81-116) تدفع في this.findings، وشرطا UNHANDLED_ASYNC_ERROR وPOTENTIAL_RESOURCE_LEAK يُقيَّمان على محتوى الملف كاملًا (!content.includes('try {') و!content.includes('.close')) — فالـ try في دالة أخرى يسكت كشفًا حقيقيًا، وكل سطر async يعيد نفس الحكم، ولا artifact ولا شهادة عند أي منها",
       "required": "كل كاشف وحدة مستقلة (ملف خاص) تُختبر منفردة؛ الشروط تُقيَّم في نطاق الهدف (DI-01، DI-15، DI-16)",
       "enforced": true,
       "reproducer": "removed-at-closure",
@@ -489,7 +489,7 @@
       "follow_ups": [
         "القراءات غير المباشرة (حافظة demos/grok-port/rag-demo) لا تُستنفد آليًا — تُراجَع يدويًا عند تغييرها؛ الحارس يضمن فقط ألّا يتكاثر الصمت",
         "أسماء تُمرَّر إلى أدوات خارجية (Docker/Render envVars في render.yaml) ليست قراءات process.env فلا صفوف لها؛ لو صار render.yaml يقرأ env لزم التسجيل",
-        "README/SECURITY يشيران إلى المرجع؛ يُستحسنadd «متغيرات البيئة» إلى فهرس CONTRIBUTING عند D1.14 (فهرس الوثائق) بدل تكرار الجدول"
+        "README/SECURITY يشيران إلى المرجع؛ يُستحسن إضافة «متغيرات البيئة» إلى فهرس CONTRIBUTING عند D1.14 (فهرس الوثائق) بدل تكرار الجدول"
       ]
     },
     {
@@ -939,7 +939,7 @@
         "O08"
       ],
       "title": "createRateLimiter يوثّق options.onAudit ويستقبله ولا يستدعيه أبدًا: رفض 429 لا يصل DAG الداشبورد من أي طريق",
-      "current": "مفتوحة",
+      "current": "مغلقة — الصنبور يُستدعى من فرع الرفض نفسه، وبلا خام",
       "notes": "مقيس: tools/celia-rate-limit.mjs يعرّف onAudit في JSDoc (:72) ويربطه (:85) ولا يوجد له استدعاء في الملف (grep: onAudit( = 0)؛ مقابل ذلك tools/celia-perimeter-auth.mjs يستدعيه فعلًا (:400 و:407). والمستدعي tools/celia-dashboard-server.mjs:118-120 يمرّر (entry) => emitDagEvent(entry.type, entry) فيظن أن رفض الحدّ يُرى. ولا حدث DAG آخر باسم RATELRimit يغطّيه (قِيس بنفس الملف).",
       "required": "إمّا استدعاء الصنبور عند الرفض بنفس شكل سطر الـ perimeter (type/at/ip أو bucketId،بلا محتويات دلو ولا بيانات غيرة) وحراسته، أو إلغاء الخيار من الواجهة ومن المستدعي — لا تعليق صامت يترك التصريح كاذبًا. الإصلاح عند الحدود: لا مسّ لـ packages/.",
       "acceptance": {
@@ -950,11 +950,18 @@
           "لو اختير مسار الإلغاء فـ emitDagEvent لا يستقبل نوعًا مجهولًا، ويُحدَّث ملحق O في الوثيقة بلا إعادة كتابة ما سبق"
         ]
       },
-      "enforced": false,
-      "reproducer": "test",
-      "verification": null,
-      "opened_at": "2026-09-24T10:25:00Z"
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/rate-limit-audit-sink.test.js",
+      "opened_at": "2026-09-24T10:25:00Z",
+      "closed_at": "2026-09-24T11:20:00Z",
+      "ticket_status": "enforced — نداء onAudit صار يتمّ مرة لكل رفض بشكل سطر الـ perimeter (type/at/bucket/limit/retryAfterSec)؛ الوسم هو hash الدلو الذي يعيده الحكم فلا خام في السطر؛ والنداء غير مبتلَع عمدًا",
+      "follow_ups": [
+        "تنبيه CodeQL الباقي tests/served-telemetry-honesty.test.js:34 (دالة measuredPosture غير مستعملة) تُرك لصاحبه: إما حذف في PR منفصل أو مصافحة تحت D1.27",
+        "لا قائمة أنواع DAG موثقة في docs/ (قيس: لا PERIMETER_* ولا TERMINAL_* مذكورة)، فRATE_LIMIT_REJECTED لا يخلق انجراف توثيق؛ لو وُثّقت الأنواع يومًا فالدخول الجديد لازم لها",
+        "تغطية حدود الحدّ نفسها (نوافذ/إطفاء/أوضاع المفاتيح) تبقى عند tests/server-rate-limit.test.js عبر الخادم؛ حارس D1.28 يفحص سطر التحقيق فقط ولا يدّعي تغطية الخوارزمية"
+      ]
     }
   ],
-  "updated_at": "2026-09-24T10:25:00Z"
+  "updated_at": "2026-09-24T11:20:00Z"
 }

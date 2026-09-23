@@ -1,0 +1,20 @@
+# D1.15 تصحيح سبب — قياس لا ادّعاء (Vite 5.4.21, npm --prefix dashboard run build)
+المُعلَن أولًا: «dashboard/public/index.html تتصادم مع مدخل Vite في dist» — غير صحيح كما قِيس.
+
+1) البناء مع الظلّ موجود (dashboard/public/index.html = نسخة الـ 67 سطرًا):
+dist/index.html                   0.41 kB │ gzip:   0.29 kB
+✓ built in 2.87s
+   sha1 dist/index.html : c8e2247bbc251e6413c9b9a0d625bfaaa28b7bf4  (مخرج البناء، 406 بايتًا)
+   sha1 public/index.html: 5e5ecc8a2cb556f126811e42d0d9da342f65289b  (الظلّ)
+   sha1 index.html مصدر  : 0d9c5e14c27b17df3e20967b069b131f4df6573d  (مدخل Vite الخام)
+
+2) البناء بعد إزالة الظلّ:
+dist/index.html                   0.41 kB │ gzip:   0.29 kB
+✓ built in 2.74s
+   sha1 dist/index.html : c8e2247bbc251e6413c9b9a0d625bfaaa28b7bf4  => نفس الملف: لا استبدال ولا تحذير في الحالتين
+
+3) حلّ السيرفر: :3016 createReadStream(join(DIST,'index.html')) و:3132 fallback إلى join(DIST,'index.html')
+   => النسخة الساكنة لم تُخدَم من publicDir قطّ؛ الحكم (نقلها إلى legacy معلنًا) قائم، والسبب صار المقيس.
+
+4) الحارس بعد تصحيح عبارة السبب: # tests 6 # pass 6 # fail 0
+   حارس الوثائق: # tests 6 # pass 6 # fail 0  · # tests 5 # pass 5 # fail 0

@@ -92,7 +92,7 @@ test('D1.15: لا نسخة ظلّ غير معلنة في الشجرة — الت
 
 test('D1.15: index.html محسومة — مدخل Vite إنتاجي، والساكنة legacy بمسار معلن', () => {
   assert.equal(fs.existsSync(path.join(ROOT, 'dashboard/public/index.html')), false,
-    'عادت نسخة index.html إلى publicDir — تتصادم مع مدخل Vite في dist (D1.15)');
+    'عادت نسخة index.html إلى publicDir — نسخة ميتة قابلة للتحرير بلا وسم ولا حارس (D1.15؛ قيس: لا تصادم في البناء بل صمت)');
   assert.match(read('dashboard/index.html'), /\/src\/main\.jsx/, 'مدخل Vite لم يعد مدخلًا — الإنتاجية غير محسومة');
   const legacy = 'dashboard/legacy/static-dashboard.html';
   assert.ok(fs.existsSync(path.join(ROOT, legacy)), 'النسخة الساكنة حُذفت بدل أن تُؤرشف — الحذف يمحو الدليل');

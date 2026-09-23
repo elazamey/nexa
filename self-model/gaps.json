@@ -547,7 +547,7 @@
           "كل مرآة معلنة في ASSET_MIRRORS مطابقة لمصدرها بالبايت، ولا مرآة/مصدر مفقود — والانحراف يكسر CI عبر npm run sync:assets:check (exit 1) لا بالتحذير",
           "الاتجاه مُعلَّن من جهة الاختبار: المصدر هو ما تستورده tests/edge-rag.test.js (adapters/) والمرآة في سطح الخدمة (dashboard/public/)، ولكل زوج سبب مكتوب — لا مرآة ذاتية ولا مرآة داخل adapters/",
           "لا نسخة ظلّ غير معلنة: مسح adapters/ وdashboard/ وsrc/ وtools/ وpackages/ وspec/ وdocs/ بحدّ 32 بايتًا لا يترك أي زوج متطابق خارج ASSET_MIRRORS",
-          "ازدواج index.html محسوم: لا dashboard/public/index.html (كان يتصادم مع مدخل Vite في dist)، وdashboard/index.html يبقى مدخل Vite (يشير إلى /src/main.jsx)، والساكنة مؤرشفة في dashboard/legacy/ مع README يسمّي المسار الجديد والحارس",
+          "ازدواج index.html محسوم بحكم مقيس: لا dashboard/public/index.html (والسبب المصحَّح: نسخة ميتة بلا قارئ — لا تصادم بناء)، وdashboard/index.html يبقى مدخل Vite (يشير إلى /src/main.jsx)، والساكنة مؤرشفة في dashboard/legacy/ مع README يسمّي المسار الجديد والحارس",
           "الأرشيف يُخدَم ويُوسَم: مسار /dashboard-static.html (+ /static) يقرأ من dashboard/legacy/ بترويسة X-Nexa-Page: legacy-static (not the production build)، وي replies 410 إن فُقد الملف بدل الصمت؛ ولا مرجع في شيفرة السيرفر إلى dashboard/public/index.html (التعليقات لا تُحسب)",
           "الفحص لا يكتب والكتابة idempotent: syncMirrors({write:false}).written فارغ، و--check لا يرحم الانحراف ولا يصلحه، و--write مرتان لا تكتبان شيئًا second-pass، والكتابة ذرّية (tmp+rename)",
           "الفاحص مستقل عن حالة الشجرة: على جذر وهمي بمنرايا منحرفة يلتقط drift عدده ويسمّي الملف ويخرج 1 — فلا يُقرأ خُضْرةُ CI ثقتَين بالصدفة",
@@ -562,7 +562,11 @@
         "المرآة تُنسخ لا تُرمَّز لأن dashboard/public/ يُخدَم كما هو؛ لو صار بناء الداشبورد يجمعها (D1.16 فوق CI) فالأفضل إسقاط public/ من git وتوليده في البناء — تغيير بنية لا تذكرة مزامنة",
         "dashboard/data/bug-report.json وhunt-memory.json متتبَّعان في git (مخرجات تشغيل) — class آخر (تلوّث الشجرة لا تكرار) يستحق تذكرة مستقلة",
         "النسخة الساكنة legacy لا تُختبَر ولا تُزامَن؛ تُؤرشف تمامًا إن تقرّر أن لا قارئ لها"
-      ]
+      ],
+      "correction": {
+        "date": "2026-09-24",
+        "what": "سبب النقل كان مكتوبًا «تتصادم مع مدخل Vite في dist» وهو غير صحيح؛ قِيس العكس. الحكم (لا نسخة في publicDir) لم يتغير، والسبب صار المقيس في self-model/evidence/d1.15-correction.txt"
+      }
     },
     {
       "id": "D1.16",

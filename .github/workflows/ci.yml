@@ -39,14 +39,15 @@ jobs:
       - name: NEXA Ω adversarial suite
         run: npm run attacks
 
+      - name: Adversarial security suite
+        run: npm run audit
+
       # A dedicated Node program, not a shell one-liner: an earlier version piped
       # `npm run report:json` into a file and npm's banner made it invalid JSON, so
       # the step failed for its own reasons and hid the real signal.
       - name: Posture check (fails if a gate is not CLOSED)
         run: npm run posture
 
-      - name: Adversarial security suite
-        run: npm run audit
 
       # Runtime-enforced proof: the protocol flow completes while the runtime denies
       # filesystem writes, child processes and network access. The flag name changed
@@ -92,8 +93,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # The lockfile is dashboard-local: the root package intentionally ships with no lockfile
-          # (zero runtime and zero development dependencies).
+          # The cache key is the dashboard lockfile because that is the only install in this job. The
+          # root package has zero runtime and zero development dependencies; it does have a tracked
+          # package-lock.json, but it resolves nothing external — only the @nexa workspace links.
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 

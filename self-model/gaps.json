@@ -677,7 +677,43 @@
         "npm audit لمسار الداشبورد غير مفحوص في أي workflow؛ قِيست 4 advisory (vite fs.deny bypass high ≤6.4.2، esbuild/vite dev-server moderate ×3) على vite 5.4.21 — الإغلاق يحتاج قرار ترقية vite كبرى أو عتبة + استثناء معلن، وهي D1.19 المقترحة",
         "deploy-pages لا يعمل sync:assets:check؛ غير كافٍ اليوم لأن ci.yml يعمل على push لكل فرع بما فيه main، لكنه يصير لازمًا لو فُرع النشر أو أُضيفت يدوية workflow_dispatch على شجرة غير مفحوصة"
       ]
+    },
+    {
+      "id": "D1.19",
+      "track": "P3",
+      "severity": "low",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "metrics.yml يعيد تشغيل ما يشغّله npm run metrics داخله — كل PR إلى main يقيس مرتين، ومعها تثبيت جذر no-op وتعليق ينكر قفلًا متتبَّعًا",
+      "current": "metrics.yml = checkout + setup-node (بلا تثبيت وبلا cache) + npm run metrics؛ الأوامر الخمسة التي كانت خطواتٍ منفصلة ينفّذها tools/check-metrics.mjs داخله بالفعل، وci.yml يبقى بوابتها على كل PR/push؛ وصُحّح تعليق ci.yml الذي كرّر نفس الادّعاء الخاطئ عن غياب قفل الجذر",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/workflow-overlap.test.js",
+      "opened_at": "2026-09-24T05:20:00Z",
+      "required": "ألا يقيس CI الشيء نفسه مرتين في نفس الـ workflow دون سبب، ولا يوثّق ادّعاءً عن الشجرة يكسره git ls-files. لا يغيّر ما تقيسه البوابة ولا عتباتها؛ يغيّر كم مرة يُقاس ومن يثبّت بلا حاجة.",
+      "notes": "من follow_ups في D1.16/D1.18. لا يمسّ ci.yml ولا عتبات metrics نفسها. release.yml فيه npm ci || npm install قبل النشر — فئة D1.18 لا هذه التذكرة، وسُجّلت D1.20.",
+      "acceptance": {
+        "criteria": [
+          "لا خطوة في metrics.yml تعيد أمرًا تنفّذه الأداة داخلها — والقائمة تُقرأ من runCommand في tools/check-metrics.mjs لا من نص محفوظ (لو تغيّرت الأداة تغيّر الحارس بعلم)",
+          "التغطية محفوظة: كل أمر من القائمة الداخلية موجود أيضًا في ci.yml، فحذف الخطوات لم يُسقِط بوابة PR عن أي قياس",
+          "لا تثبيت جذر في metrics.yml/ci.yml/deploy-pages.yml، والتبرير مقيس داخل الحارس: لا workspace (packages/* أو adapters/*) يعلن اعتمادية، وقفل الجذر بلا أي عقدة خارجية",
+          "البوابة باقية: npm run metrics آخر خطوة، على pull_request إلى main وpush إلى main، permissions = contents: read وحدها، وبلا continue-on-error ولا || true ولا if: always()",
+          "لا ادّعاء في تعليقات الملفات الثلاثة يناقض الشجرة: من يقول بلا lockfile والجذر فيه package-lock.json متتبَّع يُكسَر؛ وأي cache: npm لازم أن يشير إلى قفل متتبَّع فعلًا (في الملفات الثلاثة كلها، لا في اثنين)",
+          "إصدار node في metrics.yml داخل مصفوفة ci.yml (20 ∈ [20,22]) — لا بوابة تُقاس على تشغيل لا يغطيه الاختبار",
+          "قارئ الحارس يثبت شكل metrics.yml (3 خطوات، checkout/setup-node/metrics) ويجمع كتل | من الملف الآخر، فأي خطوة زائدة تُرى فورًا بدل أن تُمرَّر؛ وفحوص git تُختصر بـ skip صريح حيث لا .git بدل أن تنفجر على نسخة أرشيف"
+        ],
+        "inversion_test": "self-model/evidence/d1.19-red.tap (المُعيد 2 من 2 أخضر-كإثبات عند 13c91e2) → d1.19-green.tap (الحارس 6 من 6 + بوابة metrics تعمل في نسخة طارحة بلا أي تثبيت)؛ d1.19-inversion.txt بتسع نسخ: إعادة خطوة npm test ⇒ 2 من 6 (القارئ + لا إعادة قياس)؛ إعادة npm install الجذري ⇒ 2 (القارئ + لا تثبيت جذر)؛ استرجاع عبارة «ships without one by design» ⇒ 1 (التعليق يناقض الشجرة)؛ continue-on-error على الخطوة ⇒ 1 (البوابة)؛ حذف pull_request من on: ⇒ 1؛ node-version 19 خارج مصفوفة ci.yml ⇒ 1؛ إزالة runCommand audit من الأداة ⇒ 2 (لا إعادة قياس + التغطية محفوظة)؛ إزالة npm run audit من ci.yml ⇒ 1 (التغطية)؛ تفعيل cache: npm في metrics.yml بلا cache-dependency-path ⇒ 1. المجاورون خضر في التسع: المرايا 6، تكافؤ النشر 7، CI 6، الوثائق 6؛ والسجل كان أحمرّ عمدًا قبل قلب السجل ثم اخضرّ بعده"
+      },
+      "closed_at": "2026-09-24T06:15:00Z",
+      "ticket_status": "enforced — القياس مرة واحدة في المكان الصحيح؛ لا تكرار بلا إشارة، ولا تعليق يناقض git ls-files",
+      "follow_ups": [
+        "release.yml يعمل npm ci || npm install قبل npm test وmesh:verify ثم النشر — نفس فئة D1.18 (ابتلاع الفشل + no-op)، مسجَّل D1.20",
+        "لو صار check-metrics.mjs يقيس بلا أن يُشغّل الاختبارات (قراءة baseline بدل تشغيلها)، فحارس D1.19 يفرض إضافة الخطوات إلى workflow عند سقوط أي أمر من قائمة runCommand — وهذا مقصود: التغطية لا الذاكرة",
+        "security-scan.yml وagentic-bug-hunter.yml يعملان على PRs إلى main وpush main/arena/**؛ لم تُقس درجة تداخلهما مع ci.yml (تذكرة مستقلة لو تبيّن تكرار)"
+      ]
     }
   ],
-  "updated_at": "2026-09-24T04:25:00Z"
+  "updated_at": "2026-09-24T06:15:00Z"
 }

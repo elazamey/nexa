@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "9823f18c542d1b9fc377027e17090bfcb56b7aaa",
-    "tree_state": "D1.18 closure worktree (measured before the closure commit)",
+    "commit": "13c91e2c310f8f1a947413c545611ca8df0beb79",
+    "tree_state": "D1.19 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 696,
-    "pass": 696,
+    "tests": 702,
+    "pass": 702,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 696 = 689 (إغلاق D1.16) + 7 (tests/deploy-ci-parity.test.js)؛ لم يُطرح شيء لأن مُعيد D1.18 لم يدخل git أصلًا (حُذف قبل أول commit)"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 702 = 696 (إغلاق D1.18) + 6 (tests/workflow-overlap.test.js)؛ لا طرح لأن مُعيد D1.19 لم يُلتقَط في git قبل حذفه"
   },
   "frozen_claims": {
     "tests_545": {
@@ -117,6 +117,10 @@
     {
       "date": "2026-09-24",
       "event": "إغلاق D1.18 (P2 / O08 متابعة): النشر يثبّت ما فحصه CI — قفل الداشبورد وحده، بلا || مبتلع، وبلا خطوة تثبيت جذر no-op؛ بروفة تنفيذ تمسك غلط مسار أدخله الإصلاح؛ 696/696/0"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.19 (P3 / O08 متابعة): metrics.yml يقيس مرة واحدة بلا تثبيت زائد، والحارس يربط الأوامر بشيفرة check-metrics لا بالذاكرة؛ تصحيح ادّعاءين عن قفل الجذر وتحرير اختبارين من حالة محلية؛ 702/702/0"
     }
   ],
   "post_d1_2": {
@@ -345,7 +349,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-24T04:55:00Z",
+  "updated_at": "2026-09-24T06:30:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -429,5 +433,19 @@
     "green_evidence": "self-model/evidence/d1.18-green.tap (الحارس 7 من 7 + بروفة تنفّذ نص الخطوات من الـ YAML على نسخة طارحة: hunter exit 0، npm ci 131 حزمة، vite build 3.05s، dist/data = bug-report.json + hunt-memory.json، 14 ملفًا/556K) + d1.18-suite.txt (696/696/0)",
     "inversion_evidence": "d1.18-inversion.txt — اثنتا عشرة نسخة: install عائم مع || ⇒ 2 من 7؛ || على خطوة القفل ⇒ 2 (و7)؛ node 18.x ⇒ 1؛ قلب hunter/البناء ⇒ 1؛ pull_request في النشر ⇒ 1؛ contents: write ⇒ 1؛ إعادة خطوة تثبيت الجذر ⇒ 2 (و3)؛ مسار hunter وهمي ⇒ 1؛ حذف mkdir dist/data ⇒ 1؛ تعليق ينتحل خطوة ⇒ 2 (و7)؛ اعتمادية معلنة في workspace ⇒ 1؛ قفل خاطئ في cache-dependency-path ⇒ 1. المجاورون خضر في الكل (CI 6، المرايا 6، edge-rag 4، السجل 5، الوثائق 6) والاستعادة 34 من 34",
     "note": "البروفة كشفت غلطًا أدخلته بنفسي: cp -r ../data/* من داخل dashboard/ (= جذر المستودع) ⇒ dist/data فارغة مع exit 1. صُحّح المسار إلى data/*، وأُلغي || true الذي كان يجعل النشر بلا بيانات أخضر، وصار الحارس يحلّ المسارات على القرص. لا فحص نصّي للـ YAML كان يمسك هذا — وهو سبب كتابة بروفة تنفيذ لا قراءة سطور"
+  },
+  "d1.19_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.19 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 702,
+    "pass": 702,
+    "fail": 0,
+    "breakdown": "696 بعد D1.18 + 6 (حارس تداخل الـ workflows)",
+    "red_evidence": "self-model/evidence/d1.19-red.tap (2 من 2 أخضر-كإثبات؛ أوائلًا صِيغ باطّل — qِيس أن npm ci في الجذر ينجح)",
+    "green_evidence": "self-model/evidence/d1.19-green.tap (6 من 6 + حارسا D1.18/D1.16 بعد التصحيح العَرَضي + بوابة metrics في نسخة طارحة بلا تثبيت) + d1.19-suite.txt (702/702/0)",
+    "inversion_evidence": "d1.19-inversion.txt — تسع نسخ: خطوة npm test زائدة ⇒ 2 من 6؛ تثبيت جذر ⇒ 2؛ عبارة بلا lockfile ⇒ 1؛ continue-on-error ⇒ 1؛ حذف pull_request من on: ⇒ 1؛ node 19 خارج المصفوفة ⇒ 1؛ إزالة runCommand audit من الأداة ⇒ 2؛ إزالة npm run audit من ci.yml ⇒ 1؛ cache: npm بلا مسار قفل ⇒ 1. المجاورون خضر (المرايا 6، تكافؤ النشر 7، CI 6، الوثائق 6). وفيه موثّق أن Q3/Q9 أُعيدتا بعد أن كانت نسخة الانحراف تُنادى بثلاث وسائط لـ rw() فلم تُطبَّق (0 أحمر = قياس أعمى)، وأن فحوص cache كانت تتخطّى metrics.yml",
+    "note": "حذف 5 خطوات مكرّرة من metrics.yml (كلها تُنفَّذ داخل tools/check-metrics.mjs أصلًا) وتثبيتِ جذر no-op؛ تصحيح تعليقين خاطئين (metrics.yml القديم، وci.yml من D1.16) كانا ينفيان وجود قفل الجذر وهو متتبَّع؛ وتحرير اختبارين من الاعتماد على حالة محلية (dashboard/dist، و.git) بعد قياس نسخة طارحة — 704 اختبارًا هناك بفشلين هما المُعيد وحده و2 skip معلنة"
   }
 }

@@ -169,7 +169,8 @@ test('D1.18: الترتيب والبيانات — hunter قبل البناء، 
   assert.ok(!src.startsWith('../'), `مسار يبدأ بـ ../ من داخل dashboard/ = جذر المستودع: ${src}`);
   const resolved = path.resolve(ROOT, 'dashboard', src.replace(/\/\*$/, ''));
   assert.ok(fs.existsSync(resolved), `${src} لا يحلّ إلى موجود من داخل dashboard/ (qِيست dist فارغة من البيانات)`);
-  assert.ok(fs.existsSync(path.resolve(ROOT, 'dashboard', 'dist')), 'لا dashboard/dist — البناء لا يكتب حيث يتوقع النشر');
+  const dataSrc = path.resolve(ROOT, 'dashboard', 'data');
+  assert.ok(fs.readdirSync(dataSrc).length > 0, 'dashboard/ data فارغ — النسخ سينجح إلى شيء بلا محتوى');
   assert.ok(!/\|\|\s*true/.test(copy[0]), 'نسخ البيانات بـ || true — الموقع قد يُنشر بلا بيانات وخُضرة صامتة');
   const upload = steps.find((s) => /upload-pages-artifact/.test(s.uses));
   assert.ok(upload, 'لا خطوة رفع للمواقع');

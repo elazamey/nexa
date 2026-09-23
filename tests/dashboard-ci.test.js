@@ -19,6 +19,11 @@ import { execFileSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+const hasGit = (() => {
+  try { execFileSync('git', ['rev-parse', '--git-dir'], { cwd: ROOT, stdio: 'ignore' }); return true; } catch { return false; }
+})();
+
+
 
 const ci = () => read('.github/workflows/ci.yml');
 
@@ -126,7 +131,8 @@ test('D1.16: نابض D1.15 (المرايا) موصول في CI ولا يُبت�
   assert.ok(fs.existsSync(path.join(ROOT, 'tools/sync-dashboard-assets.mjs')), 'سكربت الفحص غير موجود');
 });
 
-test('D1.16: وظيفة kernel تبقى بلا تثبيت، والمخرج لا يُتتبَّع في git', () => {
+test('D1.16: وظيفة kernel تبقى بلا تثبيت، والمخرج لا يُتتبَّع في git', (skipT) => {
+  if (!hasGit) return skipT.skip('لا .git في هذه النسخة — فحص التتبّع لا معنى له هنا');
   const t = ci();
   const verify = jobOf(t, 'verify');
   assert.ok(verify, 'وظيفة verify (node 20/22) مفقودة — لا مساس بالمقيس');

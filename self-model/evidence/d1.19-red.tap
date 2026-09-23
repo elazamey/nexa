@@ -1,0 +1,12 @@
+# D1.19 red-as-proof — أخضر 2 من 2 = الفجوة قائمة (قياس عند 13c91e2)
+ok 1 - known-gap D1.19: خطوات metrics.yml تعيد أوامر ينفّذها check-metrics داخله
+ok 2 - known-gap D1.19: تثبيت جذر no-op وتعليق ينكر قفلًا متتبَّعًا
+# tests 2
+# pass 2
+# fail 0
+## أوامر metrics.yml مقابل الأوامر الداخلية للأداة وci.yml (مقيس بمجموعة مفرغوطة)
+  metrics.yml: npm install, npm test, npm run audit, npm run posture, npm run attacks, npm run attacks:google, npm run metrics
+  check-metrics.mjs runCommand: test(99) audit(105) attacks(111) attacks:google(117) posture(123) — وكل فشل exit 1
+  ci.yml على كل PR: npm test, audit, posture, attacks, attacks:google
+  => المكرر مرتين: الخمسة كاملة؛ الفريد في metrics.yml: npm install (no-op) وnpm run metrics (البوابة)
+  package-lock.json متتبَّع: 100644 0c0f5d108219f4c0eb05e409204e449cd2cfc6d9 0	package-lock.json (3467 بايتًا) — وتعليق metrics.yml يقول «ships without one by design»: ادّعاء يناقض الشجرة

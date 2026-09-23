@@ -1,0 +1,85 @@
+# D1.19 INVERSION EVIDENCE — تسع نسخ؛ المقياس: حارس D1.19 يحمرّ وحده
+الأسوار المجاورة: المرايا (6) · تكافؤ النشر D1.18 (7) · CI D1.16 (6) · سجل الفجوات (5) · الوثائق (6).
+الحذف بالأحرف بعد فك الترميز (لا cut -c على البايتات) حتى لا تُبتر تتمة UTF-8 كما حدث في ملف D1.18 الأول.
+Q1/Q2 يُحمرّان أيضًا اختبار القارئ (الأول) عن قصد: الحارس يثبّت شكل metrics.yml (3 خطوات) فأي إضافة خطوة
+تُرى immediately بدل أن تُمرَّر بصمت. Q7 يغيّر شيفرة الأداة نفسها: الحارس يتتبع runCommand لا الذاكرة.
+مرتان أُصلحت في أثناء هذا القياس، وكلتاهما عيب في الحارس/السكربت لا في الإصلاح: (1) نسخة Q3 وQ9 كانت تُنادى
+بثلاث وسائط لـ rw() فلم تُطبَّق (0 أحمر = قياس أعمى لا نجاح)؛ (2) فحوص cache كانت تمرّ على ci.yml/deploy فقط
+فلم تَرَ metrics.yml — مُدّت إلى الملفات الثلاثة، ثم قِيست النسختان وأحمرّتا الاختبار الخامس.
+--- INVERSION Q1 ---
+   # tests 6 # pass 4 # fail 2 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: القارئ يفهم metrics.yml — وإلا كان · لا إعادة قياس — ما تنفّذه الأداة د
+--- INVERSION Q2 ---
+   # tests 6 # pass 4 # fail 2 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: القارئ يفهم metrics.yml — وإلا كان · لا تثبيت جذر في الملفات الثلاثة، و
+--- INVERSION Q3 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: لا تعليق يناقض الشجرة — الادّعاء ب
+--- INVERSION Q4 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: البوابة باقية كما هي — على PRs، بل
+--- INVERSION Q5 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: البوابة باقية كما هي — على PRs، بل
+--- INVERSION Q6 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: البوابة باقية كما هي — على PRs، بل
+--- INVERSION Q7 ---
+   # tests 6 # pass 4 # fail 2 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: لا إعادة قياس — ما تنفّذه الأداة د · التغطية محفوظة — كل ما حُذف من met
+--- INVERSION Q8 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: التغطية محفوظة — كل ما حُذف من met
+--- INVERSION Q9 ---
+   # tests 6 # pass 5 # fail 1 -> workflow-overlap.test.js
+   # tests 7 # pass 7 # fail 0 -> deploy-ci-parity.test.js
+   # tests 6 # pass 6 # fail 0 -> dashboard-ci.test.js
+   # tests 6 # pass 6 # fail 0 -> duplicate-sync.test.js
+   # tests 5 # pass 4 # fail 1 -> gaps-consistency.test.js
+   # tests 6 # pass 6 # fail 0 -> docs-consistency.test.js
+   الأحمر: لا تعليق يناقض الشجرة — الادّعاء ب
+--- post-restore ---
+# tests 36 # pass 35 # fail 1
+
+وفي هذه اللحظة حارس السجل أحمرّ عمدًا: D1.19 مفتوحة ومُعيدها حُذف؛ قُلِب السجل بعدها ثم أعيد القياس
+(d1.19-green.tap) ليكون الرقم المسجَّل على الشجرة النهائية لا على المنتصف.

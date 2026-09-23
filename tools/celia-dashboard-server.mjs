@@ -2986,6 +2986,20 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // D1.15: النسخة الساكنة الموازية صارت legacy معلَنًا. كانت dashboard/public/index.html،
+  // أي الاسم والمسار نفسهما اللذان يبنيهما Vite — فتُخدَم من مسار خاص وتُوسم غير إنتاجية.
+  if (url.pathname === '/dashboard-static.html' || url.pathname === '/static') {
+    const legacyPath = resolve(root, 'dashboard/legacy/static-dashboard.html');
+    if (existsSync(legacyPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'X-Nexa-Page': 'legacy-static (not the production build)' });
+      res.end(readFileSync(legacyPath, 'utf8'));
+      return;
+    }
+    res.writeHead(410, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('legacy static dashboard moved: dashboard/legacy/static-dashboard.html (D1.15)\n');
+    return;
+  }
+
   if (url.pathname === '/rag_core.js') {
     const jsPath = resolve(root, 'dashboard/public/rag_core.js');
     if (existsSync(jsPath)) {

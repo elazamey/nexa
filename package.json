@@ -38,6 +38,8 @@
     "vectors": "node tools/vectors.mjs && node tools/omega-vectors.mjs && node tools/cellular-vectors.mjs && node tools/google-vectors.mjs",
     "metrics": "node tools/check-metrics.mjs",
     "verify": "npm run posture && npm test && npm run audit && npm run demo && npm run demo:omega && npm run demo:cellular && npm run attacks && npm run report",
+    "sync:assets": "node tools/sync-dashboard-assets.mjs --write",
+    "sync:assets:check": "node tools/sync-dashboard-assets.mjs --check",
     "dashboard": "node tools/celia-dashboard-server.mjs",
     "workspace": "node tools/celia-dashboard-server.mjs",
     "learning": "node tools/celia-learning.mjs",

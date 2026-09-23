@@ -537,22 +537,32 @@
       "sources": [
         "O07"
       ],
-      "current": "7 ملفات edge-rag متطابقة بايتًا بين adapters/ وdashboard/public/ بلا مزامنة؛ workspace.html مكرر؛ index.html نسختان متباينتان (13 مقابل 67 سطرًا) — أي إصلاح في جهة ينكسر في الأخرى",
+      "current": "تسع مرايا معلنة في tools/sync-dashboard-assets.mjs (7 وحدات edge-rag + index.html→edge-rag.html + workspace.html) تُولَّد من مصدرها كتابةً ذرّية؛ وdashboard/public/index.html نُقلت إلى dashboard/legacy/static-dashboard.html وتُخدَم عند /dashboard-static.html موسومة غير إنتاجية؛ وscan شامل يمنع أي نسخة ظلّ غير معلنة",
       "required": "مصدر حقيقة واحد: سكربت مزامنة وقت البناء + حارس CI يفشل عند الاختلاف؛ حسم ازدواج index.html (إنتاجية مقابل legacy موثق)",
-      "enforced": false,
-      "reproducer": "test",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "tests/duplicate-sync.test.js (مخطط)",
+        "inversion_test": "self-model/evidence/d1.15-red.tap (2 من 2 خضراء-كإثبات عند 794c40f) → d1.15-green.tap (6 من 6)؛ d1.15-inversion.txt بستّ نسخ + ملحق: تحرير يدوي في المرآة ⇒ 2 من 6؛ نسخة ظلّ جديدة غير معلنة ⇒ 1؛ عودة index.html إلى publicDir ⇒ 2؛ الفحص بلا نابض (لا exit 1) ⇒ 1؛ الفاحص يتجاهل الجذر الممرر ⇒ 1؛ --check يصلح القرص بدل أن يفحص ⇒ 1. وفي الستّ بقيت edge-rag (4 و6) وdetector-independence وdocs-consistency وserver-perimeter خضراء. الملحق يوثّق أن H5/H6 أُعيدت صياغتهما بعد أن كانتا غير صالحتين",
         "criteria": [
-          "اختبار/فحص يفشل إذا اختلفت النسخ عن المصدر",
-          "سكربت sync موثق يعيد التوليد من المصدر الواحد",
-          "index.html محسومة: واحدة إنتاجية والأخرى في legacy/ مع redirect موثق"
+          "كل مرآة معلنة في ASSET_MIRRORS مطابقة لمصدرها بالبايت، ولا مرآة/مصدر مفقود — والانحراف يكسر CI عبر npm run sync:assets:check (exit 1) لا بالتحذير",
+          "الاتجاه مُعلَّن من جهة الاختبار: المصدر هو ما تستورده tests/edge-rag.test.js (adapters/) والمرآة في سطح الخدمة (dashboard/public/)، ولكل زوج سبب مكتوب — لا مرآة ذاتية ولا مرآة داخل adapters/",
+          "لا نسخة ظلّ غير معلنة: مسح adapters/ وdashboard/ وsrc/ وtools/ وpackages/ وspec/ وdocs/ بحدّ 32 بايتًا لا يترك أي زوج متطابق خارج ASSET_MIRRORS",
+          "ازدواج index.html محسوم: لا dashboard/public/index.html (كان يتصادم مع مدخل Vite في dist)، وdashboard/index.html يبقى مدخل Vite (يشير إلى /src/main.jsx)، والساكنة مؤرشفة في dashboard/legacy/ مع README يسمّي المسار الجديد والحارس",
+          "الأرشيف يُخدَم ويُوسَم: مسار /dashboard-static.html (+ /static) يقرأ من dashboard/legacy/ بترويسة X-Nexa-Page: legacy-static (not the production build)، وي replies 410 إن فُقد الملف بدل الصمت؛ ولا مرجع في شيفرة السيرفر إلى dashboard/public/index.html (التعليقات لا تُحسب)",
+          "الفحص لا يكتب والكتابة idempotent: syncMirrors({write:false}).written فارغ، و--check لا يرحم الانحراف ولا يصلحه، و--write مرتان لا تكتبان شيئًا second-pass، والكتابة ذرّية (tmp+rename)",
+          "الفاحص مستقل عن حالة الشجرة: على جذر وهمي بمنرايا منحرفة يلتقط drift عدده ويسمّي الملف ويخرج 1 — فلا يُقرأ خُضْرةُ CI ثقتَين بالصدفة",
+          "الحارس السابق يردّ: أي قراءة بيئة يضيفها السكربت تحتاج صفًّا في docs/environment-reference.md، وقِيس ذلك (H7) لا استُنتج"
         ]
       },
-      "verification": null,
+      "verification": "tests/duplicate-sync.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-24T01:50:00Z",
+      "ticket_status": "enforced — التكرار قرار معلَن: مرآة مولَّدة أو كسر في CI؛ وأول قياس حيّ أن حارس D1.13 لم يمرّر قراءة السكربت الجديدة بلا صفّ",
+      "follow_ups": [
+        "المرآة تُنسخ لا تُرمَّز لأن dashboard/public/ يُخدَم كما هو؛ لو صار بناء الداشبورد يجمعها (D1.16 فوق CI) فالأفضل إسقاط public/ من git وتوليده في البناء — تغيير بنية لا تذكرة مزامنة",
+        "dashboard/data/bug-report.json وhunt-memory.json متتبَّعان في git (مخرجات تشغيل) — class آخر (تلوّث الشجرة لا تكرار) يستحق تذكرة مستقلة",
+        "النسخة الساكنة legacy لا تُختبَر ولا تُزامَن؛ تُؤرشف تمامًا إن تقرّر أن لا قارئ لها"
+      ]
     },
     {
       "id": "D1.16",
@@ -615,5 +625,5 @@
       "decision_log": "قرار المالك (2026-09-23): (1) الترتيب بعد إتمام P0-D — لا جبهة سيرفر في وسط سلسلة البوابات؛ (2) شكل الحالة = قياس حيّ فقط: getPosture() لـ gates/llm_vectors، وحذف tests/promotion. مرفوض: وسم 314/314 بتاريخ بدل حذفه، لأنه لا مصدر للسيرفر به أصلًا؛ ومرفوض تمرير live_measurement من baseline إلى HTTP payload لأن ذلك يحوّل سجلًا مجمّدًا إلى تليمترية زائفة عبر الشبكة"
     }
   ],
-  "updated_at": "2026-09-24T00:35:00Z"
+  "updated_at": "2026-09-24T01:50:00Z"
 }

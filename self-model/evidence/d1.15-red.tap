@@ -1,0 +1,6 @@
+# D1.15 red-as-proof (عند 794c40f) — تكرار بلا مصدر حقيقة ولا حارس
+ok 1 - known-gap D1.15 (O07): نسخ edge-rag السبع مكررة يدويًا بلا مصدر حقيقة
+ok 2 - known-gap D1.15 (O07): ازدواج index.html — نسخة في publicDir تصادم مدخل Vite، ولا مصدر مُعلَن
+# tests 2
+# pass 2
+# fail 0

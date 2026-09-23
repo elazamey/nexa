@@ -31,6 +31,7 @@
 | `CELIA_WORKSPACE_WRITE_AUTH` | `tools/celia-dashboard-server.mjs` | `{}` | JSON لإعداد تفويض الكتابة في الـ workspace؛ `{}` ليس تفويضًا ولا يفتح مسارًا. | إعداد |
 | `CELIA_WORKSPACE_COMMIT_AUTH` | `tools/celia-dashboard-server.mjs` | `{}` | JSON لإعداد تفويض `commit` (قائمة قرارات/سياسة) — يُفكّ الترميز ثم يُبحث ثم يُتحقَّق، لا `split(raw)`. | إعداد |
 | `CELIA_COMMIT_STATE_DIR` | `tools/celia-workspace-commit-port.mjs` | — | جذر حالة `commit` خارجي خاص؛ لازمٌ في وضع `commit`، ولا يُحذف ولا تُمسح أقفاله لاستعادة الإتاحة (الفشل المُغلق حالةٌ مقصودة). | تخزين |
+| `NEXA_SYNC_ROOT` | `tools/sync-dashboard-assets.mjs` | جذر المستودع | يعزل الفاحص في الاختبارات (أسلوب `NEXA_BUG_REPORT` نفسه): `--check` يعمل على جذر وهمي دون أن يمس المرايا المخدومة. القراءة لا تكتب إلا مع `--write` الصريح. | عزل اختبار |
 | `NEXA_HUNT_MEMORY` | `src/security/hunter/hunt-memory.js` | `dashboard/data/hunt-memory.json` | مسار ذاكرة الصيد. تُحوَّل في `tests/bootstrap.mjs` إلى مجلد مؤقّت لعزل مخرجات الاختبار عن الشجرة. | عزل اختبار |
 | `NEXA_BUG_REPORT` | `src/security/agentic-hunter.js` | `dashboard/data/bug-report.json` | مسار `bug-report.json` (الحالة المكتوبة تُبلَّغ ولا تُزفَّف — D1.8). يُحوَّل في bootstrap للسبب نفسه. | عزل اختبار |
 | `XAI_API_KEY` | `tools/celia-grok-port.mjs`, `tools/celia-demo.mjs`, `tools/celia-rag-demo.mjs` (عبر حافظة تجريبية) | `mock-key` | مفتاح مزوّد الخطة (Grok). **لا يُستدعى منه تفويض**: كونه مضبوطًا لا يفتح مسارًا ولا يشتري موافقة. | سرّ |

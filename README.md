@@ -515,7 +515,7 @@ not the one it can assert:
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 545
+- Total tests: 613
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

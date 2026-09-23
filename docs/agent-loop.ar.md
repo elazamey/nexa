@@ -147,3 +147,23 @@ const verdict = assessClaim({
 
 مثبّت بالاختبارات في `tests/celia-workspace-commit-auth.test.js` ("verification gate: …")
 عند حدود HTTP الحقيقية، مع التأكد أن الجذر والـstaging وسجل الأحداث لم تتغير عند كل رفض.
+
+## 8. إنتاج الدليل: `celia verify-run`
+
+جانب المحقّق أداة، لا fixture:
+
+```bash
+npm run verify-run -- \
+  --key ./verifier.seed \                 # بذرة hex بطول 32 بايت لهوية المحقّق
+  --subject nexa:key:ed25519:z6Mk… \      # المبدأ الذي سيرسل الـCOMMIT
+  --descriptor ./descriptor.json \        # { workspaceId, targetRoot, changeSetHash, expectedBaseHash }
+  --test tests/foo.test.js --test tests/bar.test.js \
+  --out ./evidence.json
+```
+
+تشغّل `node --test` في عملية فرعية نظيفة، تقرأ ملخص TAP، وتوقّع سلسلة
+`POLICY_DECISION/ALLOW → HANDLER_RESULT/ALLOW` (نجح الكل) أو `→ GATE_BLOCKED/DENY`
+(أي فشل أو انتهاء مهلة أو صفر اختبارات). المخرج هو بالضبط كائن `evidence` الذي يحمله
+طلب COMMIT. الأداة ترفض التوقيع إذا كان المحقّق هو الـsubject نفسه.
+الإثبات من طرف لطرف: `tests/verify-run.test.js` — عملية فرعية حقيقية → دليل → COMMIT حقيقي،
+مع رفض النسخة الفاشلة وبقاء نظام الملفات دون تغيير.

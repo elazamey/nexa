@@ -152,3 +152,23 @@ exact-state checks pass — and **before any filesystem I/O** — the committer 
 
 Pinned by `tests/celia-workspace-commit-auth.test.js` ("verification gate: …") at the
 real HTTP boundary, with root/staging/event state asserted unchanged on every denial.
+
+## 8. Producing evidence: `celia verify-run`
+
+The verifier side is a tool, not a fixture:
+
+```bash
+npm run verify-run -- \
+  --key ./verifier.seed \                 # 32-byte hex seed of the verifier identity
+  --subject nexa:key:ed25519:z6Mk… \      # the principal that will send the COMMIT
+  --descriptor ./descriptor.json \        # { workspaceId, targetRoot, changeSetHash, expectedBaseHash }
+  --test tests/foo.test.js --test tests/bar.test.js \
+  --out ./evidence.json
+```
+
+It runs `node --test` in a clean subprocess, parses the TAP summary, and signs a chain
+`POLICY_DECISION/ALLOW → HANDLER_RESULT/ALLOW` (all passed) or `→ GATE_BLOCKED/DENY`
+(anything failed, timed out, or zero tests). The output is exactly the `evidence`
+object a COMMIT request carries. The tool refuses to sign when verifier == subject.
+End-to-end proof: `tests/verify-run.test.js` — real subprocess → evidence → real COMMIT,
+with the failing variant refused and the filesystem unchanged.

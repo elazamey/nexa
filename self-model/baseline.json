@@ -16,16 +16,16 @@
   },
   "live_measurement": {
     "date": "2026-09-23",
-    "commit": "13c91e2c310f8f1a947413c545611ca8df0beb79",
-    "tree_state": "D1.19 closure worktree (measured before the closure commit)",
+    "commit": "2c94fd4e202373a2096d743af99357186f69b5eb",
+    "tree_state": "D1.20 closure worktree (measured before the closure commit)",
     "command": "npm test",
     "node": "v22.22.3",
-    "tests": 702,
-    "pass": 702,
+    "tests": 711,
+    "pass": 711,
     "fail": 0,
     "security_tests": 16,
     "tool": "tools/check-metrics.mjs (npm run metrics)",
-    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 702 = 696 (إغلاق D1.18) + 6 (tests/workflow-overlap.test.js)؛ لا طرح لأن مُعيد D1.19 لم يُلتقَط في git قبل حذفه"
+    "note": "السجل الحيّ الوحيد الذي تُحال إليه الوثائق: README.md وSECURITY.md يطابقان هذين العددين في كتلة NEXA_METRICS، وtests/count-claims-sync.test.js يكسر أي انحراف، وpub-verifier.sh يستعمل tests أرضيةً لا يُسمح للمجموعة أن تنزل تحتها. `measured` أعلى يبقى قياس التقرير المجمّد (2026-09-22 @ 085a9c7) ولا يُحدَّث. | 711 = 702 (إغلاق D1.19) + 7 (tests/release-workflow.test.js) + 2 (tests/known-gaps/d1.21-publish-config.test.js — مُعيد فجوة معلّقة يعمل في كل مجموعة)"
   },
   "frozen_claims": {
     "tests_545": {
@@ -121,6 +121,10 @@
     {
       "date": "2026-09-24",
       "event": "إغلاق D1.19 (P3 / O08 متابعة): metrics.yml يقيس مرة واحدة بلا تثبيت زائد، والحارس يربط الأوامر بشيفرة check-metrics لا بالذاكرة؛ تصحيح ادّعاءين عن قفل الجذر وتحرير اختبارين من حالة محلية؛ 702/702/0"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "إغلاق D1.20 (P2 / O08 متابعة): مسار الإصدار لم يعد يبتلع فشله — || true و|| npm install زالا، والتخطّي عند private معلن بـ ::warning:: في الـ summary؛ D1.21 (هوية الحزمة) مسجّلة بمُعيد حيّ وتنتظر قرار المالك؛ 711/711/0"
     }
   ],
   "post_d1_2": {
@@ -349,7 +353,7 @@
     "inversion_evidence": "d1.8-inversion.txt — أربع نسخ: details بلا فلتر ⇒ 2 من 7؛ ادّعاء حفظ رغم الفشل ⇒ 1 من 7؛ تذييل 7/7 الثابت ⇒ 2 من 7؛ تقارير لكل مُصرَّح به ⇒ 1 من 7. وحراس D1.2–D1.7 خضر في الأربع",
     "note": "أُغلقت عند قياس المجموعة الكاملة: 667/667/0 مع verify_exit=0 وmetrics أخضر — لا انحراف في حارس توثيق. DI-17 صارت enforced، وبذلك تكتمل مجموعة P0-D (D1.3–D1.8)؛ المتبقي من صفر-الحرج: D1.17 (قيد التسجيل)"
   },
-  "updated_at": "2026-09-24T06:30:00Z",
+  "updated_at": "2026-09-24T07:45:00Z",
   "d1.17_closure": {
     "date": "2026-09-23",
     "commit": "working tree — إغلاق D1.17 (انظر git log)",
@@ -447,5 +451,19 @@
     "green_evidence": "self-model/evidence/d1.19-green.tap (6 من 6 + حارسا D1.18/D1.16 بعد التصحيح العَرَضي + بوابة metrics في نسخة طارحة بلا تثبيت) + d1.19-suite.txt (702/702/0)",
     "inversion_evidence": "d1.19-inversion.txt — تسع نسخ: خطوة npm test زائدة ⇒ 2 من 6؛ تثبيت جذر ⇒ 2؛ عبارة بلا lockfile ⇒ 1؛ continue-on-error ⇒ 1؛ حذف pull_request من on: ⇒ 1؛ node 19 خارج المصفوفة ⇒ 1؛ إزالة runCommand audit من الأداة ⇒ 2؛ إزالة npm run audit من ci.yml ⇒ 1؛ cache: npm بلا مسار قفل ⇒ 1. المجاورون خضر (المرايا 6، تكافؤ النشر 7، CI 6، الوثائق 6). وفيه موثّق أن Q3/Q9 أُعيدتا بعد أن كانت نسخة الانحراف تُنادى بثلاث وسائط لـ rw() فلم تُطبَّق (0 أحمر = قياس أعمى)، وأن فحوص cache كانت تتخطّى metrics.yml",
     "note": "حذف 5 خطوات مكرّرة من metrics.yml (كلها تُنفَّذ داخل tools/check-metrics.mjs أصلًا) وتثبيتِ جذر no-op؛ تصحيح تعليقين خاطئين (metrics.yml القديم، وci.yml من D1.16) كانا ينفيان وجود قفل الجذر وهو متتبَّع؛ وتحرير اختبارين من الاعتماد على حالة محلية (dashboard/dist، و.git) بعد قياس نسخة طارحة — 704 اختبارًا هناك بفشلين هما المُعيد وحده و2 skip معلنة"
+  },
+  "d1.20_closure": {
+    "date": "2026-09-24",
+    "commit": "working tree — إغلاق D1.20 (انظر git log)",
+    "command": "npm test && npm run metrics && npm run verify",
+    "node": "v22.22.3",
+    "tests": 711,
+    "pass": 711,
+    "fail": 0,
+    "breakdown": "702 بعد D1.19 + 7 (حارس مسار الإصدار) + 2 (مُعيد D1.21 المعلّقة)",
+    "red_evidence": "self-model/evidence/d1.20-red.tap (2 من 2 أخضر-كإثبات؛ صياغتي الأولى للادّعاء الثاني كانت باطلة وقِست: env-reference-sync يذكر release.yml في PIPELINE_FILES لفحص البيئة فقط)",
+    "green_evidence": "self-model/evidence/d1.20-green.tap (7 من 7 + بروفة تنفيذ جسم خطوة Publish: (أ) private:true ⇒ rc 0 مع ::warning:: وSKIP_PUBLISH في الـ summary، (ب) private:false ⇒ rc 1 على registry وهمي محلي) + d1.20-suite.txt (711/711/0)",
+    "inversion_evidence": "d1.20-inversion.txt — تسع نسخ + ملحق: || true على النشر ⇒ 1؛ إعادة خطوة التثبيت الجذري ⇒ 2؛ كسر مسار الجسر ⇒ 1؛ تغيير --pack-destination وحده ⇒ 1؛ actions: write ⇒ 1؛ node 21 خارج المصفوفة ⇒ 1؛ private:false بلا حسم ⇒ 1؛ إسكات الـ warning ⇒ 1؛ حذف الإيصال من files: ⇒ 1. المجاورون خضر (تداخل workflows 6، تكافؤ النشر 7، CI 6، المرايا 6، مرجع البيئة 6). والملحق يروي خطأين في قياس لا في الشجرة: gaps-consistency كان أحمرّ في كل نسخة لأن D1.21 سُجّلت بمُعيد غير موجود، والحظر الحرفي كان يقرأ «|| true» داخل نص التحذير نفسه",
+    "note": "لا قرار في هوية الحزمة: private:true واسم غير موسّع وscope @elazamey = إعداد لا يمكن أن ينجح معه النشر (مقيس)؛ صار التخطّي معلنًا بدل الابتلاع، وحُسمت D1.21 للمالك. الحارس يبني على الـ YAML نفسه (المسارات، الدوال المستعمَلة، المجلدات، الصلاحيات) فأي انزياح في release.yml يُرى لا يُفترَض"
   }
 }

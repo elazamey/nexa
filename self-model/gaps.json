@@ -713,7 +713,67 @@
         "لو صار check-metrics.mjs يقيس بلا أن يُشغّل الاختبارات (قراءة baseline بدل تشغيلها)، فحارس D1.19 يفرض إضافة الخطوات إلى workflow عند سقوط أي أمر من قائمة runCommand — وهذا مقصود: التغطية لا الذاكرة",
         "security-scan.yml وagentic-bug-hunter.yml يعملان على PRs إلى main وpush main/arena/**؛ لم تُقس درجة تداخلهما مع ci.yml (تذكرة مستقلة لو تبيّن تكرار)"
       ]
+    },
+    {
+      "id": "D1.20",
+      "track": "P2",
+      "severity": "high",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "مسار الإصدار يبتلع فشله: نشر الحزمة بـ || true وتثبيت بلا أثر مع || يبتلع فشل القفل — أخضر لا يعني نُشر",
+      "current": "release.yml بلا خطوة تثبيت جذر (no-op مقيس) وبلا أي || في خطواته؛ خطوة Publish تقرأ private من package.json: تُعلن ::warning:: + سطر في الـ summary عند التخطّي، وتُشغّل npm publish حرفيًا بلا ابتلاع عند التفعيل؛ وحارس tests/release-workflow.test.js يربط الجسر والمسارات والصلاحيات والبوابة بنص الـ workflow نفسه",
+      "enforced": true,
+      "reproducer": "removed-at-closure",
+      "verification": "tests/release-workflow.test.js",
+      "opened_at": "2026-09-24T06:50:00Z",
+      "required": "ألّا يخضر workflow يقول «Publish» ثم يبتلع فشل النشر بـ || true، ولا خطوة تثبيت لا يستهلكها أحد مع || يُسكِت فشل القفل؛ أن تُفحص مسارات الأدلة والمنتجات التي يوقّعها الإصدار من نصّه لا من الذاكرة.",
+      "notes": "لا يقرّر هوية الحزمة (انظر D1.21) ولا يغيّر ما يُنشر؛ يغيّر فقط ما يُبلَّع أخضر وما لا يُفحص.",
+      "acceptance": {
+        "criteria": [
+          "لا || true ولا || npm install ولا continue-on-error ولا if: always() في أي خطوة من release.yml (بعد إسقاط التعليقات، فالرسائل ليست شيفرة)",
+          "خطوة Publish تنادي npm publish --access public فعلًا، وتقرأ حالة private من package.json، وتُعلن ::warning:: + سطر SKIP_PUBLISH في GITHUB_STEP_SUMMARY حين تتخطّى — لا صمت ولا ابتلاع",
+          "لا خطوة تثبيت جذر في release.yml، والتبرير مقيس داخل الحارس: لا workspace يعلن اعتمادية، وقفل الجذر بلا عقدة خارجية",
+          "جسر الأدلة مُتحقَّق منه من نص الـ workflow: المسار النسبي (من dist/packages حيث تعمل الخطوة) موجود، والصنف مُصدَّر، وكل bridge.<fn>(...) مستعمَلة معرفة في الجسر، والإيصال يُكتب هناك",
+          "تماسك المنتجات: --pack-destination = مجلد cd في خطوة البصمات = مجلد files: في action الإصدار، وSHA256SUMS على * والإيصال RELEASE_RECEIPT.json مكتوب فيه",
+          "بوابة الإصدار تعمل على وسوم v*.*.* وحدها (لا pull_request)، وتشغّل npm test + npm run mesh:verify، وnode major داخل مصفوفة ci.yml، وfetch-depth: 0، وpermissions مطابقة لـ [contents: write, packages: write, id-token: write] بالضبط",
+          "لا تناقض مبطّن: ما دامت private:true فلازم تذكرة مفتوحة في gaps.json تسمّي النشر/الـ scope ومعها مُعيد؛ ولو صارت غير private فلازم الاسم موسّع بـ scope معلن وتُقفل D1.21 في نفس التغيير"
+        ],
+        "inversion_test": "self-model/evidence/d1.20-red.tap (المُعيد 2 من 2 أخضر-كإثبات؛ صِيغ بالقياس بعد أن كانت صياغتي الأولى «لا اختبار يمس release.yml» باطّلة — env-reference-sync يذكره في PIPELINE_FILES:18) → d1.20-green.tap (الحارس 7 من 7) → d1.20-suite.txt؛ وبروفة تنفيذ جسم الخطوة المستخرج من الـ YAML: (أ) private:true ⇒ rc 0 + ::warning:: + SKIP_PUBLISH في الـ summary، (ب) private:false ⇒ rc 1 بفشل npm publish على registry وهمي 127.0.0.1:9 (بلا أي خطر نشر حقيقي) — الفشل مُبلَّغ."
+      },
+      "closed_at": "2026-09-24T07:30:00Z",
+      "ticket_status": "enforced — لا أخضر كاذب في مسار الإصدار؛ أما هوية الحزمة فقرار معلّق ومسجَّل D1.21 (بمُعيد حيّ في tests/known-gaps)",
+      "follow_ups": [
+        "D1.21 مفتوحة: private:true + اسم غير موسّع + scope @elazamey ⇒ لا إعداد ينجح معه npm publish؛ القرار للمالك (إعادة تسمية/نطاق أو حذف خطوة النشر أو حزمة فرعية موسّعة) مع files صريحة في package.json",
+        "بوابة الإصدار لا تشغّل posture/attacks/audit التي يراها كل PR، ولا تعمل على الوسوم في ci.yml — توسيع بوابة النشر تذكرة مستقلة (قرار توقيت/تكلفة)",
+        "التوقيع يعتمد على NexaEvidenceBridge بمفتاح محلي؛ أين تُحفظ المفاتيح العمومية للإيصالات ومن يتحقق منها خارج المستودع — خارج هذه التذكرة"
+      ]
+    },
+    {
+      "id": "D1.21",
+      "track": "P1",
+      "severity": "medium",
+      "area": "package-published",
+      "sources": [
+        "O08"
+      ],
+      "title": "إعدادات النشر متناقضة: الحزمة private:true واسمها غير موسّع (nexa) بينما setup-node يعلن scope ‏@elazamey على GHPR — النشر لا يمكن أن ينجح",
+      "current": "مفتوحة — تنتظر قرار المالك",
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T06:50:00Z",
+      "required": "قرار المالك قبل أي كود: إمّا @elazamey/nexa + private:false (ووقتها يُنشر 698 ملفًا/6.4MB بحزم workspaces داخلها!)، أو حذف خطوة npm publish والإبقاء على GitHub Release بالأصول الموقّعة فقط، أو نشر sub-package موسّع مستقل.",
+      "notes": "مقيس: package.json name=nexa، private=true، publishConfig {@elazamey:registry → GHPR} (يوجّه الحزم الموسّعة فقط)، npm pack --dry-run => nexa-0.1.0.tgz (698 ملفًا، 6.4MB). وnpm publish على حزمة private يفشل دائمًا — وهو ما كان || true يُخفيه (D1.20). لا يقرّر الوكيل هذا: قرار هوية/نطاق النشر للعميل.",
+      "acceptance": {
+        "criteria": [
+          "قرار مسجّل في self-model/decision-log.json: ما الذي يُنشر وأين وبأي اسم — أو أن النشر محذوف صراحةً من workflow",
+          "بعد القرار: package.json وrelease.yml متسقان (name/registry/scope/private) ويقيس ذلك حارس في tests/ — لا تعليق يشرح بل assert",
+          "الحجم تحت السيطرة: إن قُرّر النشر فـ files في package.json يحدّد ما يدخل Tarball صراحةً (لا 698 ملفًا افتراضية)"
+        ]
+      }
     }
   ],
-  "updated_at": "2026-09-24T06:15:00Z"
+  "updated_at": "2026-09-24T07:30:00Z"
 }

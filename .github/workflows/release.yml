@@ -28,9 +28,13 @@ jobs:
         registry-url: 'https://npm.pkg.github.com'
         scope: '@elazamey'
 
-    - name: Install Dependencies
-      run: npm ci || npm install
-
+    # D1.20: no install step at all — and no `|| npm install`. Measured (O22/O23): no workspace under
+    # packages/* or adapters/* declares a dependency and the tracked root lockfile resolves only the
+    # @nexa symlink farm, so the old step produced nothing that later steps consume (tests, mesh:verify,
+    # npm pack and the evidence bridge all run with no root node_modules). Worse, `|| npm install`
+    # turned a genuine lockfile failure into a green step three minutes before publishing.
+    # tests/release-workflow.test.js asserts the invariant that justifies this, so the day a real
+    # dependency appears the workflow fails its own check instead of shipping an untested tree.
     - name: Run Full Test Suite & Mesh Verification
       run: |
         npm test
@@ -64,9 +68,20 @@ jobs:
           console.log('✅ Ed25519 Signed Release Receipt created.');
         "
 
+    # D1.20: the `|| true` is gone. A step named Publish must not go green when nothing was published.
+    # What remains is a decision, not a bug (D1.21): the root package is `private: true` and unscoped
+    # while setup-node points GHPR at scope @elazamey, so `npm publish` cannot succeed as configured.
+    # Rather than hide that, the step reads the tree: while package.json says private, it emits a
+    # ::warning:: and skips; the moment someone sets private:false (resolving D1.21) the same step
+    # really publishes — and a failing publish then fails the release, loudly.
     - name: Publish Package to GitHub Package Registry
       run: |
-        npm publish --access public || true
+        if node -e "const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));process.exit(p.private?0:1)"; then
+          echo "::warning::npm publish متخطًى: package.json يقول private:true — النشر محسوم بالتذكرة D1.21 لا بابتلاع الفشل"
+          echo "SKIP_PUBLISH=private-package" >> "$GITHUB_STEP_SUMMARY"
+        else
+          npm publish --access public
+        fi
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

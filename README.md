@@ -523,7 +523,7 @@ gates · namespaces · Ω error codes · cell states: `npm run posture` prints t
 > and the [original hardening RED](docs/celia-workspace-commit-hardening-red.ar.md).
 
 <!-- NEXA_METRICS:START -->
-- Total tests: 702
+- Total tests: 711
 - Security tests: 16
 - Ω attacks: 31
 - Google identity attacks: 8

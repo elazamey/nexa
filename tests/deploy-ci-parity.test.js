@@ -146,11 +146,30 @@ test('D1.18: تكافؤ النشر مع CI — نفس القفل ونفس major 
   const cNode = /node-version:\s*['"]?(2[\d.x]*)/.exec(/dashboard:[\s\S]*?(?=\n {2}\S|\n*$)/.exec(ciText)?.[0] ?? ciText)[1];
   assert.equal(dNode.split('.')[0], cNode.split('.')[0],
     `major مختلف: نشر ${dNode} مقابل CI ${cNode} — ما يُختبَر ليس ما يُنشر`);
+  // ولا أرقام معلّقة في الحارس: ما يفرضه الحارس أن القفل **يُرضي النطاق المعلن** في package.json،
+  // فلو قُرّر دمج ترقيات dependabot (#24–#27 في elazamey/nexa) بقي النابض صادقًا بدل أن يحمرّ بلا سبب.
+  const declared = JSON.parse(read('dashboard/package.json'));
   const lock = JSON.parse(read('dashboard/package-lock.json'));
-  const react = lock.packages['node_modules/react']?.version;
-  const vite = lock.packages['node_modules/vite']?.version;
-  assert.match(String(react), /^18\./, `القفل لا يثبّت react 18 بل ${react}`);
-  assert.match(String(vite), /^5\./, `القفل لا يثبّت vite 5 بل ${vite}`);
+  const wanted = ['react', 'vite'];
+  for (const name of wanted) {
+    const range = (declared.dependencies || {})[name] || (declared.devDependencies || {})[name];
+    assert.ok(range, `dashboard/package.json لم يعد يعلن ${name} — حدّث الحارس بعلم`);
+    const locked = lock.packages[`node_modules/${name}`]?.version;
+    assert.ok(locked, `القفل لا يثبّت ${name} — npm ci سينشر شيئًا آخر`);
+    const m = /^[\^~]?(\d+)\.(\d+)\.(\d+)$/.exec(range);
+    assert.ok(m, `نطاق غير مُحدَّب لـ ${name}: ${range} — الحارس يفحص ^x.y.z/~x.y.z فقط`);
+    const [maj, min] = [Number(m[1]), Number(m[2])];
+    const [lmaj, lmin] = locked.split('.').map(Number);
+    if (range.startsWith('^')) {
+      assert.equal(lmaj, maj, `${name} في القفل ${locked} خارج ^${maj} المعلن`);
+      assert.ok(lmin >= min, `${name} في القفل ${locked} أقل من المعلن ^${maj}.${min}`);
+    } else if (range.startsWith('~')) {
+      assert.equal(lmaj, maj, `${name} في القفل ${locked} خارج ~${maj}`);
+      assert.equal(lmin, min, `${name} في القفل ${locked} خارج ~${maj}.${min}`);
+    } else {
+      assert.equal(locked, range, `${name} مثبتة على ${locked} لكن package.json تقول ${range}`);
+    }
+  }
 });
 
 test('D1.18: الترتيب والبيانات — hunter قبل البناء، والمخرج فيه data، والرفع من dist', () => {

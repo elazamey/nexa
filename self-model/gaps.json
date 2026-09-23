@@ -285,7 +285,7 @@
         "الإيصال الصادر لا يحمل certified===true بل verified===true؛ العقد مُثبَّت على ذلك في الحارس، وتوحيد الاسم (certified/verified) قرار كسر توافق يُترك لتذكرة عقد",
         "certifyFinding يولّد زوج مفاتيح عابرًا عند غياب مفتاح — فكل مُصرَّح به يُصدَّق عمليًا، والرفض لا يُبلَّغ عبر مفتاح مفقود. الحارس يستعمل حقن جسر مرفوض ليُثبت المسار؛ الربط الحقيقي بسياسة التوقيع خارج النطاق",
         "SecretsHunter يُصدِّر findings بلا artifact فتُرفض عند GATE_2 — مرئي في counts.asserted > counts.validated ولا يُصلح هنا (تذكرة كاشف-الدليل المستقلة)",
-        "لا مخطط JSON لـ bug-report.json: لا شيء يفحص الملف المكتوب ضد الحقول الجديدة وقت الإنتاج؛ يُقترح مخطط عند消费需求 حقيقية"
+        "لا مخطط JSON لـ bug-report.json: لا شيء يفحص الملف المكتوب ضد الحقول الجديدة وقت الإنتاج؛ يُقترح مخطط عند حاجة حقيقية"
       ]
     },
     {
@@ -621,7 +621,7 @@
       "enforced": true,
       "reproducer": "removed-at-closure",
       "acceptance": {
-        "inversion_test": "self-model/evidence/d1.17-guard-red.tap (6 من 6 حمراء عند 5d54d46 قبل الإصلاح؛ الاختبار السابع أُضيف معه) + d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) → d1.17-green.tap (7 من 7)؛ d1.17-inversion.txt بخمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في تعريف الحالة ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ العدد معرفةً مزروعة في belief ⇒ 2 من 7؛ سجل يروّي 501/501 ⇒ 1 من 7. وفي الخمس بقيت أسوار D1.10/D1.11 والالتزام خضراء (perimeter 9/9، rate-limit 7/7، failfast 6/6، startup-guard 8/8، commit-http 3/3، commit-auth 19/19، hardening 3/3， workspace-http 1/1، write-auth 16/16، output-isolation 3/3) — ملحق الإثبات يُصحّح سطرًا كان يحمل اسم ملف غير موجود",
+        "inversion_test": "self-model/evidence/d1.17-guard-red.tap (6 من 6 حمراء عند 5d54d46 قبل الإصلاح؛ الاختبار السابع أُضيف معه) + d1.17-red.tap (4 من 4 خضراء-كإثبات عند التسجيل) → d1.17-green.tap (7 من 7)؛ d1.17-inversion.txt بخمس نسخ: جواب محفوظ عند تعذر القياس ⇒ 3 من 7؛ حروف في تعريف الحالة ⇒ 2 من 7؛ 314/314 في الواجهة ⇒ 1 من 7؛ العدد معرفةً مزروعة في belief ⇒ 2 من 7؛ سجل يروّي 501/501 ⇒ 1 من 7. وفي الخمس بقيت أسوار D1.10/D1.11 والالتزام خضراء (perimeter 9/9، rate-limit 7/7، failfast 6/6، startup-guard 8/8، commit-http 3/3، commit-auth 19/19، hardening 3/3، workspace-http 1/1، write-auth 16/16، output-isolation 3/3) — ملحق الإثبات يُصحّح سطرًا كان يحمل اسم ملف غير موجود",
         "criteria": [
           "GET /api/celia/state لا يعيد tests ولا promotion كحقل خام، ولا نسبة «ن/م» ولا 314 ولا 501 ولا 48.5% ولا 100% في كتلة الحالة",
           "gates وسائر الأعداد تُقرأ من القياس: في جذر فيه spec/ تساوي الحمولة مخرج check-posture حرفًا بحرف (parity test)، وفي بيئة لا تقيس (لا spec/) تُخدَم الكتلة بلا عدد مع NEXA-POSTURE-UNAVAILABLE/UNMEASURABLE — لا جواب محفوظ",
@@ -676,7 +676,11 @@
         "تعليق metrics.yml:34-36 يقول إن setup-node يحتاج قفلًا و«NEXA ships without one by design» — قِيس أن package-lock.json متتبَّع في الجذر (3467B، 31 عقدة، صفر حزمة خارجية): العبارة خاطئة، وتصحيحها وثائقي بحت لا يغيّر سلوكًا",
         "npm audit لمسار الداشبورد غير مفحوص في أي workflow؛ قِيست 4 advisory (vite fs.deny bypass high ≤6.4.2، esbuild/vite dev-server moderate ×3) على vite 5.4.21 — الإغلاق يحتاج قرار ترقية vite كبرى أو عتبة + استثناء معلن، وهي D1.19 المقترحة",
         "deploy-pages لا يعمل sync:assets:check؛ غير كافٍ اليوم لأن ci.yml يعمل على push لكل فرع بما فيه main، لكنه يصير لازمًا لو فُرع النشر أو أُضيفت يدوية workflow_dispatch على شجرة غير مفحوصة"
-      ]
+      ],
+      "correction": {
+        "date": "2026-09-24",
+        "what": "كان criterion رقم 3 يُلزم القفل بـ react 18 وvite 5 حرفيًا؛ قِيس أن في المستودع PRs مفتوحة من dependabot (#24 vite→8، #25 react→19، #26 plugin-react→6، #27 tailwind→4) كانت ستُحمرّ الحارس بلا سبب أمني. استُبدل الإلزام بحلّي: القفل يجب أن يُرضي النطاق المعلن في dashboard/package.json (^major و~major.minor)، فيبقى النابض صادقًا قبل وبعد أي قرار ترقية."
+      }
     },
     {
       "id": "D1.19",
@@ -773,7 +777,107 @@
           "الحجم تحت السيطرة: إن قُرّر النشر فـ files في package.json يحدّد ما يدخل Tarball صراحةً (لا 698 ملفًا افتراضية)"
         ]
       }
+    },
+    {
+      "id": "D1.22",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "بوابة الإصدار أضعف من بوابة الـ PR: الوسم لا يشغّل posture/attacks/audit ولا فحص المرايا ولا تزامن الـ vectors — والـ tarball يُبنى من شجرة أقل فحصًا",
+      "current": "مفتوحة",
+      "notes": "مقيس: بوابة الإصدار (on: tags v*.*.*) تشغّل npm test وnpm run mesh:verify فقط، بينما ci.yml — الذي لا يعمل على الوسوم — يشغّل npm run audit وnpm run posture وnpm run attacks وnpm run attacks:google وnpm run sync:assets:check وnpm run vectors. وci.yml يعمل على push لكل الفروع بما فيها main، فالفجوة الفعلية هي وسوم على commit غير main أو وسوم قديمة مُعاد دفعها.",
+      "required": "ألّا يُبنَى منتج منشور من شجرة لم تجتز القياسات التي يراها كل PR؛ القرار المطلوب: تشغيلها كلها في وظيفته قبل pack، أو اشتراط أن يكون الوسم على رأس main (تحقّق) — والاثنان قابلان للقياس.",
+      "acceptance": {
+        "criteria": [
+          "release.yml يشغّل كل أمر يقيس سلامة النواة في ci.yml (audit, posture, attacks, attacks:google) قبل خطوة npm pack — أو يرفض الوسم غير الواقع على رأس main صراحةً",
+          "خطوة sync:assets:check وخطوة تزامن spec/vectors موجودتان قبل التوقيع على المنتج، أو مُستثنَتان بتعليق يقوله",
+          "بوابة الإصدار تفشل (rc≠0) لو فشل أي من هذه، بلا || وبلا continue-on-error (ورث D1.20)",
+          "حارس يربط مجموعة الأوامر في الملفين بقائمة واحدة معلنة، فلا يضاف قياس إلى ci.yml ويُنسَى في الإصدار"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.23",
+      "track": "P2",
+      "severity": "medium",
+      "area": "ci-cd",
+      "sources": [
+        "O08"
+      ],
+      "title": "لا بوابة تدقيق اعتماديات للداشبورد: أربع advisory مقيسة على vite 5.4.21 (أعلاها high) ولا ‏npm audit في أي workflow يمس dashboard/",
+      "current": "مفتوحة — تحتاج قرار عتبة أو قرار ترقية",
+      "notes": "القياس في self-model/evidence/d1.23-advisories.txt (npm audit --json داخل dashboard/). الثغرات تمس خادم التطوير لا مخرج vite build الساكن؛ وفي المستودع أربعة PRs من dependabot (#24–#27) ترقّي الكُبرى. الحارس الجديد في D1.18 صار يفحص إرضاء النطاق لا الأرقام الحرفية، فقرار الدمج لا يكسر شيئًا.",
+      "required": "قرار المالك: عتبة الفشل (high+/critical+/moderate+allowlist) أو دمج ترقيات dependabot أو قبول موثّق منتهٍ الصلاحية؛ لا يقرّره الوكيل لأنه يغيّر اعتماديات الواجهة المنشورة.",
+      "acceptance": {
+        "criteria": [
+          "خطوة CI تشغّل npm audit على dashboard/ بعتبة معلنة (‏--audit-level=…) وتفشل فوقها، أو تعليق في الـ workflow يسجّل القبول وسببه وتاريخه",
+          "لو قُرّر الاستثناء فملف استثناء معلن في المستودع (لا في head commit للـ workflow) مع سبب ورقم advisory",
+          "حارس يربط القائمة: إن لم توجد بوابة audit للداشبورد فلازم تذكرة مفتوحة تسمّيها — لا صمت مريح",
+          "بعد الدمج: تحديث ‏dashboard/package-lock.json متزامن مع النطاقات المعلنَة (الحارس في D1.18 يفحص الإرضاء لا الأرقام)"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.24",
+      "track": "P2",
+      "severity": "low",
+      "area": "documentation",
+      "sources": [
+        "O06"
+      ],
+      "title": "قاعدة «لا رقم في وثيقة سارية بلا قياس» محصورة في README/SECURITY — ‏docs/ فيها أرقام مُعلَّقة تُقرأ حالةً وهي قياس لحظة",
+      "current": "مفتوحة",
+      "notes": "مقيس: tests/count-claims-sync.test.js يفحص ملفين فقط (README.md وSECURITY.md)؛ وسجل D1.14 يوثّق أن توسيع القاعدة إلى docs/ تُرك عمدًا كتذكرة مستقلة. الخطر الملموس: ‏docs/repository-audit-*.ar.md وdocs/*.md تحمل صيغ N/M و«100% PASS» صحيحة لتاريخها فقط.",
+      "required": "أن تُقرأ كل رقم في وثيقة سارية من قياس، أو تُوسم صراحةً بلحظتها — بنفس الآلية المستعملة في README/SECURITY لا باختراع ثانٍ. لا يحذف ولا يعيد كتابة أي سجل قائم.",
+      "acceptance": {
+        "criteria": [
+          "نطاق الفحص معلن في الحارس ويُقاس من قائمة ملفات، لا من تكرار نصّي محفور؛ وdocs/archive/ (إن وُجد) مُستثنًى بتعريف",
+          "كل وثيقة في docs/ إما بلا رقم حالة، أو رقمها منسوب إلى ‏self-model/baseline.json/npm run metrics، أو موسومة «قياس لحظة» بصيغة يفهمها الحارس",
+          "الفئات المُسجَّلة سلفًا في السجل (سجلّ/تاريخي) لا تُعاد صياغتها؛ الحارس يضيف الوسم عند الحاجة لا يحرّر الماضي",
+          "الحارس لا يكسر السجل: مواد docs/repository-audit-*.ar.md المرفوعة سابقًا تُقرأ سجلًّا (append-only) فلا تُحمرّ بأرقامها"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
+    },
+    {
+      "id": "D1.25",
+      "track": "P3",
+      "severity": "low",
+      "area": "documentation",
+      "sources": [
+        "O06"
+      ],
+      "title": "فهرس التوثيق: ‏docs/archive/ معرّف في القاعدة لكنه غير موجود، وdocs/evidence/ مفهرس كمجلد واحد بدل ملفاته",
+      "current": "مفتوحة",
+      "notes": "مقيس عند التحضير: لا docs/archive/ في الشجرة (القاعدة في docs/README.md تعرف المسار والحارس يقبله عند أول أرشفة)؛ وdocs/evidence/ فيه عشرات الملفات ومفهرس في docs/README.md بصفّ مجلد واحد — فحارس D1.14 لا يرى ملفاته واحدًا واحدًا ولا يطلب له حالة.",
+      "required": "حسم دقة الفهرسة دون تضخيم الصيانة: إما صف لكل ملف دليل مع حالته، أو قاعدة «مجلد مُفهرَس = كل ملفاته مفهرسة تلقائيًا» مع سطر يقيس العدد. والأرشفة الفعلية تُفعَّل عند أول نقل وثيقة، بلا نقل استباقي.",
+      "acceptance": {
+        "criteria": [
+          "docs/README.md يعرّف بدقة هل الأدلة مفهرسة ملفًا بملف أم كمجلد، والاختبار يطابق النص مع الشجرة (عدّاد ملفات فعلي، لا رقم مكتوب)",
+          "لو بقي المجلد مُفهرَسًا كوحدة، فالحارس يفحص أن كل ملف جديد في docs/evidence/ مطابق لنمط مسموح (d1.x-*.tap/.txt) فلا يفلت أي ملف من الفهرسة",
+          "docs/archive/ يُنشأ عند أول أرشفة فعلية مع صفّ «مؤرشفة» لا قبلها؛ لا نقل استباقي لشيء",
+          "لا تضخيم: لا يُلزم كل ملف دليل بصفّ يدوي إن كان النمط يغطيه؛ القرار مسجّل في self-model/decision-log.json"
+        ]
+      },
+      "enforced": false,
+      "reproducer": "test",
+      "verification": null,
+      "opened_at": "2026-09-24T08:20:00Z"
     }
   ],
-  "updated_at": "2026-09-24T07:30:00Z"
+  "updated_at": "2026-09-24T08:20:00Z"
 }

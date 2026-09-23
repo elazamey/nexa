@@ -48,6 +48,10 @@
     {
       "date": "2026-09-23",
       "event": "إغلاق D1.10 (P0-B) بأربع طبقات منفصلة: محيط HTTP (مفتاح للمشغّل/CLI + جلسة HttpOnly + CSRF للـ SPA)، حد معدل 429 بمفتاح هوية قابل للضبط، fail-fast إنتاجي بلا مفتاح، وعقد قرار موافقة موقَّع ({} لم تعد قرارًا)؛ 622/622 أخضر (597 − 3 مُعيد + 28 اختبارًا جديدًا)؛ أحمر→أخضر في self-model/evidence/d1.10-{red,green}.tap؛ النواة لم تُمَس"
+    },
+    {
+      "date": "2026-09-23",
+      "event": "إغلاق D1.11 (P0-C): حارس استمرارية عند الإقلاع — production + mock://memory = exit 1 قبل أي listen (النفي مُثبَت بغياب رسالة الجاهزية وباستطراق TCP لمنفذ محجوز)، والقرار من حكم البورت لا من شكل الإعداد، والمخرج إقرار صريح بحرفه يبقى موسومًا DEMO؛ حارس مستقل عن حارس المحيط؛ 629/629 أخضر (622 بعد D1.10 + 8 اختبار جديد − 1 مُعيد known-gaps حُذف)؛ verify PASS والشجرة نظيفة"
     }
   ],
   "post_d1_2": {
@@ -87,6 +91,19 @@
     "breakdown": "597 الأساس + 9 (perimeter) + 7 (rate limit) + 6 (fail-fast) + 6 (approval contract) − 3 (مُعيد known-gaps/D1.10 حُذف في تغيير الإغلاق)",
     "inversion_evidence": "self-model/evidence/d1.10-red.tap (5/6 fail) → self-model/evidence/d1.10-green.tap (6/6 pass)",
     "barrier_removal_check": "إزالة الجدار 4/9 حمراء، إزالة الحد 4/7، إزالة حارس الإنتاج 2/6",
+    "side_effects_restored": []
+  },
+  "d1.11_closure": {
+    "date": "2026-09-23",
+    "commit": "working tree — إغلاق D1.11 (انظر git log)",
+    "command": "npm test",
+    "node": "v22.22.3",
+    "tests": 629,
+    "pass": 629,
+    "fail": 0,
+    "breakdown": "622 بعد D1.10 + 8 (tests/server-startup-guard.test.js) − 1 (مُعيد known-gaps/d1.11 حُذف في تغيير الإغلاق)؛ اختبارات D1.10 المتأثرة بالإصلاح حُدِّثت بلا تغيير في أعدادها (إقرار المؤقتية في اختبارين، وتصحيح تمهيد D1.13 إلى ملفات الحدود)",
+    "inversion_evidence": "self-model/evidence/d1.11-red.tap (7/8 fail — listened:true، والمنفذ قُبل أثناء الحياة) → d1.11-green.tap (8/8 pass)",
+    "barrier_removal_check": "تعطيل حارس الاستمرارية ⇒ 2 من 8 حمراء (اختبارا الإقلاع الفعلي)، وحارس المحيط يبقى أخضر — الفصل قائم",
     "side_effects_restored": []
   }
 }

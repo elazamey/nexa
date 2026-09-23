@@ -1,0 +1,177 @@
+TAP version 13
+# Subtest: D1.11 (وحدة): الحارس يقرر من حكم البورت، ومنطوق الإغلاق محدد
+not ok 1 - D1.11 (وحدة): الحارس يقرر من حكم البورت، ومنطوق الإغلاق محدد
+  ---
+  duration_ms: 1.964574
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:99:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    لا حارس استمرارية بعد
+    + actual - expected
+
+    + 'undefined'
+    - 'function'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'function'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:100:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: D1.11 (وحدة): محلّ الحقول هو نفسه ما يراه البورت — بلا انحراف
+not ok 2 - D1.11 (وحدة): محلّ الحقول هو نفسه ما يراه البورت — بلا انحراف
+  ---
+  duration_ms: 0.33424
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:161:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'undefined'
+    - 'function'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'function'
+  actual: 'undefined'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:162:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: D1.11.1: production + mock = خروج غير صفري، وغياب تام لأي listen
+not ok 3 - D1.11.1: production + mock = خروج غير صفري، وغياب تام لأي listen
+  ---
+  duration_ms: 6092.435903
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:185:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    listen() استُدعي: العملية خدمت قبل أن ترفض
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:187:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.11.2: النفي القابل للتفتيش — لا منفذ TCP مفتوح أثناء الحياة ولا بعدها
+not ok 4 - D1.11.2: النفي القابل للتفتيش — لا منفذ TCP مفتوح أثناء الحياة ولا بعدها
+  ---
+  duration_ms: 8182.715347
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:195:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    المنفذ قُبل أثناء حياة العملية: الخادم استمع
+
+    25 !== 0
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 25
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:220:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.11.3: development/test + mock = الإقلاع مسموح كما كان تمامًا
+ok 5 - D1.11.3: development/test + mock = الإقلاع مسموح كما كان تمامًا
+  ---
+  duration_ms: 24302.437064
+  type: 'test'
+  ...
+# Subtest: D1.11.4: إقرار صريح = يقلع، والوضوح يبقى موسومًا لا ادّعاءً
+not ok 6 - D1.11.4: إقرار صريح = يقلع، والوضوح يبقى موسومًا لا ادّعاءً
+  ---
+  duration_ms: 8077.698623
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:236:1'
+  failureType: 'testCodeFailure'
+  error: 'لا صفة استمرارية في قائمة الصدق: الادعاء بلا counter-claim'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:251:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.11 honesty: وضع الذاكرة يُعلن من حالة البورت لا من الأمنية
+not ok 7 - D1.11 honesty: وضع الذاكرة يُعلن من حالة البورت لا من الأمنية
+  ---
+  duration_ms: 251.883014
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:256:1'
+  failureType: 'testCodeFailure'
+  error: 'مسار الحالة لا يصرّح بنوعية الاستمرارية'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:261:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: D1.11 ترتيب الحراس: محيط مفتاحه ناقص يرفض أولًا، والاثنان معًا لا يبتلع أحدهما الآخر
+not ok 8 - D1.11 ترتيب الحراس: محيط مفتاحه ناقص يرفض أولًا، والاثنان معًا لا يبتلع أحدهما الآخر
+  ---
+  duration_ms: 222.639026
+  type: 'test'
+  location: '/home/user/nexa/tests/server-startup-guard.test.js:266:1'
+  failureType: 'testCodeFailure'
+  error: 'حارس المحيط ما زال أول من يتكلم'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    [nexa] NEXA startup refused: production runtime with no HTTP perimeter credential.
+      Every /api/* route (authorizations/request, approve, terminal/execute, workspace
+      write/commit, semantic/governed stores) mutates state; serving them unauthenticated
+      is the failure this guard exists to make impossible.
+      Set NEXA_API_KEY to a secret of at least 32 chars (operator/CLI credential; the
+      browser SPA then authenticates with an HttpOnly session cookie), or run this
+      process outside production (NODE_ENV/NEXA_ENV) if it is not a deployment.
+
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///home/user/nexa/tests/server-startup-guard.test.js:269:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 1
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51065.608095

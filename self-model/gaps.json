@@ -311,33 +311,47 @@
       "follow_ups": [
         "حد حجم جسم لطلبات POST في المسارات القديمة (نفس نمط req.on('data') بلا سقف) — خارج D1.10",
         "دوران NEXA_OPERATOR_SEED: تحذير عند الإقلاع فقط الآن؛ الفصل الكامل لبصمة المشغّل عن /api/v1/authorizations/stats مؤجل"
-      ]
+      ],
+      "closure_note": "المعيار 12 («D1.11 تبقى مفتوحة عمدًا») وصف لحظة إغلاق D1.10؛ أُغلقت D1.11 لاحقًا بنفس المسار (فصل الحارسين بقي كما صُمم: حارس الاستمرارية لا يمس المحيط ولا العكس)"
     },
     {
       "id": "D1.11",
       "track": "P0-C",
       "severity": "high",
       "area": "server",
-      "title": "حارس بدء التشغيل: الإنتاج يرفض mock://memory بصمت",
+      "title": "حارس بدء التشغيل: الإنتاج يرفض ادّعاء استمرارية غير متحققة (mock://memory)",
       "sources": [
         "O03"
       ],
       "current": "الخادم يسقط إلى mock://memory عند غياب SUPABASE_* حتى مع NODE_ENV=production، ويقلع ويخدم بنجاح — 'يعمل محليًا ويفشل إنتاجيًا' بصمت",
-      "required": "fail-fast عند الإقلاع: NODE_ENV=production + ذاكرة mock = خروج فوري برمز غير صفري ورسالة سبب؛ التطوير/الاختبار يبقيان على السلوك الحالي",
-      "enforced": false,
+      "required": "fail-fast عند الإقلاع — لا: القرار من حكم البورت نفسه لا من شكل الإعداد. NODE_ENV/NEXA_ENV=production + ذاكرة استمرارية mock (إعداد غائب، مضيف mock://، أو URL يبدو حقيقيًا مع سائق غير مثبَّت) = خروج برمز 1 قبل أي listen مع NEXA_E_PERSISTENCE_MOCK ورسالة تحوي السبب والعلاجين؛ المخرج الوحيد إقرار صريح بالحرف NEXA_PRODUCTION_PERSISTENCE=ack-mock-ephemeral يبقى موسومًا DEMO في /api/v1/system/status؛ development/test بلا تغيير؛ خلفية حقيقية فعلًا (_isMock===false) تقلع بلا أي إقرار",
+      "enforced": true,
       "reproducer": "test",
       "acceptance": {
-        "inversion_test": "tests/server-startup-guard.test.js (مخطط)",
+        "inversion_test": "tests/server-startup-guard.test.js — أحمر قبل الإصلاح ثم أخضر بعده (self-model/evidence/d1.11-red.tap: 7 فشل/1 نجاح، d1.11-green.tap: 8/8). الدليل الحاسم ليس «exit != 0» بل «فشل الإقلاع ∧ لا منفذ TCP مقبول أثناء الحياة ∧ المنفذ قابل للربط بعد الخروج»",
         "criteria": [
-          "NODE_ENV=production بلا SUPABASE: الخادم لا يستمع أبدًا ويخرج برمز فشل",
-          "NODE_ENV=production مع إعداد حقيقي (أو بديل موثق): يقلع طبيعيًا",
-          "التطوير والاختبار (mock): يقلعان كما اليوم بلا أي تغيير"
-        ]
+          "production + mock://memory: الكود 1، ولا نداء listen() قط (غياب رسالة الجاهزية من ناقل الإقلاع)، والرمز NEXA_E_PERSISTENCE_MOCK في أول سطر",
+          "المنفذ المحجوز مسبقًا لا يقبل أي اتصال أثناء عمر العملية، ويبقى قابلًا للربط بعد خروجها — لا «خدم ثم مات»",
+          "رسالة حتمية ومحددة: سبب مميز (unconfigured | mock-url | no-driver) وعلاجان، بلا مفتاح ولا مضيف مشروع في النص",
+          "URL يبدو حقيقيًا مع سائق غائب = مرفوض أيضًا؛ هذا بالضبط الادعاء الكاذب الذي لا يمسكه أي فحص إعداد",
+          "development/test/CI مع mock: إقلاع وخدمة كما كان حرفيًا (url/key محفوظان بسلوكهما السابق، بلا انحراف بين الحارس والبورت)",
+          "production + خلفية استمرارية حقيقية (_isMock === false): العقد محفوظ — يقلع بلا أي علامة أو إقرار",
+          "الإقرار الصريح بحرفه الوحيد المسموح يُبقي النشر التجريبي قابلًا للإقلاع، ويطبع تحذيرًا، ويُسجَّل memory: DEMO في /api/v1/system/status؛ أي قيمة أخرى (1/yes/فارغ/حرف كبير/مسافة ذيل) ليست إقرارًا",
+          "الحارس مستقل عن حارس المحيط: كل منهما يرفض بموضوعه وحده، ولا تظهر الرسالتان في إقلاع واحد",
+          "لا توسيع: لا Supabase refactor، لا تنفيذ تخزين دائم، لا Render migration (عقد render.yaml موثق فقط)، لا تفكيك للسيرفر",
+          "نطاق القرار محصور بذاكرة الاستمرارية المعلنة؛ الحالة المؤقتة الأخرى (governed engine، missions، commit state dir) موثقة كمتابعة لا كمغلقة بالخطأ"
+        ],
+        "pre_condition": "يجب أن يُثبت المُعيد قبل الإصلاح أن الخادم يسمع فعلًا (منفذ مفتوح + 200)، لا مجرد أن العملية لم ترفض",
+        "closure": "إغلاق في نفس التغيير الذي يحذف tests/known-gaps/d1.11-mock-in-production.test.js ويضع verification حيًا خارج known-gaps"
       },
-      "verification": null,
+      "verification": "tests/server-startup-guard.test.js",
       "opened_at": "2026-09-22T23:15:00Z",
-      "closed_at": null,
-      "ticket_status": "open"
+      "closed_at": "2026-09-23T01:40:00Z",
+      "ticket_status": "closed 2026-09-23 — حارس استمرارية في tools/celia-startup-guard.mjs، مستقل عن حارس المحيط؛ لا Supabase refactor ولا تنفيذ تخزين دائم (خارج النطاق عمدًا)",
+      "follow_ups": [
+        "CELIA_COMMIT_STATE_DIR في الإنتاج قد يشير إلى مسار مؤقت: نفس فئة الادعاء، خارج D1.11 (لا يُقاس بحكم البورت)",
+        "NexaGovernedMemoryEngine والمهمات/الأحداث في الذاكرة فقط: إما خلفية دائمة أو لافتة DEMO مطردة في system/status"
+      ]
     },
     {
       "id": "D1.12",
@@ -467,5 +481,5 @@
       "ticket_status": "open"
     }
   ],
-  "updated_at": "2026-09-23T00:55:00Z"
+  "updated_at": "2026-09-23T01:40:00Z"
 }

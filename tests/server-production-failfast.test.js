@@ -60,8 +60,10 @@ test('D1.10.1: مفتاح فارغ/مسافات = مفقود، وإشارة NEXA
 });
 
 test('D1.10 layer 3: production بمفتاح يقلع، والصحة تمر بلا مصرّح والمسار لا يخدع الحارس', async (t) => {
+  // إقرار مؤقتية الحالة مطلوب من D1.11 فصاعدًا حتى يُقاس حارس المحيط وحده؛ لا علاقة
+  // له بما يُختبر هنا (نشر حقيقي يحتاج سائق استمرارية فعليًا، لا علامة).
   const server = await startIsolatedServer(t, undefined, undefined, {
-    env: { NODE_ENV: 'production', NEXA_API_KEY: KEY },
+    env: { NODE_ENV: 'production', NEXA_API_KEY: KEY, NEXA_PRODUCTION_PERSISTENCE: 'ack-mock-ephemeral' },
   });
   const health = await server.raw({ method: 'GET', path: '/healthz' });
   assert.equal(health.status, 200, 'مفتش الصحة لا يحمل مصرّحًا: 401 هنا يعني إعادة تدوير لا انقطاعًا');
@@ -76,16 +78,25 @@ test('D1.10 layer 3: production بمفتاح يقلع، والصحة تمر بل
   assert.match((login.headers['set-cookie'] ?? []).find((c) => c.startsWith('nexa_session=')) ?? '', /Secure/);
 });
 
-test('D1.10 layer 3: إنتاج + ذاكرة mock يقلع — الحارس لا يبتلع D1.11', async (t) => {
-  // SUPABASE_URL='' يسقط إلى mock://memory في الكود: هذا بالضبط ثغرة D1.11،
-  // وتذكرة D1.11 تبقى مفتوحة — طبقة المحيط لا تُغلقها عرضًا.
-  const server = await startIsolatedServer(t, undefined, undefined, {
-    env: { NODE_ENV: 'production', NEXA_API_KEY: KEY, SUPABASE_URL: '', SUPABASE_ANON_KEY: '' },
+test('D1.10 layer 3: حارسان مستقلان — المحيط لا يفحص SUPABASE_*، ورمز رفض واحد لكل إقلاع', async (t) => {
+  // بعد إغلاق D1.11 صار الفصل قابلًا للقياس من الاتجاهين: كل حارس يتكلم عن موضوعه
+  // وحده، ولا تُخلط الرسالتان في إقلاع واحد (منطوق قابل للتفتيش في CI وعند النشر).
+  const perimeterOnly = await bootToExit(t, {
+    NODE_ENV: 'production', SUPABASE_URL: 'https://p.supabase.co', SUPABASE_ANON_KEY: 'k',
   });
-  const state = await server.raw({
-    method: 'GET', path: '/api/celia/state', headers: { Authorization: `Bearer ${KEY}` },
+  assert.equal(perimeterOnly.code, 1);
+  assert.match(perimeterOnly.logs, /NEXA_E_PERIMETER_UNCONFIGURED/);
+  assert.ok(!perimeterOnly.logs.includes('NEXA_E_PERSISTENCE_MOCK'),
+    'حارس المحيط أبلغ عن الاستمرارية — الفصل انكسر');
+
+  const persistenceOnly = await bootToExit(t, {
+    NODE_ENV: 'production', NEXA_API_KEY: KEY, SUPABASE_URL: '', SUPABASE_ANON_KEY: '',
   });
-  assert.equal(state.status, 200, 'mock://memory ليست مسؤولية حارس المحيط (انظر known-gaps D1.11)');
+  assert.equal(persistenceOnly.code, 1);
+  assert.match(persistenceOnly.logs, /NEXA_E_PERSISTENCE_MOCK/);
+  assert.ok(!persistenceOnly.logs.includes('NEXA_E_PERIMETER_UNCONFIGURED'),
+    'حارس الاستمرارية أبلغ عن المحيط بعد اجتيازه');
+  assert.ok(!persistenceOnly.logs.includes(KEY), 'رسالة الإقلاع تسرّب المفتاح');
 });
 
 test('D1.10 layer 3: بيئات التطوير/الاختبار غير معنية بالحارس', async (t) => {

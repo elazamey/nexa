@@ -43,7 +43,7 @@ import { createTransactionalWorkspacePort } from './celia-workspace-port.mjs';
 import { createWorkspaceWriteAuthorizer, WorkspaceWriteError } from './celia-workspace-write-auth.mjs';
 import { createPerimeter, HEALTH_ROUTE, SESSION_ROUTE, unauthorizedPayload } from './celia-perimeter-auth.mjs';
 import { createRateLimiter, sendTooManyRequests, rateLimitHeaders } from './celia-rate-limit.mjs';
-import { assertProductionPerimeter, operatorSeedWarning } from './celia-startup-guard.mjs';
+import { assertProductionPerimeter, assertProductionPersistence, operatorSeedWarning, resolvePersistenceBackend } from './celia-startup-guard.mjs';
 import { createWorkspaceCommitter } from './celia-workspace-commit-port.mjs';
 import { WorkspaceCommitError } from './celia-workspace-commit-auth.mjs';
 import { createAstPort } from './celia-ast-port.mjs';
@@ -125,13 +125,12 @@ const rateLimit = createRateLimiter({
 // not after it has served mutating traffic. Local/dev/test are untouched.
 const startup = assertProductionPerimeter({ env: process.env, required: perimeter.required });
 if (!startup.ok) {
+  // The code leads the line: an operator (and CI grep) reads one token, not prose.
+  console.error(`[nexa] ${startup.code}: startup refused`);
   console.error(`[nexa] ${startup.message}`);
   process.exitCode = 1;
   process.exit(1);
 }
-const seedWarning = operatorSeedWarning(process.env);
-if (seedWarning) console.warn(`[nexa] ${seedWarning}`);
-
 // Trusted operator configuration, never derived from request headers/body.
 // Missing configuration denies every workspace write; invalid config stops startup.
 const authorizeWorkspaceWrite = createWorkspaceWriteAuthorizer(
@@ -142,11 +141,41 @@ const authorizeWorkspaceWrite = createWorkspaceWriteAuthorizer(
 export const dagEventEmitter = new EventEmitter();
 dagEventEmitter.setMaxListeners(50);
 
-// v0.5 — Semantic Memory Port (mock by default, real Supabase if env set)
-const vectorPort = createVectorSupabasePort({
-  url: process.env.SUPABASE_URL || 'mock://memory',
-  key: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || 'mock-key'
+// v0.5 — Semantic Memory Port (mock by default, real Supabase if env set).
+// D1.11: the values come from the same resolver the startup guard inspects, so the
+// guard cannot be checking a different backend than the one this process got.
+const persistence = resolvePersistenceBackend({ env: process.env });
+const vectorPort = createVectorSupabasePort({ url: persistence.url, key: persistence.key });
+
+// === D1.11 / P0-C — production does not claim continuity it does not have ====
+// The port's own verdict (_isMock === false) is the only admissible evidence: a
+// real-looking SUPABASE_URL with a silent mock fallback is precisely the state
+// this guard exists to refuse. Runs before any filesystem write and long before
+// listen(); dev/test keep today's behaviour untouched.
+const persistenceStartup = assertProductionPersistence({
+  env: process.env,
+  backend: persistence,
+  realBackend: vectorPort._isMock === false,
 });
+if (!persistenceStartup.ok) {
+  console.error(`[nexa] ${persistenceStartup.code}: startup refused`);
+  console.error(`[nexa] ${persistenceStartup.message}`);
+  process.exitCode = 1;
+  process.exit(1);
+}
+if (persistenceStartup.warning) console.warn(`[nexa] ${persistenceStartup.warning}`);
+// Advisory only, and after every fatal check: a process that is about to refuse
+// should not also be lectured about key hygiene in the same breath.
+const seedWarning = operatorSeedWarning(process.env);
+if (seedWarning) console.warn(`[nexa] ${seedWarning}`);
+// Every honesty label below is derived from the port, never from the env shape.
+const memoryHonesty = vectorPort._isMock === false
+  ? { component: 'memory', mode: 'LIVE', detail: `pgvector backend via ${persistence.source}` }
+  : {
+    component: 'memory',
+    mode: 'DEMO',
+    detail: 'mock://memory — in-process only, lost on restart, not shared across replicas',
+  };
 
 // v0.5 Governed Memory Engine — Self-Evolving Agent OS (no pgvector needed)
 const governedEngine = new NexaGovernedMemoryEngine({ maxNodes: 500, ownerKid: 'nexa:governed:api:v0.5' });
@@ -1545,6 +1574,8 @@ const server = createServer(async (req, res) => {
         { component: 'approvals', mode: 'LIVE', detail: 'hash-chained ledger, human decisions' },
         { component: 'evidence', mode: 'LIVE', detail: 'hash-chained logs, verifiable offline' },
         { component: 'creative', mode: 'DEMO', detail: `mock provider (${creativePort.stats().provider}), deterministic` },
+        // D1.11: continuity is stated, not assumed — the label follows the port.
+        memoryHonesty,
         { component: 'desktop', mode: 'DEMO', detail: 'canvas simulation — no VNC in this sandbox' },
       ],
       usage: usageMeter.summaryAll(),

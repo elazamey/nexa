@@ -174,7 +174,11 @@ test('D1.10 perimeter: /healthz بلا سر وبلا جدار، ولا يعيد 
 });
 
 test('D1.10 perimeter: كوكي Secure في الإنتاج أو خلف https، والمفتاح الفارغ = غائب', async (t) => {
-  const prod = await startIsolatedServer(t, undefined, undefined, { env: withKey({ NODE_ENV: 'production' }) });
+  // إقرار مؤقتية الحالة مطلوب من D1.11 فصاعدًا لأي إقلاع production: هذا الاختبار
+  // يقيس أعلام الكوكي في الإنتاج، لا خلفية الاستمرارية (انظر server-startup-guard).
+  const prod = await startIsolatedServer(t, undefined, undefined, {
+    env: withKey({ NODE_ENV: 'production', NEXA_PRODUCTION_PERSISTENCE: 'ack-mock-ephemeral' }),
+  });
   const prodLogin = await prod.raw({ method: 'POST', path: '/api/v1/session', body: { apiKey: KEY } });
   assert.equal(prodLogin.status, 200);
   const prodCookie = (prodLogin.headers['set-cookie'] ?? []).find((c) => c.startsWith('nexa_session='));

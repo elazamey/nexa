@@ -33,10 +33,20 @@
 # credential, no state read and no rate-limit budget, so a platform probe can
 # never read "401" as "app down" — nor spend the operator's quota.
 #
-# Supabase credentials (SUPABASE_URL / SUPABASE_ANON_KEY) are intentionally NOT
-# declared here: production without them still falls back to mock://memory, which
-# is a separate open ticket (D1.11) with its own guard. Do not add them until that
-# gap is closed, or the deploy will look verified while it is not.
+# --- D1.11 (P0-C) continuity contract ----------------------------------------
+# Production also refuses to boot when the memory backend is ephemeral: the server
+# asks its own vector port whether it got a real pgvector client, and a mock answer
+# (missing SUPABASE_*, a mock:// host, or a URL that is real-looking while no
+# driver is installable) is fatal at startup — because the failure being closed is
+# the *false continuity claim*, not a missing feature. Declared sync:false below so
+# the credentials stay out of git; declaring them is not what makes the deploy
+# honest, having a reachable backend is.
+#
+# A demo deploy that intentionally accepts ephemerality (facts die on restart) sets
+#   NEXA_PRODUCTION_PERSISTENCE=ack-mock-ephemeral
+# That is a label, not an escape hatch: it must be spelled exactly, it prints a
+# loud boot warning, and /api/v1/system/status keeps reporting memory as DEMO —
+# nothing is allowed to call the deployment persistent while it is not.
 
 services:
   - type: web
@@ -59,6 +69,12 @@ services:
       - key: NEXA_API_KEY
         sync: false
       - key: NEXA_OPERATOR_SEED
+        sync: false
+      # Continuity backend (D1.11). Without a reachable pair, a production deploy
+      # exits before listening — by design.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
         sync: false
       # Optional tuning knobs for the perimeter layers (defaults are production
       # safe; see tools/celia-rate-limit.mjs for units and semantics).

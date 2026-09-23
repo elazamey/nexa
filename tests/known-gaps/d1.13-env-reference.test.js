@@ -12,10 +12,25 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-test('known-gap D1.13 (O05): لا .env.example رغم قراءة الخادم لمتغيرات env', () => {
-  const server = fs.readFileSync(path.join(ROOT, 'tools/celia-dashboard-server.mjs'), 'utf8');
-  assert.ok(server.includes('process.env.CELIA_WORKSPACE_WRITE_AUTH'), 'تمهيد: الخادم يقرأ CELIA_* من البيئة');
-  assert.ok(server.includes('process.env.SUPABASE_URL'), 'تمهيد: الخادم يقرأ SUPABASE_* من البيئة');
+const BOUNDARY_FILES = [
+  'tools/celia-dashboard-server.mjs',
+  // من طبقتي المحيط وحارس الإقلاع فصاعدًا، قراءات البيئة التشغيلية تعيش في وحدات
+  // الحدود لا في
+  // السيرفر وحده (محيط، حد معدل، حارس إقلاع) — أي أن الفجوة اتسعت، لا ضاقت:
+  // لا مرجع واحد يسمّي المتغيرات العشرة الآن الموزّعة على أربعة ملفات.
+  'tools/celia-perimeter-auth.mjs',
+  'tools/celia-rate-limit.mjs',
+  'tools/celia-startup-guard.mjs',
+];
+
+test('known-gap D1.13 (O05): لا .env.example رغم قراءة حدود الخادم لمتغيرات env', () => {
+  const boundary = BOUNDARY_FILES.map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
+  assert.ok(boundary.includes('process.env.CELIA_WORKSPACE_WRITE_AUTH'), 'تمهيد: الحدود تقرأ CELIA_* من البيئة');
+  assert.ok(boundary.includes('process.env.SUPABASE_URL') || boundary.includes('env.SUPABASE_URL'),
+    'تمهيد: الحدود تقرأ SUPABASE_* من البيئة');
+  assert.ok(boundary.includes('NEXA_API_KEY') && boundary.includes('NEXA_RATE_LIMIT_MAX')
+    && boundary.includes('NEXA_PRODUCTION_PERSISTENCE'),
+    'تمهيد: متغيرات المحيط/الحد/الإقلاع تُقرأ بلا مرجع مركزي يسمّيها');
   assert.equal(
     fs.existsSync(path.join(ROOT, '.env.example')),
     false,
